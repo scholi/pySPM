@@ -56,6 +56,7 @@ class SPM_image:
             self.pixels = np.array(struct.unpack("<%if"%(size[0]*size[1]),BIN)).reshape(size)
         elif self.root.tag=="channel_list":# ToF-SIMS data
             self.type = "ToF-SIMS"
+            self.channel = "Counts"
             x   = int(self.root.findall("./channel/axis[name='x']/count")[0].text)
             y   = int(self.root.findall("./channel/axis[name='y']/count")[0].text)
             RAW = self.root.findall("./channel/pixels")[0].text
@@ -119,7 +120,8 @@ class SPM_image:
     def show(self, ax=None, sig = None, cmap=None, title=None):
         if ax==None:
             fig, ax = plt.subplots(1,1)
-        title="{0} - {0}".format(self.type,self.channel)
+        if title==None:
+            title="{0} - {1}".format(self.type,self.channel)
         unit=self.size['real']['unit']
         sunit='afpnum kMGTPE'
         if len(unit)==1: isunit=6
@@ -158,7 +160,7 @@ class SPM_image:
         x,y = np.linspace(x1,x2,int(d)+1),np.linspace(y1,y2,int(d)+1)
         return scipy.ndimage.map_coordinates(self.pixels,np.vstack((y,x)))
 
-    def plotProfile(self, x1,y1,x2,y2, ax=None, col='b-'):
+    def plotProfile(self, x1,y1,x2,y2, ax=None, col='b-',**kargs):
         if ax==None:
             fig, ax = plt.subplots(1,1)
         d  = np.sqrt((x2-x1)**2+(y2-y1)**2)
@@ -168,9 +170,10 @@ class SPM_image:
         l  = np.linspace(0,rd,int(d)+1)
         x,y = np.linspace(x1,x2,int(d)+1),np.linspace(y1,y2,int(d)+1)
         z=scipy.ndimage.map_coordinates(self.pixels,np.vstack((y,x)))
-        ax.plot(l,z,col)
+        l=ax.plot(l,z,col,**kargs)
         ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
         ax.set_ylabel("Height [{0}]".format(self.size['real']['unit']))
+        return l
 
     def getBinThreshold(self, percent, high=True, adaptive=False, binary=True):
         if adaptive:
