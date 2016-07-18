@@ -7,9 +7,22 @@ import matplotlib.pyplot as plt
 import scipy
 import skimage
 import skimage.filters
+import copy
+
 """
 Library to handle SPM data.
 """
+
+def getSPM(filename, channel, corr=''):
+    Fwd = SPM_image(filename, channel)
+    Bwd = SPM_image(filename, channel, True)
+    Fwd.pixels = (Fwd.pixels + Bwd.pixels)/2
+    del Bwd
+    if corr.lower() == 'slope':
+        Fwd.correctSlope()
+    elif corr.lower() == 'lines':
+        Fwd.correctLines()
+    return Fwd
 
 class SPM_image:
     def __init__(self, filename, channel='Topography', backward=False,corr='none'):
@@ -103,7 +116,7 @@ class SPM_image:
         tf *= recon_tf
         return np.real(np.fft.ifft2(np.fft.fft2(work_image)*recon_tf))
 
-    def show(self, ax=None, sig = None, cmap=None):
+    def show(self, ax=None, sig = None, cmap=None, title=None):
         if ax==None:
             fig, ax = plt.subplots(1,1)
         title="{0} - {0}".format(self.type,self.channel)
@@ -137,6 +150,8 @@ class SPM_image:
         else:
             ax.set_xlabel('x [{0}]'.format(unit))
             ax.set_ylabel('y [{0}]'.format(unit))
+        if title != None:
+            ax.set_title(title)
 
     def getProfile(self, x1,y1,x2,y2):
         d=np.sqrt((x2-x1)**2+(y2-y1)**2)
@@ -213,6 +228,19 @@ class SPM_image:
                 mask[yi,xi]=1
         if neg: return np.fliplr(mask)
         return mask
+	
+    def adjust_position(self, fixed):
+        """ Shift the current pixels to match a fixed image """
+        adj = copy.deepcopy(self)
+        cor = np.fft.fft2(fixed.pixels)
+        cor = np.abs( np.fft.ifft2( np.conj(cor) * np.fft.fft2(self.pixels) ) )
+        cor = cor / fixed.pixels.size
+        ypeak, xpeak = np.unravel_index(cor.argmax(), cor.shape)
+        shift = [-(ypeak-1), -(xpeak-1)]
+        adj.pixels = np.roll(self.pixels,shift[0],axis=0)
+        adj.pixels = np.roll( adj.pixels,shift[1],axis=1)
+        return adj
+		
 
     
 def imshow_sig(img,sig=1, ax=None, **kargs):
