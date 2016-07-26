@@ -50,11 +50,15 @@ class SPM_image:
 							},
 						 'real':{
 							'unit':self.root.findall(".//spm:area/spm:contents/spm:unit/spm:v",namespaces)[0].text,
-							'x':float(self.root.findall(".//spm:area//spm:contents/spm:x/spm:v",namespaces)[0].text),
-							'y':float(self.root.findall(".//spm:area//spm:contents/spm:y/spm:v",namespaces)[0].text),
+							'x':float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:fast_axis/spm:v",namespaces)[0].text),
+							'y':float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:slow_axis/spm:v",namespaces)[0].text),
 							}}
 			BIN = base64.b64decode(RAW)
-			self.pixels = np.array(struct.unpack("<%if"%(size[0]*size[1]),BIN)).reshape(size)
+			recorded_size = len(BIN)/4
+			self.size['recorded']={'pixels':(recorded_size/size[0],size[0])}
+			self.size['recorded']['real']={'x':self.size['real']['x'],
+				'y':self.size['real']['y']*self.size['recorded']['pixels'][0]/float(self.size['pixels']['y'])}
+			self.pixels = np.array(struct.unpack("<%if"%(recorded_size),BIN)).reshape(self.size['recorded']['pixels'])
 		elif self.root.tag=="channel_list":# ToF-SIMS data
 			self.type = "ToF-SIMS"
 			self.channel = "Counts"
@@ -129,9 +133,9 @@ class SPM_image:
 		elif unit[0] in sunit:
 			unit=unit[1:]
 			isunit=sunit.index(unit[0])
-		W = self.size['real']['x']
-		H = self.size['real']['y']
-		fact=int(round(np.log(W)/np.log(10)/3))
+		W = self.size['recorded']['real']['x']
+		H = self.size['recorded']['real']['y']
+		fact=int(np.floor(np.log(W)/np.log(10)/3))
 		isunit+=fact
 		W,H=W/10**(fact*3),H/10**(fact*3)
 		if cmap==None:
