@@ -6,6 +6,7 @@ import os
 import matplotlib.pyplot as plt
 import scipy
 import skimage
+import skimage.exposure
 #import skimage.filters
 import copy
 from tqdm import tqdm
@@ -122,7 +123,7 @@ class SPM_image:
 		tf *= recon_tf
 		return np.real(np.fft.ifft2(np.fft.fft2(work_image)*recon_tf))
 
-	def show(self, ax=None, sig = None, cmap=None, title=None):
+	def show(self, ax=None, sig = None, cmap=None, title=None, adaptive=False, dmin=0, dmax=0):
 		if ax==None:
 			fig, ax = plt.subplots(1,1)
 		if title==None:
@@ -143,14 +144,21 @@ class SPM_image:
 			if unit=='m' and self.channel == "Topography":
 				cmap='hot'
 		extent=(0,W,0,H)
-		if sig == None:
-			ax.imshow(self.pixels,cmap=cmap,extent=extent)
+		mi,ma = np.min(self.pixels), np.max(self.pixels)
+		if adaptive:
+			img = np.asarray(256*(self.pixels-mi)/(ma-mi),dtype=np.uint8)
+			mi,ma=0,1
+			img = skimage.exposure.equalize_adapthist(img, clip_limit=0.03)
 		else:
-			std  = np.std(self.pixels)
-			avg  = np.mean(self.pixels)
+			img=self.pixels
+		if sig == None:
+			ax.imshow(np.flipud(img),cmap=cmap,extent=extent,vmin=mi+dmin,vmax=ma+dmax)
+		else:
+			std  = np.std(img)
+			avg  = np.mean(img)
 			vmin  = avg - sig * std
 			vmax = avg + sig * std
-			ax.imshow(np.flipud(self.pixels),cmap=cmap, vmin=vmin, vmax=vmax, extent=extent)
+			ax.imshow(np.flipud(img),cmap=cmap, vmin=vmin, vmax=vmax, extent=extent)
 		if isunit!=6:
 			ax.set_xlabel('x [{0}{1}]'.format(sunit[isunit],unit))
 			ax.set_ylabel('y [{0}{1}]'.format(sunit[isunit],unit))
