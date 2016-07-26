@@ -6,7 +6,7 @@ import os
 import matplotlib.pyplot as plt
 import scipy
 import skimage
-import skimage.filters
+#import skimage.filters
 import copy
 from tqdm import tqdm
 
@@ -269,6 +269,54 @@ def imshow_sig(img,sig=1, ax=None, **kargs):
 	vmax = avg + sig * std
 	ax.imshow(img,vmin=vmin, vmax=vmax, **kargs)
 	
+def adjust_position(fixed,to_adjust,shift=False):
+	""" Shift the current pixels to match a fixed image """
+	adj = copy.deepcopy(to_adjust)
+	cor = np.fft.fft2(fixed)
+	cor = np.abs( np.fft.ifft2( np.conj(cor) * np.fft.fft2(to_adjust) ) )
+	cor = cor / to_adjust.size
+	ypeak, xpeak = np.unravel_index(cor.argmax(), cor.shape)
+	shift = [-(ypeak-1), -(xpeak-1)]
+	adj = np.roll(to_adjust,shift[0],axis=0)
+	adj = np.roll(adj   ,shift[1],axis=1)
+	if shift:	return adj,shift
+	return adj
+
+def tukeywin(window_length, alpha=0.5):
+	'''The Tukey window, also known as the tapered cosine window, can be regarded as a cosine lobe of width \alpha * N / 2
+	that is convolved with a rectangle window of width (1 - \alpha / 2). At \alpha = 1 it becomes rectangular, and
+	at \alpha = 0 it becomes a Hann window.
+	
+	We use the same reference as MATLAB to provide the same results in case users compare a MATLAB output to this function
+	output
+	
+	Reference
+	---------
+	http://www.mathworks.com/access/helpdesk/help/toolbox/signal/tukeywin.html
+	
+	'''
+	# Special cases
+	if alpha <= 0:
+		return np.ones(window_length) #rectangular window
+	elif alpha >= 1:
+		return np.hanning(window_length)
+	
+	# Normal case
+	x = np.linspace(0, 1, window_length)
+	w = np.ones(x.shape)
+	
+	# first condition 0 <= x < alpha/2
+	first_condition = x<alpha/2
+	w[first_condition] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[first_condition] - alpha/2) ))
+	
+	# second condition already taken care of
+	
+	# third condition 1 - alpha / 2 <= x <= 1
+	third_condition = x>=(1 - alpha/2)
+	w[third_condition] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[third_condition] - 1 + alpha/2))) 
+	
+	return w
+
 if __name__ == "__main__":
 	Path = "C:/Users/ols/Dropbox/ToF_SIMS"
 	AFM = SPM_image("{0}/CyI5b_0006_ns.xml".format(Path),corr='slope')
