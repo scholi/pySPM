@@ -150,7 +150,7 @@ class SPM_image:
 			avg  = np.mean(self.pixels)
 			vmin  = avg - sig * std
 			vmax = avg + sig * std
-			ax.imshow(self.pixels,cmap=cmap, vmin=vmin, vmax=vmax, extent=extent)
+			ax.imshow(np.flipud(self.pixels),cmap=cmap, vmin=vmin, vmax=vmax, extent=extent)
 		if isunit!=6:
 			ax.set_xlabel('x [{0}{1}]'.format(sunit[isunit],unit))
 			ax.set_ylabel('y [{0}{1}]'.format(sunit[isunit],unit))
