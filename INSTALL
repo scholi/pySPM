@@ -1,0 +1,3 @@
+install the SPM folder in your PYTHONPATH.
+
+For Windows users it means you have to create a system variable (environment variable) called PythonPath pointing toward the parent directory where the SPM folder is located.
