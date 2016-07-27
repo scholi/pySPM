@@ -45,6 +45,8 @@ class SPM_image:
 				raise 'Channel {0} in {1} scan not found'.format(channel,direction)
 				return
 			size= [int(z.text) for z in self.root.findall("spm:vector/spm:contents/spm:size/spm:contents//spm:v", namespaces)]
+			self.scanSpeed = {'value':float(self.root.findall("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='%s']/../spm:point_interval/spm:v"%(["forward","backward"][backward]), namespaces)[0].text) * size[0],
+					'unit': self.root.findall("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='%s']/../spm:point_interval_unit/spm:v"%(["forward","backward"][backward]), namespaces)[0].text}
 			self.size = {'pixels':{
 							'x':size[0],
 							'y':size[1]
