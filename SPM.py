@@ -7,6 +7,7 @@ import struct
 import os
 import matplotlib.pyplot as plt
 import scipy
+import scipy.ndimage
 import skimage
 import skimage.exposure
 #import skimage.filters
@@ -126,7 +127,14 @@ class SPM_image:
 		return u"""Feedback: {feedback[channel]} : P:{P[value]}{P[unit]} : I:{I[value]}{I[unit]}
 Size: {size[pixels][x]}×{size[pixels][y]} pixels = {x[value]:.3} {x[unit]}×{y[value]:.3} {y[unit]}
 Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,feedback=self.feedback,size=self.size,scanSpeed=self.scanSpeed)
-			
+
+	def correctMedianDiff(self):
+		N=self.pixels
+		N2=np.vstack([N[1:,:],N[-1:,:]])-N # Difference of the pixel between two consecutive row
+		C=np.cumsum(np.median(N2,axis=1)) # Take the median of the difference and cumsum them
+		D=np.tile(C,(N.shape[0],1)).T     # Extend the vector to a matrix (row copy)
+		self.pixels = N-D
+					
 	def correctSlope(self):
 		s=np.mean(self.pixels,axis=1)
 		i=np.arange(len(s))
@@ -218,20 +226,23 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		x,y = np.linspace(x1,x2,int(d)+1),np.linspace(y1,y2,int(d)+1)
 		return scipy.ndimage.map_coordinates(self.pixels,np.vstack((y,x)))
 
-	def plotProfile(self, x1,y1,x2,y2, ax=None, col='b-',**kargs):
+	def plotProfile(self, x1,y1,x2,y2, ax=None, col='b-', pixels=False,**kargs):
 		if ax==None:
 			fig, ax = plt.subplots(1,1)
 		d  = np.sqrt((x2-x1)**2+(y2-y1)**2)
 		dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
 		dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
-		rd = np.sqrt(dx**2+dy**2)
+		if pixels:
+			rd=d
+		else:
+			rd = np.sqrt(dx**2+dy**2)
 		l  = np.linspace(0,rd,int(d)+1)
 		x,y = np.linspace(x1,x2,int(d)+1),np.linspace(y1,y2,int(d)+1)
 		z=scipy.ndimage.map_coordinates(self.pixels,np.vstack((y,x)))
-		l=ax.plot(l,z,col,**kargs)
+		p=ax.plot(l,z,col,**kargs)
 		ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
 		ax.set_ylabel("Height [{0}]".format(self.size['real']['unit']))
-		return l
+		return {'plot':p,'l':l}
 
 	def getBinThreshold(self, percent, high=True, adaptive=False, binary=True):
 		if adaptive:
