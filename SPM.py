@@ -47,6 +47,12 @@ class SPM_image:
 			size= [int(z.text) for z in self.root.findall("spm:vector/spm:contents/spm:size/spm:contents//spm:v", namespaces)]
 			self.scanSpeed = {'value':float(self.root.findall("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='%s']/../spm:point_interval/spm:v"%(["forward","backward"][backward]), namespaces)[0].text) * size[0],
 					'unit': self.root.findall("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='%s']/../spm:point_interval_unit/spm:v"%(["forward","backward"][backward]), namespaces)[0].text}
+			fbPath = "spm:vector/spm:contents/spm:instrumental_parameters/spm:contents/spm:z_control/spm:contents"
+			self.feedback = {'channel':self.root.findall('{0}/spm:z_feedback_channel/spm:v'.format(fbPath), namespaces)[0].text}
+			self.feedback['P']={'value':float(self.root.findall('{0}/spm:proportional_z_gain/spm:v'.format(fbPath), namespaces)[0].text),
+					'unit':self.root.findall('{0}/spm:proportional_z_gain_unit/spm:v'.format(fbPath), namespaces)[0].text}
+			self.feedback['I']={'value':float(self.root.findall('{0}/spm:integral_z_time/spm:v'.format(fbPath), namespaces)[0].text),
+					'unit':self.root.findall('{0}/spm:integral_z_time_unit/spm:v'.format(fbPath), namespaces)[0].text}
 			self.size = {'pixels':{
 							'x':size[0],
 							'y':size[1]
