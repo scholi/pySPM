@@ -1,3 +1,5 @@
+#*-* encoding: utf-8 *-*
+
 import xml.etree.ElementTree as ET
 import base64
 import numpy as np
@@ -26,6 +28,30 @@ def getSPM(filename, channel, corr=''):
 		Fwd.correctLines()
 	return Fwd
 
+def funit(v,u=None,iMag=False):
+    if u==None:
+        u=v['unit']
+        v=v['value']
+    import math
+    shift=int(math.floor(math.log10(v)/3.0))
+    mag=u'afpnμm1kMGTPE'
+    imag=mag.index('1')
+    unit=u
+    if len(u)>1 and u[0] in mag and iMag:
+        imag=mag.index(u[0])
+        unit=u[1:]
+    value = v/10**(3*shift)
+    imag += shift
+    if imag<0:
+        value *= 10**(imag*3)
+        imag=0
+    elif imag>=len(mag):
+        value *= 10**((imag-len(mag)+1)*3)
+        imag = len(mag)-1
+    m=mag[imag]
+    if m=='1': m=''
+    return {'value':value,'unit':u'{mag}{unit}'.format(mag=m,unit=unit)}
+
 class SPM_image:
 	def __init__(self, filename, channel='Topography', backward=False,corr='none'):
 		if not os.path.exists(filename): raise IOError('File Not Found')
@@ -53,6 +79,8 @@ class SPM_image:
 					'unit':self.root.findall('{0}/spm:proportional_z_gain_unit/spm:v'.format(fbPath), namespaces)[0].text}
 			self.feedback['I']={'value':float(self.root.findall('{0}/spm:integral_z_time/spm:v'.format(fbPath), namespaces)[0].text),
 					'unit':self.root.findall('{0}/spm:integral_z_time_unit/spm:v'.format(fbPath), namespaces)[0].text}
+			if self.feedback['channel']=='df':
+				self.feedback['channel']=u'Δf'
 			self.size = {'pixels':{
 							'x':size[0],
 							'y':size[1]
@@ -89,6 +117,15 @@ class SPM_image:
 			self.correctSlope()
 		elif corr.lower() == 'lines':
 			self.correctLines()
+	
+	def getSummary(self):
+		x=funit(self.size['real']['x'],self.size['real']['unit'])
+		y=funit(self.size['real']['y'],self.size['real']['unit'])
+		P=funit(self.feedback['P'])
+		I=funit(self.feedback['I'])
+		return u"""Feedback: {feedback[channel]} : P:{P[value]}{P[unit]} : I:{I[value]}{I[unit]}
+Size: {size[pixels][x]}×{size[pixels][y]} pixels = {x[value]:.3} {x[unit]}×{y[value]:.3} {y[unit]}
+Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,feedback=self.feedback,size=self.size,scanSpeed=self.scanSpeed)
 			
 	def correctSlope(self):
 		s=np.mean(self.pixels,axis=1)
