@@ -182,7 +182,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		if ax==None:
 			fig, ax = plt.subplots(1,1)
 		if title==None:
-			title="{0} - {1}".format(self.type,self.channel)
+			title=u"{0} - {1}".format(self.type,self.channel)
 		unit=self.size['real']['unit']
 		sunit='afpnum kMGTPE'
 		if len(unit)==1: isunit=6
@@ -216,11 +216,11 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			vmax = avg + sig * std
 			ax.imshow(np.flipud(img),cmap=cmap, vmin=vmin, vmax=vmax, extent=extent)
 		if isunit!=6:
-			ax.set_xlabel('x [{0}{1}]'.format(sunit[isunit],unit))
-			ax.set_ylabel('y [{0}{1}]'.format(sunit[isunit],unit))
+			ax.set_xlabel(u'x [{0}{1}]'.format(sunit[isunit],unit))
+			ax.set_ylabel(u'y [{0}{1}]'.format(sunit[isunit],unit))
 		else:
-			ax.set_xlabel('x [{0}]'.format(unit))
-			ax.set_ylabel('y [{0}]'.format(unit))
+			ax.set_xlabel(u'x [{0}]'.format(unit))
+			ax.set_ylabel(u'y [{0}]'.format(unit))
 		if title != None:
 			ax.set_title(title)
 
