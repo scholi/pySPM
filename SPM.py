@@ -82,14 +82,16 @@ class SPM_image:
 					'unit':self.root.findall('{0}/spm:integral_z_time_unit/spm:v'.format(fbPath), namespaces)[0].text}
 			if self.feedback['channel']=='df':
 				self.feedback['channel']=u'Δf'
+			x=funit(float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:fast_axis/spm:v",namespaces)[0].text),self.root.findall(".//spm:area/spm:contents/spm:unit/spm:v",namespaces)[0].text)
+			y=funit(float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:slow_axis/spm:v",namespaces)[0].text),self.root.findall(".//spm:area/spm:contents/spm:unit/spm:v",namespaces)[0].text)
 			self.size = {'pixels':{
 							'x':size[0],
 							'y':size[1]
 							},
 						 'real':{
-							'unit':self.root.findall(".//spm:area/spm:contents/spm:unit/spm:v",namespaces)[0].text,
-							'x':float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:fast_axis/spm:v",namespaces)[0].text),
-							'y':float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:slow_axis/spm:v",namespaces)[0].text),
+							'unit':x['unit'],
+							'x':x['value'],
+							'y':y['value'],
 							}}
 			BIN = base64.b64decode(RAW)
 			recorded_size = len(BIN)/4
