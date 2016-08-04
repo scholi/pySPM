@@ -189,6 +189,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		elif unit[0] in sunit:
 			unit=unit[1:]
 			isunit=sunit.index(unit[0])
+		else: isunit=6
 		W = self.size['recorded']['real']['x']
 		H = self.size['recorded']['real']['y']
 		fact=int(np.floor(np.log(W)/np.log(10)/3))
