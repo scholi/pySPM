@@ -2,8 +2,100 @@ import numpy as np
 import struct
 import os
 import re
+import matplotlib.pyplot as plt
 
-class ToF:
+Elements = {
+	'H': {1:(1.00782503223,.999885),2:(2.01410177812,.000115)},
+	'Li':{6:(6.0151228874,.0759),7:(7.0160034366,.9241)},
+	'Be':{9:(9.012183065,1)},
+	'B':{10:(10.01293695,.199),11:(11.00930536,.801)},
+	'C': {12:(12,.9893),13:(13.00335483507,.01107)},
+	'N': {14:(14.00307400443,.99636),15:(15.00010889888,.00364)},
+	'O': {16:(15.99491461957,.99757),17:(16.99913175650,.00038),18:(17.99915961286,.00205)},
+	'F': {19:(18.9984036273,1)},
+	'Ag':{107:(106.9050916,.51839),109:(108.9047553,.48161)},
+	'Au':{197:(196.96656879,1)},
+	'Si':{28:(27.97692653465,.92223),29:(28.97649466490,.04685),30:(29.973770136,0.3092)},
+	'Ti':{46:(45.95262772,.0825),47:(46.95175879,0.0744),48:(47.94794198,.7372),49:(48.94786568,.0541),50:(49.94478689,.0518)},
+}
+
+def getSpecElt(Elts):
+	if len(Elts)==1: return Elements[Elts[0]]
+	tm={}
+	r1=Elements[Elts[0]]
+	r2=getSpecElt(Elts[1:])
+	for x in r1:
+		for y in r2:
+			if x+y not in tm:
+				tm[x+y]=[r1[x][0]+r2[y][0],r1[x][1]*r2[y][1]]
+			else:
+				tm[x+y][1]+=r1[x][1]*r2[y][1]
+	return tm
+
+def SplitElts(elt):
+	elts=[]
+	for x,i in re.findall('([A-Z][a-z]?)([0-9]*)',elt):
+		if i=='': i=1
+		else: i=int(i)
+		elts+=[x for k in xrange(i)]
+	return elts
+		
+def showElts(Elts):
+	r=getSpecElt(Elts)
+	plt.bar(r.keys(),[z[1] for z in r.values()]);
+	plt.show();
+
+class BIF6:
+	def __init__(self, filename):
+		self.f = open(filename, 'rb')
+		self.header=struct.unpack('xx4s5H',self.f.read(16))
+		self.size = (self.header[2],self.header[3])
+		self.N=self.size[0]*self.size[1]
+		self.cat=[]
+		for i in range(self.header[1]):
+			self.f.seek(16+i*(4*self.N+16))
+			self.cat.append(struct.unpack('4f',self.f.read(16)))
+		
+	def getImgID(self, ID):
+		assert ID>=0 and ID<=self.header[1]
+		self.f.seek(32+ID*(4*self.N+16))
+		return np.array(struct.unpack(str(self.N)+'I',self.f.read(4*self.N))).reshape(self.size)
+	
+	def getImgMass(self, m):
+		for i,x in enumerate(self.cat):
+			if m>=x[0]-.5 and m<=x[1]+.5: return self.getImgID(i)
+		return None
+	
+	def getImgElt(self, elt):
+		r={}
+		A=getSpecElt(SplitElts(elt))
+		for k in A:
+			r[k]={'data':self.getImgMass(k),'mass':A[k][0],'abund':A[k][1]}
+		return r
+	
+	def showImgElt(self, elt, size=10):
+		A=self.getImgElt(elt)
+		ks=[z for z in A if A[z]['data']!=None]
+		fig, ax = plt.subplots(len(ks)//4+1,4,figsize=(10*(len(ks)//4+1),10))
+		mi=np.min(A[ks[0]]['data'])
+		ma=np.max(A[ks[0]]['data'])
+		A[ks[0]]['CT']=ma
+		for i,k in enumerate(ks[1:]):
+			M=np.min(A[k]['data'])
+			mi=min(mi,M)
+			A[k]['minCT']=M
+			M=np.max(A[k]['data'])
+			ma=max(ma,M)
+			A[k]['CT']=M
+		ks.sort()
+		for i,k in enumerate(ks):
+			ax[i//4][i%4].imshow(A[k]['data']/A[k]['abund'],vmin=0,vmax=ma)
+			ax[i//4][i%4].set_title('mass: {mass:.3} - abundancy: {abund:.3f} - CT: {CT}'.format(**A[k]))
+			
+	def __exit__(self, exc_type, exc_value, traceback):
+		self.f.close()
+
+class BIF3D:
 	def __init__(self, path):
 		self.Peaks = {}
 		self.RPeaks = {}
