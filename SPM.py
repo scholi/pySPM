@@ -120,7 +120,40 @@ class SPM_image:
 			self.correctSlope()
 		elif corr.lower() == 'lines':
 			self.correctLines()
-	
+		elif corr.lower() == 'plane':
+			self.correctPlane()
+
+	def Offset(self, profiles, width=1, ax=None):
+		offset=np.zeros(self.pixels.shape[0])
+		counts=np.zeros(self.pixels.shape[0])
+		for p in profiles:
+			y,D = self.getRowProfile(*p,width=width,ax=ax)
+			counts[y]+=1
+			offset[y[1:]]+=np.diff(D)
+		counts[counts==0] = 1
+		offset = offset/counts
+		offset = np.cumsum(offset)
+ 		offset = offset.reshape((self.pixels.shape[1],1))
+		return np.flipud(self.pixels) - np.repeat(offset,self.pixels.shape[1],axis=1)
+
+	def getRowProfile(self,x1,y1,x2,y2,width=1,ax=None):
+		if y2<y1:
+				x1,y1,x2,y2=x2,y2,x1,y1
+
+		if ax!=None: ax.plot((x1,x2),(y1,y2),'w-')
+		x = np.arange(self.pixels.shape[1])
+		y = np.arange(self.pixels.shape[0])
+		I=scipy.interpolate.interp2d(x,y,np.flipud(self.pixels))
+		
+		Y=np.arange(y1,y2+1)
+		V=np.zeros(len(Y))
+		for w in np.arange(width):
+				xl=np.linspace(x1-(width-1)/2.+w,x2-(width-1)/2.+w,len(Y))
+				for i in range(len(Y)):
+						Z=I(xl[i],Y[i])
+						V[i]+=Z
+		return Y,V/width
+
 	def getSummary(self):
 		x=funit(self.size['real']['x'],self.size['real']['unit'])
 		y=funit(self.size['real']['y'],self.size['real']['unit'])
@@ -142,6 +175,15 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		i=np.arange(len(s))
 		fit=np.polyfit(i,s,1)
 		self.pixels-=np.tile(np.polyval(fit,i).reshape(len(i),1),len(i))
+
+	def correctPlane(self):
+		x = np.arange(self.pixels.shape[1])
+		y = np.arange(self.pixels.shape[0])
+		X,Y = np.meshgrid(x,y)
+		Z = self.pixels
+		A = np.column_stack((np.ones(Z.ravel().size),X.ravel(),Y.ravel()))
+		c, resid, rank, sigma = np.linalg.lstsq(A,Z.ravel())
+		self.pixels -= c[0]*np.ones(self.pixels.shape) + c[1] * X + c[2] * Y
 
 	def correctLines(self):
 		self.pixels-=np.tile(np.mean(self.pixels,axis=1).T,(self.pixels.shape[0],1)).T
