@@ -73,10 +73,10 @@ class BIF6:
 			r[k]={'data':self.getImgMass(k),'mass':A[k][0],'abund':A[k][1]}
 		return r
 	
-	def showImgElt(self, elt, size=10):
+	def showImgElt(self, elt, size=10, abundCorr=False, tot=True):
 		A=self.getImgElt(elt)
 		ks=[z for z in A if A[z]['data']!=None]
-		fig, ax = plt.subplots(len(ks)//4+1,4,figsize=(10*(len(ks)//4+1),10))
+		fig, ax = plt.subplots((len(ks)+1)//4+1,4,figsize=(10*((len(ks)+1)//4+1),10))
 		mi=np.min(A[ks[0]]['data'])
 		ma=np.max(A[ks[0]]['data'])
 		A[ks[0]]['CT']=ma
@@ -88,9 +88,18 @@ class BIF6:
 			ma=max(ma,M)
 			A[k]['CT']=M
 		ks.sort()
+		di=0
+		if tot:
+			SUM = sum([A[k]['data'] for k in ks])
+			ax[0][0].imshow(SUM,vmin=0)
+			ax[0][0].set_title("Total");
+			di=1
 		for i,k in enumerate(ks):
-			ax[i//4][i%4].imshow(A[k]['data']/A[k]['abund'],vmin=0,vmax=ma)
-			ax[i//4][i%4].set_title('mass: {mass:.3} - abundancy: {abund:.3f} - CT: {CT}'.format(**A[k]))
+			if abundCorr:
+				ax[(i+di)//4][(i+di)%4].imshow(A[k]['data']/A[k]['abund'],vmin=0,vmax=ma)
+			else:
+				ax[(i+di)//4][(i+di)%4].imshow(A[k]['data'],vmin=0,vmax=ma)
+			ax[(i+di)//4][(i+di)%4].set_title('mass: {mass:.3} - abundancy: {abund:.3f} - CT: {CT}'.format(**A[k]))
 			
 	def __exit__(self, exc_type, exc_value, traceback):
 		self.f.close()
