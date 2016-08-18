@@ -56,7 +56,7 @@ def funit(v,u=None,iMag=False):
 
 class SPM_image:
 	def __init__(self, filename, channel='Topography', backward=False,corr='none'):
-		if not os.path.exists(filename): raise IOError('File Not Found')
+		if not os.path.exists(filename): raise IOError('File "{0}" Not Found'.format(filename))
 		if filename[-4:]!='.xml': raise TypeError("Only xml files are handeled for the moment!")
 		self.filename=filename
 		tree = ET.parse(filename)
@@ -96,7 +96,7 @@ class SPM_image:
 							}}
 			BIN = base64.b64decode(RAW)
 			recorded_size = len(BIN)/4
-			self.size['recorded']={'pixels':(recorded_size/size[0],size[0])}
+			self.size['recorded']={'pixels':(int(recorded_size/size[0]),size[0])}
 			self.size['recorded']['real']={'x':self.size['real']['x'],
 				'y':self.size['real']['y']*self.size['recorded']['pixels'][0]/float(self.size['pixels']['y'])}
 			self.pixels = np.array(struct.unpack("<%if"%(recorded_size),BIN)).reshape(self.size['recorded']['pixels'])
@@ -134,7 +134,7 @@ class SPM_image:
 		counts[counts==0] = 1
 		offset = offset/counts
 		offset = np.cumsum(offset)
- 		offset = offset.reshape((self.pixels.shape[1],1))
+		offset = offset.reshape((self.pixels.shape[1],1))
 		return np.flipud(self.pixels) - np.repeat(offset,self.pixels.shape[1],axis=1)
 
 	def getRowProfile(self,x1,y1,x2,y2,width=1,ax=None):
