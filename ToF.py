@@ -68,7 +68,7 @@ class BIF6:
 		for i,x in enumerate(self.cat):
 			for m in masses:
 				if m>=x[0]-.5 and m<=x[1]+.5:
-					if SUM==None:
+					if SUM is None:
 						SUM=self.getImgID(i)
 					else:
 						SUM+=self.getImgID(i)
