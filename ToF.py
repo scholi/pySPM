@@ -61,10 +61,18 @@ class BIF6:
 		self.f.seek(32+ID*(4*self.N+16))
 		return np.array(struct.unpack(str(self.N)+'I',self.f.read(4*self.N))).reshape(self.size)
 	
-	def getImgMass(self, m):
+	def getImgMass(self, masses):
+		if type(masses)==float or type(masses)==int:
+			masses=[masses]
+		SUM=None
 		for i,x in enumerate(self.cat):
-			if m>=x[0]-.5 and m<=x[1]+.5: return self.getImgID(i)
-		return None
+			for m in masses:
+				if m>=x[0]-.5 and m<=x[1]+.5:
+					if SUM==None:
+						SUM=self.getImgID(i)
+					else:
+						SUM+=self.getImgID(i)
+		return SUM
 	
 	def getImgElt(self, elt):
 		r={}
