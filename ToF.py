@@ -37,7 +37,7 @@ def SplitElts(elt):
 	for x,i in re.findall('([A-Z][a-z]?)([0-9]*)',elt):
 		if i=='': i=1
 		else: i=int(i)
-		elts+=[x for k in xrange(i)]
+		elts+=[x for k in range(i)]
 	return elts
 		
 def showElts(Elts):
