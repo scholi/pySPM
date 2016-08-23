@@ -430,7 +430,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 def cut(img, c):
 	if c[2]-c[0]==img.shape[1] and c[3]-c[1]==img.shape[0]:
 		raise Exception("Reshaping the same array again?")
-	return pixels[c[1]:c[3],c[0]:c[2]]
+	return img[c[1]:c[3],c[0]:c[2]]
 	
 def imshow_sig(img,sig=1, ax=None, **kargs):
 	if ax==None:
