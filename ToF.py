@@ -3,6 +3,7 @@ import struct
 import os
 import re
 import matplotlib.pyplot as plt
+import SPM
 
 Elements = {
 	'H': {1:(1.00782503223,.999885),2:(2.01410177812,.000115)},
@@ -72,7 +73,7 @@ class BIF6:
 						SUM=self.getImgID(i)
 					else:
 						SUM+=self.getImgID(i)
-		return SUM
+		return SPM.SPM_image(BIN=np.flipud(SUM))
 	
 	def getImgElt(self, elt):
 		r={}

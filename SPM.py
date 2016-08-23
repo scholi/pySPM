@@ -55,7 +55,18 @@ def funit(v,u=None,iMag=False):
     return {'value':value,'unit':u'{mag}{unit}'.format(mag=m,unit=unit)}
 
 class SPM_image:
-	def __init__(self, filename, channel='Topography', backward=False,corr='none'):
+	def __init__(self, filename=None, channel='Topography', backward=False,corr='none',BIN=None,real=None):
+		if filename is None and not BIN is None:
+			self.channel = 'Data'
+			self.direction = 'Unknown'
+			self.size={'pixels':{'x':BIN.shape[1],'y':BIN.shape[0]}}
+			if not real is None:
+				self.size['real']=real
+			else: self.size['real']={'unit':'pixels','x':BIN.shape[1],'y':BIN.shape[0]}
+			self.size['recorded']={'pixels':self.size['pixels'],'real':self.size['real']}
+			self.pixels = BIN
+			self.type = 'RawData'
+			return
 		if not os.path.exists(filename): raise IOError('File "{0}" Not Found'.format(filename))
 		if filename[-4:]!='.xml': raise TypeError("Only xml files are handeled for the moment!")
 		self.filename=filename
@@ -228,7 +239,8 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			title=u"{0} - {1}".format(self.type,self.channel)
 		unit=self.size['real']['unit']
 		sunit='afpnum kMGTPE'
-		if len(unit)==1: isunit=6
+		if len(unit)==1 or unit in ['pixels']:
+			isunit=6
 		elif unit[0] in sunit:
 			unit=unit[1:]
 			isunit=sunit.index(unit[0])
