@@ -11,6 +11,7 @@ import scipy.ndimage
 import skimage
 import skimage.exposure
 import scipy.interpolate
+from skimage import transform as tf
 #import skimage.filters
 import copy
 from tqdm import tqdm
@@ -107,10 +108,10 @@ class SPM_image:
 							}}
 			BIN = base64.b64decode(RAW)
 			recorded_size = len(BIN)/4
-			self.size['recorded']={'pixels':(int(recorded_size/size[0]),size[0])}
+			self.size['recorded']={'pixels':{'y':int(recorded_size/size[0]),'x':size[0]}}
 			self.size['recorded']['real']={'x':self.size['real']['x'],
-				'y':self.size['real']['y']*self.size['recorded']['pixels'][0]/float(self.size['pixels']['y'])}
-			self.pixels = np.array(struct.unpack("<%if"%(recorded_size),BIN)).reshape(self.size['recorded']['pixels'])
+				'y':self.size['real']['y']*self.size['recorded']['pixels']['y']/float(self.size['pixels']['y'])}
+			self.pixels = np.array(struct.unpack("<%if"%(recorded_size),BIN)).reshape((self.size['recorded']['pixels']['y'],self.size['recorded']['pixels']['x']))
 		elif self.root.tag=="channel_list":# ToF-SIMS data
 			self.type = "ToF-SIMS"
 			self.channel = "Counts"
@@ -232,6 +233,11 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		tf *= recon_tf
 		return np.real(np.fft.ifft2(np.fft.fft2(work_image)*recon_tf))
 
+	def getExtent(self):
+		W = self.size['recorded']['real']['x']
+		H = self.size['recorded']['real']['y']
+		return (0,W,0,H)
+
 	def show(self, ax=None, sig = None, cmap=None, title=None, adaptive=False, dmin=0, dmax=0):
 		if ax==None:
 			fig, ax = plt.subplots(1,1)
@@ -263,7 +269,15 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		else:
 			img=self.pixels
 		if sig == None:
-			ax.imshow(np.flipud(img),cmap=cmap,extent=extent,vmin=mi+dmin,vmax=ma+dmax)
+			ax.imshow(np.flipud(img),cmap=cmap,vmin=mi+dmin,vmax=ma+dmax)
+			xp = np.linspace(0,self.pixels.shape[1],11)
+			xr = np.linspace(0,W,11)
+			ax.set_xticks(xp)
+			ax.set_xticklabels([str(round(z,2)) for z in xr])
+			yp = np.linspace(0,self.pixels.shape[0],11)
+			yr = np.linspace(0,H,11)
+			ax.set_yticks(yp)
+			ax.set_yticklabels([str(round(z,2)) for z in yr])
 		else:
 			std  = np.std(img)
 			avg  = np.mean(img)
@@ -383,7 +397,37 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		adj.pixels = np.roll(self.pixels,shift[0],axis=0)
 		adj.pixels = np.roll( adj.pixels,shift[1],axis=1)
 		return adj
+
+	def align(self, tform, cut=True):
+		New = copy.deepcopy(self)
+		New.pixels = tf.warp(self.pixels, tform, preserve_range=True)
+		if not cut:
+			return New
+		cut=[0,0]+list(self.pixels.shape)
+		if tform.translation[0]>=0: cut[2]-=tform.translation[0]
+		elif tform.translation[0]<0: cut[0]-=tform.translation[0]
+		if tform.translation[1]>=0: cut[1]+=tform.translation[1]
+		elif tform.translation[1]<0: cut[3]+=tform.translation[1]
+		cut = [int(x) for x in cut]
+		New.cut(cut)
+		return New, cut
+
+	def ResizeInfos(self):
+		self.size['real']['x']*=self.pixels.shape[1]/self.size['pixels']['x']
+		self.size['real']['y']*=self.pixels.shape[0]/self.size['pixels']['y']
+		self.size['recorded']['real']['x']*=self.pixels.shape[1]/self.size['pixels']['x']
+		self.size['recorded']['real']['y']*=self.pixels.shape[0]/self.size['pixels']['y']
+		self.size['recorded']['pixels']['x']*=self.pixels.shape[1]/self.size['pixels']['x']
+		self.size['recorded']['pixels']['y']*=self.pixels.shape[0]/self.size['pixels']['y']
+		self.size['real']['y']*=self.pixels.shape[0]/self.size['pixels']['y']
+		self.size['pixels']['x']=self.pixels.shape[1]
+		self.size['pixels']['y']=self.pixels.shape[0]
 		
+	def cut(self, c):
+		if c[2]-c[0]==self.pixels.shape[1] and c[3]-c[1]==self.pixels.shape[0]:
+			raise Exception("Reshaping the same array again?")
+		self.pixels = self.pixels[c[1]:c[3],c[0]:c[2]]
+		self.ResizeInfos()
 
 	
 def imshow_sig(img,sig=1, ax=None, **kargs):
