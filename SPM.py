@@ -424,11 +424,13 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		self.size['pixels']['y']=self.pixels.shape[0]
 		
 	def cut(self, c):
-		if c[2]-c[0]==self.pixels.shape[1] and c[3]-c[1]==self.pixels.shape[0]:
-			raise Exception("Reshaping the same array again?")
-		self.pixels = self.pixels[c[1]:c[3],c[0]:c[2]]
+		self.pixels = cut(self.pixels, c)
 		self.ResizeInfos()
 
+def cut(img, c):
+	if c[2]-c[0]==img.shape[1] and c[3]-c[1]==img.shape[0]:
+		raise Exception("Reshaping the same array again?")
+	return pixels[c[1]:c[3],c[0]:c[2]]
 	
 def imshow_sig(img,sig=1, ax=None, **kargs):
 	if ax==None:
