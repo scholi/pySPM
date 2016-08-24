@@ -37,7 +37,7 @@ def funit(v,u=None,iMag=False):
         v=v['value']
     import math
     shift=int(math.floor(math.log10(v)/3.0))
-    mag=u'afpnμm1kMGTPE'
+    mag=u'afpnum1kMGTPE'
     imag=mag.index('1')
     unit=u
     if len(u)>1 and u[0] in mag and iMag:
@@ -248,8 +248,8 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		if len(unit)==1 or unit in ['pixels']:
 			isunit=6
 		elif unit[0] in sunit:
+			isunit=sunit.find(unit[0])
 			unit=unit[1:]
-			isunit=sunit.index(unit[0])
 		else: isunit=6
 		W = self.size['recorded']['real']['x']
 		H = self.size['recorded']['real']['y']
@@ -285,8 +285,11 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			vmax = avg + sig * std
 			ax.imshow(np.flipud(img),cmap=cmap, vmin=vmin, vmax=vmax, extent=extent)
 		if isunit!=6:
-			ax.set_xlabel(u'x [{0}{1}]'.format(sunit[isunit],unit))
-			ax.set_ylabel(u'y [{0}{1}]'.format(sunit[isunit],unit))
+			u = sunit[isunit]
+			if u=='u':
+				u='$\\mu$'
+			ax.set_xlabel(u'x [{0}{1}]'.format(u,unit))
+			ax.set_ylabel(u'y [{0}{1}]'.format(u,unit))
 		else:
 			ax.set_xlabel(u'x [{0}]'.format(unit))
 			ax.set_ylabel(u'y [{0}]'.format(unit))
