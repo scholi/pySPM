@@ -31,7 +31,7 @@ def getSPM(filename, channel, corr=''):
 		Fwd.correctLines()
 	return Fwd
 
-def funit(v,u=None,iMag=False):
+def funit(v,u=None,iMag=True):
     if u==None:
         u=v['unit']
         v=v['value']
@@ -40,7 +40,7 @@ def funit(v,u=None,iMag=False):
     mag=u'afpnum1kMGTPE'
     imag=mag.index('1')
     unit=u
-    if len(u)>1 and u[0] in mag and iMag:
+    if len(u)>1 and u[0] in mag and u[1:] and iMag:
         imag=mag.index(u[0])
         unit=u[1:]
     value = v/10**(3*shift)
@@ -95,8 +95,13 @@ class SPM_image:
 					'unit':self.root.findall('{0}/spm:integral_z_time_unit/spm:v'.format(fbPath), namespaces)[0].text}
 			if self.feedback['channel']=='df':
 				self.feedback['channel']=u'Δf'
-			x=funit(float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:fast_axis/spm:v",namespaces)[0].text),self.root.findall(".//spm:area/spm:contents/spm:unit/spm:v",namespaces)[0].text)
-			y=funit(float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:slow_axis/spm:v",namespaces)[0].text),self.root.findall(".//spm:area/spm:contents/spm:unit/spm:v",namespaces)[0].text)
+			uval = float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:fast_axis/spm:v",namespaces)[0].text)
+			udispu = self.root.findall(".//spm:area//spm:contents/spm:display_unit/spm:v",namespaces)[0].text
+			udisps = float(self.root.findall(".//spm:area/spm:contents/spm:display_scale/spm:v",namespaces)[0].text)
+			uname = self.root.findall(".//spm:area/spm:contents/spm:unit/spm:v",namespaces)[0].text
+			x=funit(uval*udisps, udispu)
+			uval = float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:slow_axis/spm:v",namespaces)[0].text)
+			y=funit(uval*udisps,udispu)
 			self.size = {'pixels':{
 							'x':size[0],
 							'y':size[1]
