@@ -520,6 +520,9 @@ def NormP(x,p):
     r[r>1]=1
     return r
 
+def stat(x):
+	print("Min: {mi:.3f}, Max: {ma:.3f}, Mean: {mean:.3f}, Std: {std:.3f}".format(mi=np.min(x),ma=np.max(x), mean=np.mean(x), std=np.std(x)))
+
 if __name__ == "__main__":
 	Path = "C:/Users/ols/Dropbox/ToF_SIMS"
 	AFM = SPM_image("{0}/CyI5b_0006_ns.xml".format(Path),corr='slope')
