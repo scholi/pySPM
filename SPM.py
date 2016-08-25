@@ -462,6 +462,12 @@ def adjust_position(fixed,to_adjust,shift=False):
 	if shift:	return adj,shift
 	return adj
 
+def tukeyfy(A, alpha):
+	tuky = tukeywin(A.shape[0],alpha)
+	tukx = tukeywin(A.shape[1],alpha)
+	tuk = np.multiply(tukx[:,None].T,tuky[:,None])
+	return A * tuk
+
 def tukeywin(window_length, alpha=0.5):
 	'''The Tukey window, also known as the tapered cosine window, can be regarded as a cosine lobe of width \alpha * N / 2
 	that is convolved with a rectangle window of width (1 - \alpha / 2). At \alpha = 1 it becomes rectangular, and
@@ -496,6 +502,23 @@ def tukeywin(window_length, alpha=0.5):
 	w[third_condition] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[third_condition] - 1 + alpha/2))) 
 	
 	return w
+
+def Normalize(x):
+    return (x-np.min(x))/(np.max(x)-np.min(x))
+
+def overlay(ax,mask,color,**kargs):
+    m = ma.masked_array(mask,~mask)
+    col = np.array(colors.colorConverter.to_rgba(color))
+    I=col[:,None,None].T*m[:,:,None]
+    ax.imshow(I,**kargs);
+
+def NormP(x,p):
+    thresh_high = np.percentile(x,100-p)
+    thresh_low = np.percentile(x,p)
+    r=(x-thresh_low)/(thresh_high-thresh_low)
+    r[r<0]=0
+    r[r>1]=1
+    return r
 
 if __name__ == "__main__":
 	Path = "C:/Users/ols/Dropbox/ToF_SIMS"
