@@ -417,7 +417,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		if tform.translation[1]>=0: cut[1]+=tform.translation[1]
 		elif tform.translation[1]<0: cut[3]+=tform.translation[1]
 		cut = [int(x) for x in cut]
-		New.cut(cut)
+		New.cut(cut,inplace=True)
 		return New, cut
 
 	def ResizeInfos(self):
@@ -431,9 +431,15 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		self.size['pixels']['x']=self.pixels.shape[1]
 		self.size['pixels']['y']=self.pixels.shape[0]
 		
-	def cut(self, c):
-		self.pixels = cut(self.pixels, c)
-		self.ResizeInfos()
+	def cut(self, c, inplace=False):
+		if not inplace:
+			new = copy.deepcopy(self)
+			new.pixels = cut(self.pixels, c)
+			new.ResizeInfos()
+			return new
+		else:
+			self.pixels = cut(self.pixels, c)
+			self.ResizeInfos()
 
 def cut(img, c):
 	if c[2]-c[0]==img.shape[1] and c[3]-c[1]==img.shape[0]:
@@ -519,6 +525,13 @@ def NormP(x,p):
     r[r<0]=0
     r[r>1]=1
     return r
+
+def BeamProfile(target, source, mu = 1e-6):
+	source = 2*source-1
+	tf = np.fft.fft2(source)
+	tf /= np.size(tf)
+	recon_tf = 1 / ( tf + (mu / np.conj(tf)) )
+	return np.fft.fftshift(np.real(np.fft.ifft2( np.fft.fft2(target) * recon_tf )))
 
 def stat(x):
 	print("Min: {mi:.3f}, Max: {ma:.3f}, Mean: {mean:.3f}, Std: {std:.3f}".format(mi=np.min(x),ma=np.max(x), mean=np.mean(x), std=np.std(x)))
