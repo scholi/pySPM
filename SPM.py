@@ -32,28 +32,28 @@ def getSPM(filename, channel, corr=''):
 	return Fwd
 
 def funit(v,u=None,iMag=True):
-    if u==None:
-        u=v['unit']
-        v=v['value']
-    import math
-    shift=int(math.floor(math.log10(v)/3.0))
-    mag=u'afpnum1kMGTPE'
-    imag=mag.index('1')
-    unit=u
-    if len(u)>1 and u[0] in mag and u[1:] and iMag:
-        imag=mag.index(u[0])
-        unit=u[1:]
-    value = v/10**(3*shift)
-    imag += shift
-    if imag<0:
-        value *= 10**(imag*3)
-        imag=0
-    elif imag>=len(mag):
-        value *= 10**((imag-len(mag)+1)*3)
-        imag = len(mag)-1
-    m=mag[imag]
-    if m=='1': m=''
-    return {'value':value,'unit':u'{mag}{unit}'.format(mag=m,unit=unit)}
+	if u==None:
+		u=v['unit']
+		v=v['value']
+	import math
+	shift=int(math.floor(math.log10(v)/3.0))
+	mag=u'afpnum1kMGTPE'
+	imag=mag.index('1')
+	unit=u
+	if len(u)>1 and u[0] in mag and u[1:] and iMag:
+		imag=mag.index(u[0])
+		unit=u[1:]
+	value = v/10**(3*shift)
+	imag += shift
+	if imag<0:
+		value *= 10**(imag*3)
+		imag=0
+	elif imag>=len(mag):
+		value *= 10**((imag-len(mag)+1)*3)
+		imag = len(mag)-1
+	m=mag[imag]
+	if m=='1': m=''
+	return {'value':value,'unit':u'{mag}{unit}'.format(mag=m,unit=unit)}
 
 class SPM_image:
 	def __init__(self, filename=None, channel='Topography', backward=False,corr='none',BIN=None,real=None):
@@ -185,7 +185,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		N=self.pixels
 		N2=np.vstack([N[1:,:],N[-1:,:]])-N # Difference of the pixel between two consecutive row
 		C=np.cumsum(np.median(N2,axis=1)) # Take the median of the difference and cumsum them
-		D=np.tile(C,(N.shape[0],1)).T     # Extend the vector to a matrix (row copy)
+		D=np.tile(C,(N.shape[0],1)).T	 # Extend the vector to a matrix (row copy)
 		self.pixels = N-D
 					
 	def correctSlope(self):
@@ -510,21 +510,22 @@ def tukeywin(window_length, alpha=0.5):
 	return w
 
 def Normalize(x):
-    return (x-np.min(x))/(np.max(x)-np.min(x))
+	return (x-np.min(x))/(np.max(x)-np.min(x))
 
 def overlay(ax,mask,color,**kargs):
-    m = ma.masked_array(mask,~mask)
-    col = np.array(colors.colorConverter.to_rgba(color))
-    I=col[:,None,None].T*m[:,:,None]
-    ax.imshow(I,**kargs);
+	m = ma.masked_array(mask,~mask)
+	col = np.array(colors.colorConverter.to_rgba(color))
+	I=col[:,None,None].T*m[:,:,None]
+	ax.imshow(I,**kargs);
 
-def NormP(x,p):
-    thresh_high = np.percentile(x,100-p)
-    thresh_low = np.percentile(x,p)
-    r=(x-thresh_low)/(thresh_high-thresh_low)
-    r[r<0]=0
-    r[r>1]=1
-    return r
+def NormP(x,p, trunk=True):
+	thresh_high = np.percentile(x,100-p)
+	thresh_low = np.percentile(x,p)
+	r=(x-thresh_low)/(thresh_high-thresh_low)
+	if trunk:
+		r[r<0]=0
+		r[r>1]=1
+	return r
 
 def BeamProfile(target, source, mu = 1e-6):
 	source = 2*source-1
@@ -532,6 +533,19 @@ def BeamProfile(target, source, mu = 1e-6):
 	tf /= np.size(tf)
 	recon_tf = 1 / ( tf + (mu / np.conj(tf)) )
 	return np.fft.fftshift(np.real(np.fft.ifft2( np.fft.fft2(target) * recon_tf )))
+
+def px2real(x,y,size,ext):
+    rx=ext[0]+(x/size[1])*(ext[1]-ext[0])
+    ry=ext[2]+(y/size[0])*(ext[3]-ext[2])
+    return rx,ry
+
+def real2px(x,y,size,ext):
+    px = size[1]*(x-ext[0])/(ext[1]-ext[0])
+    py = size[0]*(y-ext[2])/(ext[3]-ext[2])
+    return px,py
+
+def gaussian(x, mu, sig, A=1):
+    return A*np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
 
 def stat(x):
 	print("Min: {mi:.3f}, Max: {ma:.3f}, Mean: {mean:.3f}, Std: {std:.3f}".format(mi=np.min(x),ma=np.max(x), mean=np.mean(x), std=np.std(x)))
