@@ -243,7 +243,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		H = self.size['recorded']['real']['y']
 		return (0,W,0,H)
 
-	def show(self, ax=None, sig = None, cmap=None, title=None, adaptive=False, dmin=0, dmax=0):
+	def show(self, ax=None, sig = None, cmap=None, title=None, adaptive=False, dmin=0, dmax=0,pixels=False):
 		if ax==None:
 			fig, ax = plt.subplots(1,1)
 		if title==None:
@@ -274,21 +274,14 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		else:
 			img=self.pixels
 		if sig == None:
-			ax.imshow(np.flipud(img),cmap=cmap,vmin=mi+dmin,vmax=ma+dmax)
-			xp = np.linspace(0,self.pixels.shape[1],11)
-			xr = np.linspace(0,W,11)
-			ax.set_xticks(xp)
-			ax.set_xticklabels([str(round(z,2)) for z in xr])
-			yp = np.linspace(0,self.pixels.shape[0],11)
-			yr = np.linspace(0,H,11)
-			ax.set_yticks(yp)
-			ax.set_yticklabels([str(round(z,2)) for z in yr])
+			vmin=mi+dmin
+			vmax=ma+dmax
 		else:
 			std  = np.std(img)
 			avg  = np.mean(img)
 			vmin  = avg - sig * std
 			vmax = avg + sig * std
-			ax.imshow(np.flipud(img),cmap=cmap, vmin=vmin, vmax=vmax)
+		if not pixels:
 			xp = np.linspace(0,self.pixels.shape[1],11)
 			xr = np.linspace(0,W,11)
 			ax.set_xticks(xp)
@@ -297,6 +290,11 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			yr = np.linspace(0,H,11)
 			ax.set_yticks(yp)
 			ax.set_yticklabels([str(round(z,2)) for z in yr])
+			ax.imshow(np.flipud(img),cmap=cmap,vmin=vmin,vmax=vmax)
+		else:
+			ax.imshow(img,cmap=cmap,vmin=vmin,vmax=vmax)
+			
+
 		if isunit!=6:
 			u = sunit[isunit]
 			if u=='u':
