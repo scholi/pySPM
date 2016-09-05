@@ -243,7 +243,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		H = self.size['recorded']['real']['y']
 		return (0,W,0,H)
 
-	def show(self, ax=None, sig = None, cmap=None, title=None, adaptive=False, dmin=0, dmax=0,pixels=False):
+	def show(self, ax=None, sig = None, cmap=None, title=None, adaptive=False, dmin=0, dmax=0,pixels=False,flip=False):
 		if ax==None:
 			fig, ax = plt.subplots(1,1)
 		if title==None:
@@ -290,22 +290,23 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			yr = np.linspace(0,H,11)
 			ax.set_yticks(yp)
 			ax.set_yticklabels([str(round(z,2)) for z in yr])
+		if not flip:
 			ax.imshow(np.flipud(img),cmap=cmap,vmin=vmin,vmax=vmax)
 		else:
 			ax.imshow(img,cmap=cmap,vmin=vmin,vmax=vmax)
 			
-
-		if isunit!=6:
-			u = sunit[isunit]
-			if u=='u':
-				u='$\\mu$'
-			ax.set_xlabel(u'x [{0}{1}]'.format(u,unit))
-			ax.set_ylabel(u'y [{0}{1}]'.format(u,unit))
-		else:
-			ax.set_xlabel(u'x [{0}]'.format(unit))
-			ax.set_ylabel(u'y [{0}]'.format(unit))
-		if title != None:
-			ax.set_title(title)
+		if not pixels:
+			if isunit!=6:
+				u = sunit[isunit]
+				if u=='u':
+					u='$\\mu$'
+				ax.set_xlabel(u'x [{0}{1}]'.format(u,unit))
+				ax.set_ylabel(u'y [{0}{1}]'.format(u,unit))
+			else:
+				ax.set_xlabel(u'x [{0}]'.format(unit))
+				ax.set_ylabel(u'y [{0}]'.format(unit))
+			if title != None:
+				ax.set_title(title)
 
 	def getProfile(self, x1,y1,x2,y2):
 		d=np.sqrt((x2-x1)**2+(y2-y1)**2)
