@@ -288,7 +288,15 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			avg  = np.mean(img)
 			vmin  = avg - sig * std
 			vmax = avg + sig * std
-			ax.imshow(np.flipud(img),cmap=cmap, vmin=vmin, vmax=vmax, extent=extent)
+			ax.imshow(np.flipud(img),cmap=cmap, vmin=vmin, vmax=vmax)
+			xp = np.linspace(0,self.pixels.shape[1],11)
+			xr = np.linspace(0,W,11)
+			ax.set_xticks(xp)
+			ax.set_xticklabels([str(round(z,2)) for z in xr])
+			yp = np.linspace(0,self.pixels.shape[0],11)
+			yr = np.linspace(0,H,11)
+			ax.set_yticks(yp)
+			ax.set_yticklabels([str(round(z,2)) for z in yr])
 		if isunit!=6:
 			u = sunit[isunit]
 			if u=='u':
