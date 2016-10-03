@@ -8,6 +8,7 @@ import os
 import matplotlib.pyplot as plt
 import scipy
 import scipy.ndimage
+import scipy.optimize
 import skimage
 import skimage.exposure
 import scipy.interpolate
@@ -528,6 +529,11 @@ def overlay(ax,mask,color,**kargs):
 def NormP(x,p, trunk=True):
 	thresh_high = np.percentile(x,100-p)
 	thresh_low = np.percentile(x,p)
+	if thresh_low==thresh_high:
+		thresh_high=np.max(x)
+		thresh_low=np.min(x)
+	if thresh_low==thresh_high:
+		thresh_high=thresh_low+1
 	r=(x-thresh_low)/(thresh_high-thresh_low)
 	if trunk:
 		r[r<0]=0
@@ -556,6 +562,32 @@ def gaussian(x, mu, sig, A=1):
 
 def stat(x):
 	print("Min: {mi:.3f}, Max: {ma:.3f}, Mean: {mean:.3f}, Std: {std:.3f}".format(mi=np.min(x),ma=np.max(x), mean=np.mean(x), std=np.std(x)))
+
+def fit2d(Z,dx=2,dy=1):
+	x = np.arange(Z.shape[1],dtype=np.float)
+	y = np.arange(Z.shape[0],dtype=np.float)
+	X, Y = np.meshgrid(x,y)
+	x2 = X.ravel()
+	y2 = Y.ravel()
+	A=np.vstack([x2**i for i in range(dx+1)])
+	A=np.vstack([A]+[y2**i for i in range(1,dy+1)])
+	res = scipy.optimize.lsq_linear(A.T,Z.ravel())
+	r=res['x']
+	Z2 = r[0]*np.ones(Z.shape)
+	for i in range(1,dx+1): Z2+=r[i]*(X**i)
+	for i in range(1,dy+1): Z2+=r[dx+i]*(Y**i)
+	return r,Z2
+
+def align(img, tform):
+	New = tf.warp(img, tform, preserve_range=True)
+	Cut=[0,0]+list(img.shape)
+	if tform.translation[0]>=0: Cut[2]-=tform.translation[0]
+	elif tform.translation[0]<0: Cut[0]-=tform.translation[0]
+	if tform.translation[1]>=0: Cut[1]+=tform.translation[1]
+	elif tform.translation[1]<0: Cut[3]+=tform.translation[1]
+	Cut = [int(x) for x in Cut]
+	New = cut(New, Cut)
+	return New, Cut
 
 if __name__ == "__main__":
 	Path = "C:/Users/ols/Dropbox/ToF_SIMS"

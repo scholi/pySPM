@@ -24,7 +24,7 @@ class Aligner:
 	
 	def ImproveShift(self):
 		tform = tf.AffineTransform(scale=self.scale, rotation=self.rotation,translation=(0,0))
-		O = tf.warp(self.other,tform)
+		O = tf.warp(self.other,tform,output_shape=self.fixed.shape)
 		Corr = np.real(np.fft.fftshift(np.fft.ifft2(np.conj(np.fft.fft2(self.fixed))*np.fft.fft2(O))));
 		cord = np.unravel_index(np.argmax(Corr),self.fixed.shape)
 		self.trans = (cord[1]-self.size[0]/2,cord[0]-self.size[1]/2)
@@ -33,7 +33,7 @@ class Aligner:
 		return  tf.AffineTransform(scale=self.scale, rotation=self.rotation,translation=self.trans)
 		
 	def getMatchingIndex(self):
-		return np.sum((self.fixed-tf.warp(self.other,self.getTf()))**2)
+		return np.sum((self.fixed-tf.warp(self.other,self.getTf(),output_shape=self.fixed.shape))**2)
 	
 	def ImproveScaleX(self,fact=.1,count=0):
 		old = self.scale
