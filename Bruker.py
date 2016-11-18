@@ -43,8 +43,9 @@ class Bruker:
 					bck=False
 					if self.Layers[i][b'Line Direction'][0]==b'Retrace': bck=True
 					if bck==backward:
-						Scale=float(self.Layers[i][b'@2:Z scale'][0].split()[5])/65536.0
-						r=self.Scanners[0][b'@Sens. ZsensSens'][0].split()
+						r = re.match(r'[A-Z]+ \[([^\]]+)\] \([0-9\.]+ [^\)]+\) ([0-9\.]+) V',self.Layers[i][b'@2:Z scale'][0].decode('utf8')).groups()
+						Scale=float(r[1])/65536.0
+						r=self.Scanners[0][b'@'+r[0].encode('utf8')][0].split()
 						Scale*=float(r[1])
 						Data=self.getRawLayer(i)*Scale
 						
