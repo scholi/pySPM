@@ -452,6 +452,21 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		New.cut(cut,inplace=True)
 		return New, cut
 
+	def getFFT(self):
+			return np.fft.fftshift(np.fft.fft2(self.pixels))
+
+	def getRmask(self):
+			x = np.linspace(-1,1,self.pixels.shape[1])
+			y = np.linspace(-1,1,self.pixels.shape[0])
+			X,Y=np.meshgrid(x,y)
+			R=np.sqrt(X**2+Y**2)
+			return R
+
+	def filterLowPass(self, p):
+			F=self.getFFT()
+			mask=self.getRmask()<p
+			self.pixels=np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
+
 	def ResizeInfos(self):
 		self.size['real']['x']*=self.pixels.shape[1]/self.size['pixels']['x']
 		self.size['real']['y']*=self.pixels.shape[0]/self.size['pixels']['y']
@@ -462,6 +477,14 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		self.size['real']['y']*=self.pixels.shape[0]/self.size['pixels']['y']
 		self.size['pixels']['x']=self.pixels.shape[1]
 		self.size['pixels']['y']=self.pixels.shape[0]
+
+	def filterScarsRemoval(self, thresh=.5):
+		for y in range(1,self.pixels.shape[0]-1):
+			b=self.pixels[y-1,:]
+			c=self.pixels[y,:]
+			a=self.pixels[y+1,:]
+			mask=np.abs(b-a)<.5*(np.abs(c-a))
+			self.pixels[y,mask]=b[mask]
 		
 	def cut(self, c, inplace=False):
 		if not inplace:
