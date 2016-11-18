@@ -56,10 +56,24 @@ def funit(v,u=None,iMag=True):
 	if m=='1': m=''
 	return {'value':value,'unit':u'{mag}{unit}'.format(mag=m,unit=unit)}
 
+def getCurve(filename,channel='Normal Deflection',backward=False):
+	tree = ET.parse(filename)
+	root = tree.getroot()
+	namespace={'spm':'http://www.nanoscan.ch/SPM'}
+	RAW=root.findall("spm:vector/spm:contents/spm:direction/spm:vector/spm:contents/spm:name[spm:v='{direction}']/../spm:channel/spm:vector/spm:contents/spm:name[spm:v='{channel}']/../spm:data/spm:v".format(direction=['forward','backward'][backward],channel=channel),namespace)[0].text
+	start=float(root.findall("spm:vector/spm:contents/spm:axis/spm:vector/spm:contents/spm:start/spm:vector/spm:v",namespace)[0].text)
+	stop=float(root.findall("spm:vector/spm:contents/spm:axis/spm:vector/spm:contents/spm:stop/spm:vector/spm:v",namespace)[0].text)
+	unit=root.findall("spm:vector/spm:contents/spm:axis/spm:vector/spm:contents/spm:unit/spm:v",namespace)[0].text
+	BIN=base64.b64decode(RAW)
+	N=len(BIN)
+	vals=np.array(struct.unpack("<"+str(N//4)+"f",BIN))
+	x = np.linspace(start,stop,len(vals))
+	return x,vals
+
 class SPM_image:
-	def __init__(self, filename=None, channel='Topography', backward=False,corr='none',BIN=None,real=None):
+	def __init__(self, filename=None, channel='Topography', backward=False,corr='none',BIN=None,real=None,_type=None,zscale=None):
 		if filename is None and not BIN is None:
-			self.channel = 'Data'
+			self.channel = channel
 			self.direction = 'Unknown'
 			self.size={'pixels':{'x':BIN.shape[1],'y':BIN.shape[0]}}
 			if not real is None:
@@ -67,7 +81,9 @@ class SPM_image:
 			else: self.size['real']={'unit':'pixels','x':BIN.shape[1],'y':BIN.shape[0]}
 			self.size['recorded']={'pixels':self.size['pixels'],'real':self.size['real']}
 			self.pixels = BIN
-			self.type = 'RawData'
+			if not _type is None: self.type = _type
+			else: self.type = 'RawData'
+			self.zscale=zscale
 			return
 		if not os.path.exists(filename): raise IOError('File "{0}" Not Found'.format(filename))
 		if filename[-4:]!='.xml': raise TypeError("Only xml files are handeled for the moment!")
@@ -142,7 +158,7 @@ class SPM_image:
 		elif corr.lower() == 'plane':
 			self.correctPlane()
 
-	def Offset(self, profiles, width=1, ax=None):
+	def Offset(self, profiles, width=1, ax=None, inline=True):
 		offset=np.zeros(self.pixels.shape[0])
 		counts=np.zeros(self.pixels.shape[0])
 		for p in profiles:
@@ -153,7 +169,11 @@ class SPM_image:
 		offset = offset/counts
 		offset = np.cumsum(offset)
 		offset = offset.reshape((self.pixels.shape[1],1))
-		return np.flipud(self.pixels) - np.repeat(offset,self.pixels.shape[1],axis=1)
+		if inline:
+			self.pixels=self.pixels-np.flipud(np.repeat(offset,self.pixels.shape[1],axis=1))
+			return True
+		else:
+			return np.flipud(self.pixels) - np.repeat(offset,self.pixels.shape[1],axis=1)
 
 	def getRowProfile(self,x1,y1,x2,y2,width=1,ax=None):
 		if y2<y1:
@@ -309,27 +329,31 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			if title != None:
 				ax.set_title(title)
 
-	def getProfile(self, x1,y1,x2,y2):
+	def getProfile(self, x1,y1,x2,y2, img=None, imgColor='w-'):
+		if not img is None:
+			img.plot([x1,x2],[y1,y2],imgColor)
 		d=np.sqrt((x2-x1)**2+(y2-y1)**2)
 		x,y = np.linspace(x1,x2,int(d)+1),np.linspace(y1,y2,int(d)+1)
-		return scipy.ndimage.map_coordinates(self.pixels,np.vstack((y,x)))
+		return np.linspace(0,d,int(d)+1),scipy.ndimage.map_coordinates(np.flipud(self.pixels),np.vstack((y,x)))
 
-	def plotProfile(self, x1,y1,x2,y2, ax=None, col='b-', pixels=False,**kargs):
+	def plotProfile(self, x1,y1,x2,y2, ax=None, col='b-', pixels=False,img=None,imgColor='w-',**kargs):
 		if ax==None:
 			fig, ax = plt.subplots(1,1)
 		d  = np.sqrt((x2-x1)**2+(y2-y1)**2)
 		dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
 		dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
+		if not img is None:
+			img.plot([x1,x2],[y1,y2],imgColor)
 		if pixels:
 			rd=d
 		else:
 			rd = np.sqrt(dx**2+dy**2)
 		l  = np.linspace(0,rd,int(d)+1)
 		x,y = np.linspace(x1,x2,int(d)+1),np.linspace(y1,y2,int(d)+1)
-		z=scipy.ndimage.map_coordinates(self.pixels,np.vstack((y,x)))
+		z=scipy.ndimage.map_coordinates(np.flipud(self.pixels),np.vstack((y,x)))
 		p=ax.plot(l,z,col,**kargs)
 		ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
-		ax.set_ylabel("Height [{0}]".format(self.size['real']['unit']))
+		ax.set_ylabel("Height [{0}]".format(self.zscale))
 		return {'plot':p,'l':l}
 
 	def getBinThreshold(self, percent, high=True, adaptive=False, binary=True):
