@@ -57,6 +57,9 @@ def funit(v,u=None,iMag=True):
 	return {'value':value,'unit':u'{mag}{unit}'.format(mag=m,unit=unit)}
 
 def getCurve(filename,channel='Normal Deflection',backward=False):
+	"""
+	function to retrieve data which are not in the form of images. This is typically used for 1D channel where the normal deflection is recorded while z is swept.
+	"""
 	tree = ET.parse(filename)
 	root = tree.getroot()
 	namespace={'spm':'http://www.nanoscan.ch/SPM'}
@@ -71,7 +74,10 @@ def getCurve(filename,channel='Normal Deflection',backward=False):
 	return x,vals
 
 class SPM_image:
-	def __init__(self, filename=None, channel='Topography', backward=False,corr='none',BIN=None,real=None,_type=None,zscale=None):
+	"""
+	Main class to handle SPM images
+	"""
+	def __init__(self, filename=None, channel='Topography', backward=False,corr='none',BIN=None,real=None,_type=None,zscale='?'):
 		if filename is None and not BIN is None:
 			self.channel = channel
 			self.direction = 'Unknown'
@@ -173,7 +179,9 @@ class SPM_image:
 			self.pixels=self.pixels-np.flipud(np.repeat(offset,self.pixels.shape[1],axis=1))
 			return True
 		else:
-			return np.flipud(self.pixels) - np.repeat(offset,self.pixels.shape[1],axis=1)
+			C = copy.deepcopy(self)
+			C.pixels = np.flipud(self.pixels) - np.repeat(offset,self.pixels.shape[1],axis=1)
+			return C
 
 	def getRowProfile(self,x1,y1,x2,y2,width=1,ax=None):
 		if y2<y1:
@@ -353,8 +361,11 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		z=scipy.ndimage.map_coordinates(np.flipud(self.pixels),np.vstack((y,x)))
 		p=ax.plot(l,z,col,**kargs)
 		ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
-		ax.set_ylabel("Height [{0}]".format(self.zscale))
-		return {'plot':p,'l':l}
+		try:
+			ax.set_ylabel("Height [{0}]".format(self.zscale))
+		except:
+			pass
+		return {'plot':p,'l':l,'z':z}
 
 	def getBinThreshold(self, percent, high=True, adaptive=False, binary=True):
 		if adaptive:
@@ -462,6 +473,10 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			R=np.sqrt(X**2+Y**2)
 			return R
 
+	def corrFit2d(self, nx=2,ny=1):
+		r,z = fit2d(self.pixels,nx,ny)
+		self.pixels -= z
+
 	def filterLowPass(self, p):
 			F=self.getFFT()
 			mask=self.getRmask()<p
@@ -478,13 +493,18 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		self.size['pixels']['x']=self.pixels.shape[1]
 		self.size['pixels']['y']=self.pixels.shape[0]
 
-	def filterScarsRemoval(self, thresh=.5):
+	def filterScarsRemoval(self, thresh=.5,inline=True):
+		if not inline:
+			C = copy.deepcopy(self)
+		else:
+			C = self
 		for y in range(1,self.pixels.shape[0]-1):
 			b=self.pixels[y-1,:]
 			c=self.pixels[y,:]
 			a=self.pixels[y+1,:]
 			mask=np.abs(b-a)<.5*(np.abs(c-a))
-			self.pixels[y,mask]=b[mask]
+			C.pixels[y,mask]=b[mask]
+		return C
 		
 	def cut(self, c, inplace=False):
 		if not inplace:
