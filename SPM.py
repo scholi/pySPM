@@ -180,7 +180,7 @@ class SPM_image:
 			return True
 		else:
 			C = copy.deepcopy(self)
-			C.pixels = np.flipud(self.pixels) - np.repeat(offset,self.pixels.shape[1],axis=1)
+			C.pixels = self.pixels - np.flipud(np.repeat(offset,self.pixels.shape[1],axis=1))
 			return C
 
 	def getRowProfile(self,x1,y1,x2,y2,width=1,ax=None):
@@ -477,10 +477,15 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		r,z = fit2d(self.pixels,nx,ny)
 		self.pixels -= z
 
-	def filterLowPass(self, p):
+	def filterLowPass(self, p, inline=True):
 			F=self.getFFT()
 			mask=self.getRmask()<p
-			self.pixels=np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
+			if inline:
+				self.pixels=np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
+			else:
+				C = copy.deepcopy(self)
+				C.pixels=np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
+				return C
 
 	def ResizeInfos(self):
 		self.size['real']['x']*=self.pixels.shape[1]/self.size['pixels']['x']
