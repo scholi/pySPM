@@ -1,7 +1,7 @@
 import numpy as np
 import struct
 import re
-import SPM
+import pySPM
 
 class Bruker:
 	def __init__(self, path):
@@ -53,5 +53,5 @@ class Bruker:
 						s=self.Layers[i][b'Scan Size'][0].split()
 						if s[2][0]==126: s[2]=b'u'+s[2][1:]
 						Size={'x':float(s[0]),'y':float(s[1]),'unit':s[2].decode('utf8')}
-						I=SPM.SPM_image(channel=channel,backward=backward,BIN=Data,real=Size,_type='Bruker AFM',zscale=zscale.decode('utf8'))
+						I=pySPM.SPM_image(channel=channel,backward=backward,BIN=Data,real=Size,_type='Bruker AFM',zscale=zscale.decode('utf8'))
 						return I

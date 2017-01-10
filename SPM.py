@@ -386,7 +386,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		return np.ones(self.pixels.shape)*r
 
 	def getShadowMask(self, angle, BIN=None, pb=False):
-		if type(BIN)!=type(None): 
+		if BIN is not None: 
 			BIN=BIN*1.0
 		slope = np.tan(np.radians(angle))
 		neg   = False
@@ -394,25 +394,27 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			neg   = True
 			slope = -slope
 			topo  = np.fliplr(self.pixels)
-			BIN   = np.fliplr(BIN)
+			if BIN is not None: BIN   = np.fliplr(BIN)
 		else:
 			topo = self.pixels
 		x	= np.linspace(0,self.size['real']['x'],self.pixels.shape[1])
+		if self.size['real']['unit']=='um': x*=1e-6
+		elif self.size['real']['unit']=='nm': x*=1e-9
 		mask = np.zeros(self.pixels.shape)
 		AFM_bin_shadow = np.zeros(self.pixels.shape)
-		Y=xrange(self.pixels.shape[0])
+		Y=range(self.pixels.shape[0])
 		if pb: Y=tqdm(Y)
 		for yi in Y:
-			for xi in xrange(self.pixels.shape[1]):
+			for xi in range(self.pixels.shape[1]):
 				cut   = self.pixels.shape[1]-2
 				y_ray = slope*(x-x[xi]) + topo[yi,xi]
 				while cut>xi and y_ray[cut]>topo[yi,cut]:
 					cut-=1
 				if xi==cut:
-					AFM_bin_shadow[yi,xi]=BIN[yi,xi]
+					if BIN is not None: AFM_bin_shadow[yi,xi]=BIN[yi,xi]
 					continue
 				# Cut has been found
-				if type(BIN)!=type(None):
+				if BIN is not None:
 					x1 = x[cut]
 					x2 = x[cut+1]
 					y1 = topo[yi,cut]
@@ -437,7 +439,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		if neg:
 			mask = np.fliplr(mask)
 			AFM_bin_shadow = np.fliplr(AFM_bin_shadow)
-		if type(BIN)!=type(None):
+		if BIN is not None:
 			return (mask, AFM_bin_shadow)
 		return mask
 	
