@@ -155,8 +155,12 @@ class SPM_image:
 						 'real':{
 							 'unit':'m',
 							 'x':float(self.root.findall("./channel/axis[name='x']/variable/extent")[0].text),
+							 'y':float(self.root.findall("./channel/axis[name='y']/variable/extent")[0].text)},
+						 'recorded':{'real':{
+							 'unit':'m',
+							 'x':float(self.root.findall("./channel/axis[name='x']/variable/extent")[0].text),
 							 'y':float(self.root.findall("./channel/axis[name='y']/variable/extent")[0].text)
-							 }}
+							 }}}
 		if corr.lower() == 'slope':
 			self.correctSlope()
 		elif corr.lower() == 'lines':
