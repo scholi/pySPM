@@ -10,7 +10,7 @@ import scipy
 import scipy.ndimage
 import scipy.optimize
 import skimage
-import skimage.exposure
+import skimage.exposure, skimage.filters
 import scipy.interpolate
 from skimage import transform as tf
 #import skimage.filters
@@ -377,7 +377,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 				return skimage.filters.threshold_adaptive(self.pixels, percent)
 			return np.ones(self.pixels.shape)*skimage.filters.threshold_adaptive(self.pixels, percent)
 		mi=np.min(self.pixels)
-		norm = (self.pixels+mi)/(np.max(self.pixels)-mi)
+		norm = (self.pixels-mi)/(np.max(self.pixels)-mi)
 		if high:
 			r=norm > percent
 		else:
