@@ -338,8 +338,8 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			else:
 				ax.set_xlabel(u'x [{0}]'.format(unit))
 				ax.set_ylabel(u'y [{0}]'.format(unit))
-			if title != None:
-				ax.set_title(title)
+		if title != None:
+			ax.set_title(title)
 
 	def getProfile(self, x1,y1,x2,y2, img=None, imgColor='w-'):
 		if not img is None:
