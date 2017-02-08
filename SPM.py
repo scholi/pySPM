@@ -622,8 +622,12 @@ def BeamProfile(target, source, mu = 1e-6):
 	source = 2*source-1
 	tf = np.fft.fft2(source)
 	tf /= np.size(tf)
-	recon_tf = 1 / ( tf + (mu / np.conj(tf)) )
+	recon_tf = np.conj(tf) / ( np.abs(tf)**2 + mu)
 	return np.fft.fftshift(np.real(np.fft.ifft2( np.fft.fft2(target) * recon_tf )))
+
+def ZoomCenter(img, sx, sy=None):
+	if sy is None: sy=sx
+	return img[(img.shape[1]-sy)//2:(img.shape[1]+sy)//2,(img.shape[0]-sx)//2:(img.shape[0]+sx)//2]
 
 def px2real(x,y,size,ext):
     rx=ext[0]+(x/size[1])*(ext[1]-ext[0])
@@ -666,6 +670,23 @@ def align(img, tform):
 	Cut = [int(x) for x in Cut]
 	New = cut(New, Cut)
 	return New, Cut
+
+def getProfile(I,x1,y1,x2,y2,width=1,ax=None):
+		d=np.sqrt((x2-x1)**2+(y2-y1)**2)
+		P=[]
+		if not ax is None:
+			dx = -width/2*(y2-y1)/d
+			dy = width/2*(x2-x1)/d
+			ax.plot([x1,x2],[y1,y2],'w')
+			ax.plot([x1-dx,x1+dx],[y1-dy,y1+dy],'w')
+			ax.plot([x2-dx,x2+dx],[y2-dy,y2+dy],'w')
+		for w in np.linspace(-width/2,width/2,width):
+			dx = -w*(y2-y1)/d
+			dy = w*(x2-x1)/d
+			x,y = np.linspace(x1+dx,x2+dx,int(d)+1),np.linspace(y1+dy,y2+dy,int(d)+1)
+			N = scipy.ndimage.map_coordinates(I,np.vstack((y,x)))
+			P.append(N)
+		return np.linspace(0,d,int(d)+1),np.vstack(P).T
 
 if __name__ == "__main__":
 	Path = "C:/Users/ols/Dropbox/ToF_SIMS"
