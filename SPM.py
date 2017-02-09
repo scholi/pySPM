@@ -625,6 +625,14 @@ def BeamProfile(target, source, mu = 1e-6):
 	recon_tf = np.conj(tf) / ( np.abs(tf)**2 + mu)
 	return np.fft.fftshift(np.real(np.fft.ifft2( np.fft.fft2(target) * recon_tf )))
 
+def BeamProfile1D(target, source, mu = 1e-6):
+	source = 2*source-1
+	tf = np.fft.fft(source)
+	tf /= np.size(tf)
+	recon_tf = np.conj(tf) / ( np.abs(tf)**2 + mu)
+	F = np.fft.fft(target) * recon_tf 
+	return np.fft.fftshift(np.real(np.fft.ifft(F))), F
+
 def ZoomCenter(img, sx, sy=None):
 	if sy is None: sy=sx
 	return img[(img.shape[1]-sy)//2:(img.shape[1]+sy)//2,(img.shape[0]-sx)//2:(img.shape[0]+sx)//2]
