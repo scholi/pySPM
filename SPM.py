@@ -316,15 +316,16 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			avg  = np.nanmean(img)
 			vmin  = avg - sig * std
 			vmax = avg + sig * std
+		mpl.rc('axes',grid=False)
 		if not pixels:
 			xp = np.linspace(0,self.pixels.shape[1],11)
 			xr = np.linspace(0,W,11)
 			ax.set_xticks(xp)
-			ax.set_xticklabels([str(round(z,2)) for z in xr])
+			ax.set_xticklabels([str(np.round(z,1)) for z in xr])
 			yp = np.linspace(0,self.pixels.shape[0],11)
 			yr = np.linspace(0,H,11)
 			ax.set_yticks(yp)
-			ax.set_yticklabels([str(round(z,2)) for z in yr])
+			ax.set_yticklabels([str(round(z,1)) for z in yr])
 		if not flip:
 			ax.imshow(np.flipud(img),cmap=cmap,vmin=vmin,vmax=vmax,**kargs)
 		else:

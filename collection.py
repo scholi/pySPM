@@ -1,5 +1,7 @@
 from pySPM.SPM import SPM_image
 import pandas as pd
+import copy
+import matplotlib.pyplot as plt
 
 class collection:
 	"""Class to handle a collection of SPM images"""
@@ -33,11 +35,18 @@ class collection:
 		if key not in self.CH: return None
 		return SPM_image(_type=self.name,BIN=self.CH[key],real=self.size,channel=key)
 		
-	def show(self, ax,channels=None, cmap='hot'):
+	def show(self, ax=None,channels=None, cmap='hot'):
 		if channels is None:
 			channels = list(self.CH.keys())
+		N=len(channels)
+		if ax is None:
+			if N==4:
+				fig, ax = plt.subplots(2,2,figsize=(20,self[channels[0]].pixels.shape[0]*20/self[channels[0]].pixels.shape[1]))
+			else:
+				fig, ax = plt.subplots(N//3+1,min(3,N),figsize=(20,(N//3+1)*20/min(3,N)))
 		for i,x in enumerate(channels):
-			self[x].show(ax=ax[i],cmap=cmap)
+			self[x].show(ax=ax.ravel()[i],cmap=cmap)
+		plt.tight_layout()
 	
 	def getMultiVariate(self, channels=None):
 		if channels is None:
@@ -45,3 +54,20 @@ class collection:
 		data = pd.DataFrame({k:self.CH[k].ravel() for k in channels})
 		return data
 	
+	def StitchCorrection(self, channel, stitches):
+		N = copy.deepcopy(self)
+		del N.CH
+		N.CH = {}
+		size = list(self.CH.values())[0]
+		S=np.zeros((size[0]/stitches[0],size[1]/stitches[1]))
+		for i in range(stitches[0]):
+			for j in range(stitches[1]):
+				S+=self.CH[channel][128*i:128*(i+1),128*j:128*(j+1)]
+		S[S==0]=1
+		for x in self.CH:
+			F = np.zeros(size)
+			for i in range(stitches[0]):
+				for j in range(stitches[1]):
+					F[128*i:128*(i+1),128*j:128*(j+1)]=self.CH[x][128*i:128*(i+1),128*j:128*(j+1)]/T
+			N.add(F,x)
+		return N
