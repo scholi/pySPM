@@ -279,9 +279,9 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 
 	def show(self, ax=None, sig = None, cmap=None, title=None, adaptive=False, dmin=0, dmax=0,pixels=False,flip=False,**kargs):
 		mpl.rc('axes',grid=False)
-		if ax==None:
+		if ax is None:
 			fig, ax = plt.subplots(1,1)
-		if title==None:
+		if title == None:
 			title=u"{0} - {1}".format(self.type,self.channel)
 		unit=self.size['real']['unit']
 		sunit='afpnum kMGTPE'
@@ -326,10 +326,14 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			yr = np.linspace(0,H,11)
 			ax.set_yticks(yp)
 			ax.set_yticklabels([str(round(z,1)) for z in yr])
+		if 'level' in kargs:
+			vmin=np.percentile(img,100-kargs['level'])
+			vmax=np.percentile(img,kargs['level'])
+			del kargs['level']
 		if not flip:
-			ax.imshow(np.flipud(img),cmap=cmap,vmin=vmin,vmax=vmax,**kargs)
+			ax.imshow(np.flipud(img), cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
 		else:
-			ax.imshow(img,cmap=cmap,vmin=vmin,vmax=vmax,**kargs)
+			ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
 			
 		if not pixels:
 			if isunit!=6:

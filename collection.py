@@ -35,7 +35,7 @@ class collection:
 		if key not in self.CH: return None
 		return SPM_image(_type=self.name,BIN=self.CH[key],real=self.size,channel=key)
 		
-	def show(self, ax=None,channels=None, cmap='hot'):
+	def show(self, ax=None,channels=None, cmap='hot', **kargs):
 		if channels is None:
 			channels = list(self.CH.keys())
 		N=len(channels)
@@ -45,7 +45,7 @@ class collection:
 			else:
 				fig, ax = plt.subplots(N//3+1,min(3,N),figsize=(20,(N//3+1)*20/min(3,N)))
 		for i,x in enumerate(channels):
-			self[x].show(ax=ax.ravel()[i],cmap=cmap)
+			self[x].show(ax=ax.ravel()[i],cmap=cmap,**kargs)
 		plt.tight_layout()
 	
 	def getMultiVariate(self, channels=None):
