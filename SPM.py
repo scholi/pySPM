@@ -16,6 +16,7 @@ from skimage import transform as tf
 #import skimage.filters
 import copy
 from tqdm import tqdm
+import matplotlib as mpl
 
 """
 Library to handle SPM data.
@@ -277,6 +278,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		return (0,W,0,H)
 
 	def show(self, ax=None, sig = None, cmap=None, title=None, adaptive=False, dmin=0, dmax=0,pixels=False,flip=False,**kargs):
+		mpl.rc('axes',grid=False)
 		if ax==None:
 			fig, ax = plt.subplots(1,1)
 		if title==None:
