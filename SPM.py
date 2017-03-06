@@ -299,7 +299,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			if unit=='m' and self.channel == "Topography":
 				cmap='hot'
 		extent=(0,W,0,H)
-		mi,ma = np.min(self.pixels), np.max(self.pixels)
+		mi,ma = np.nanmin(self.pixels), np.nanmax(self.pixels)
 		if adaptive:
 			img = np.asarray(256*(self.pixels-mi)/(ma-mi),dtype=np.uint8)
 			mi,ma=0,1
@@ -310,8 +310,8 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			vmin=mi+dmin
 			vmax=ma+dmax
 		else:
-			std  = np.std(img)
-			avg  = np.mean(img)
+			std  = np.nanstd(img)
+			avg  = np.nanmean(img)
 			vmin  = avg - sig * std
 			vmax = avg + sig * std
 		if not pixels:
@@ -695,7 +695,15 @@ def getProfile(I,x1,y1,x2,y2,width=1,ax=None):
 			N = scipy.ndimage.map_coordinates(I,np.vstack((y,x)))
 			P.append(N)
 		return np.linspace(0,d,int(d)+1),np.vstack(P).T
-
+		
+def dist_v2(img):
+	x2 = np.arange(img.shape[1])
+	x2 = (np.minimum(x2, img.shape[1]-x2))**2
+	y2 = np.arange(img.shape[0])
+	y2 = (np.minimum(y2, img.shape[0] - y2))**2
+	X,Y = np.meshgrid(x2,y2)
+	return np.sqrt(X+Y)
+		
 if __name__ == "__main__":
 	Path = "C:/Users/ols/Dropbox/ToF_SIMS"
 	AFM = SPM_image("{0}/CyI5b_0006_ns.xml".format(Path),corr='slope')

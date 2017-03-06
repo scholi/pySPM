@@ -1,4 +1,5 @@
 from pySPM.SPM import SPM_image
+import pandas as pd
 
 class collection:
 	"""Class to handle a collection of SPM images"""
@@ -32,7 +33,15 @@ class collection:
 		if key not in self.CH: return None
 		return SPM_image(_type=self.name,BIN=self.CH[key],real=self.size,channel=key)
 		
-	def show(self, ax, channels, cmap='hot'):
+	def show(self, ax,channels=None, cmap='hot'):
+		if channels is None:
+			channels = list(self.CH.keys())
 		for i,x in enumerate(channels):
 			self[x].show(ax=ax[i],cmap=cmap)
-			
+	
+	def getMultiVariate(self, channels=None):
+		if channels is None:
+			channels = self.CH.keys()
+		data = pd.DataFrame({k:self.CH[k].ravel() for k in channels})
+		return data
+	
