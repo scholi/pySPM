@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 class collection:
 	"""Class to handle a collection of SPM images"""
 	
-	def __init__(self, sx=None,sy=None,unit='px', name='RawData'):
+	def __init__(self, sx=None,sy=None,unit='px', name='RawData', cls=None):
 		"""
 			Create a new collection.
 			You should provide a size.
@@ -15,6 +15,10 @@ class collection:
 				and unit for the name of the dimensional units
 		"""
 		
+		if isinstance(cls, collection):
+			self.size = cls.size
+			self.name = cls.name
+			
 		if sy is None and sx is not None:
 			sy=sx
 			
@@ -34,6 +38,9 @@ class collection:
 	def __getitem__(self, key):
 		if key not in self.CH: return None
 		return SPM_image(_type=self.name,BIN=self.CH[key],real=self.size,channel=key)
+	
+	def __setitem__(self, key, value):
+		self.add(value, key)
 		
 	def show(self, ax=None,channels=None, cmap='hot', **kargs):
 		if channels is None:
