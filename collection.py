@@ -43,7 +43,7 @@ class collection:
 			if N==4:
 				fig, ax = plt.subplots(2,2,figsize=(20,self[channels[0]].pixels.shape[0]*20/self[channels[0]].pixels.shape[1]))
 			else:
-				fig, ax = plt.subplots(N//3+1,min(3,N),figsize=(20,(N//3+1)*20/min(3,N)))
+				fig, ax = plt.subplots((N-1)//3+1,min(3,N),figsize=(20,((N-1)//3+1)*20/min(3,N)))
 		for i,x in enumerate(channels):
 			self[x].show(ax=ax.ravel()[i],cmap=cmap,**kargs)
 		plt.tight_layout()
