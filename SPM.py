@@ -710,9 +710,3 @@ def dist_v2(img):
 	y2 = (np.minimum(y2, img.shape[0] - y2))**2
 	X,Y = np.meshgrid(x2,y2)
 	return np.sqrt(X+Y)
-		
-if __name__ == "__main__":
-	Path = "C:/Users/ols/Dropbox/ToF_SIMS"
-	AFM = SPM_image("{0}/CyI5b_0006_ns.xml".format(Path),corr='slope')
-	CC2 = SPM_image("{0}/CyI5b_PCBM_CC2.xml".format(Path))
-	AFM.show()

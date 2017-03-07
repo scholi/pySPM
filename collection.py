@@ -2,7 +2,19 @@ from pySPM.SPM import SPM_image
 import pandas as pd
 import copy
 import matplotlib.pyplot as plt
+import re
 
+def atoi(text):
+    return int(text) if text.isdigit() else text
+
+def natural_keys(text):
+    '''
+    alist.sort(key=natural_keys) sorts in human order
+    http://nedbatchelder.com/blog/200712/human_sorting.html
+    (See Toothy's implementation in the comments)
+    '''
+    return [ atoi(c) for c in re.split('(\d+)', text) ]
+	
 class collection:
 	"""Class to handle a collection of SPM images"""
 	
@@ -46,6 +58,7 @@ class collection:
 		if channels is None:
 			channels = list(self.CH.keys())
 		N=len(channels)
+		channels.sort(key=natural_keys)
 		if ax is None:
 			if N==4:
 				fig, ax = plt.subplots(2,2,figsize=(20,self[channels[0]].pixels.shape[0]*20/self[channels[0]].pixels.shape[1]))
