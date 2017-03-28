@@ -169,6 +169,23 @@ class SPM_image:
 		elif corr.lower() == 'plane':
 			self.correctPlane()
 
+	def addScale(self, length, ax=None, height=20, color='w', loc=4, text=True, fontsize=20):
+		import matplotlib.patches
+		L=length*self.size['pixels']['x']/self.size['real']['x']
+		ref=[height,height]
+		if loc==1 or loc==4:
+			ref[0]=self.size['pixels']['x']-ref[0]-L
+		if loc==3 or loc==4:
+			ref[1]=self.size['pixels']['y']-ref[1]-height
+		if ax is None:
+			ax=plt.gca()
+		ax.add_patch(matplotlib.patches.Rectangle(ref,width=L,height=height,color=color))
+		if text:
+			r=funit(length,self.size['real']['unit'])
+			if r['unit'][0]=='u':
+				r['unit']='$\\mu$'+r['unit'][1:]
+			ax.annotate("{value:.01f} {unit}".format(**r),(ref[0]+L/2,ref[1]),color=color,fontsize=fontsize,va="bottom",ha="center")
+
 	def Offset(self, profiles, width=1, ax=None, inline=True):
 		offset=np.zeros(self.pixels.shape[0])
 		counts=np.zeros(self.pixels.shape[0])
@@ -626,7 +643,12 @@ def NormP(x,p, trunk=True):
 	return r
 
 def BeamProfile(target, source, mu = 1e-6):
+	"""
+	Calculate the PSF by deconvolution of the target
+	with the source using a Tikhonov regularization of factor mu.
+	"""
 	source = 2*source-1
+	target = target-np.mean(target)
 	tf = np.fft.fft2(source)
 	tf /= np.size(tf)
 	recon_tf = np.conj(tf) / ( np.abs(tf)**2 + mu)

@@ -62,7 +62,7 @@ class BIF6:
 		self.f.seek(32+ID*(4*self.N+16))
 		return np.array(struct.unpack(str(self.N)+'I',self.f.read(4*self.N))).reshape(self.size)
 	
-	def getImgMass(self, masses):
+	def getImgMass(self, masses, raw=False):
 		if type(masses)==float or type(masses)==int:
 			masses=[masses]
 		SUM=None
@@ -73,6 +73,8 @@ class BIF6:
 						SUM=self.getImgID(i)
 					else:
 						SUM+=self.getImgID(i)
+		if raw:
+			return SUM
 		return pySPM.SPM_image(BIN=np.flipud(SUM))
 	
 	def getImgElt(self, elt):
