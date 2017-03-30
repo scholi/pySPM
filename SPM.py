@@ -365,14 +365,10 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 		if title != None:
 			ax.set_title(title)
 
-	def getProfile(self, x1,y1,x2,y2, img=None, imgColor='w-'):
-		if not img is None:
-			img.plot([x1,x2],[y1,y2],imgColor)
-		d=np.sqrt((x2-x1)**2+(y2-y1)**2)
-		x,y = np.linspace(x1,x2,int(d)+1),np.linspace(y1,y2,int(d)+1)
-		return np.linspace(0,d,int(d)+1),scipy.ndimage.map_coordinates(np.flipud(self.pixels),np.vstack((y,x)))
+	def getProfile(self, x1,y1,x2,y2, width=1, ax=None, imgColor='w-'):
+		return getProfile(np.flipud(self.pixels),x1,y1,x2,y2,width=width,ax=ax)
 
-	def plotProfile(self, x1,y1,x2,y2, ax=None, col='b-', pixels=False,img=None,imgColor='w-',**kargs):
+	def plotProfile(self, x1,y1,x2,y2, ax=None, width=1,col='b-', pixels=False,img=None,imgColor='w-',**kargs):
 		if ax==None:
 			fig, ax = plt.subplots(1,1)
 		d  = np.sqrt((x2-x1)**2+(y2-y1)**2)
@@ -384,10 +380,12 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 			rd=d
 		else:
 			rd = np.sqrt(dx**2+dy**2)
-		l  = np.linspace(0,rd,int(d)+1)
-		x,y = np.linspace(x1,x2,int(d)+1),np.linspace(y1,y2,int(d)+1)
-		z=scipy.ndimage.map_coordinates(np.flipud(self.pixels),np.vstack((y,x)))
-		p=ax.plot(l,z,col,**kargs)
+		p=self.getProfile(x1,y1,x2,y2,width=width, ax=img)
+		profile = np.mean(p)
+		s = np.std(p)
+		p=ax.plot(l,profile,col,**kargs)
+		ax.fill_between(l,profile-s,profile+s,col=col,alpha=.2)
+		ax.fill_between(l,profile-2*s,profile+2*s,col=col,alpha=.2)
 		ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
 		try:
 			ax.set_ylabel("Height [{0}]".format(self.zscale))
@@ -516,7 +514,7 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(x=x,y=y,P=P,I=I,f
 				C = copy.deepcopy(self)
 				C.pixels=np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
 				return C
-
+	
 	def ResizeInfos(self):
 		self.size['real']['x']*=self.pixels.shape[1]/self.size['pixels']['x']
 		self.size['real']['y']*=self.pixels.shape[0]/self.size['pixels']['y']
@@ -555,6 +553,23 @@ def cut(img, c):
 	if c[2]-c[0]==img.shape[1] and c[3]-c[1]==img.shape[0]:
 		raise Exception("Reshaping the same array again?")
 	return img[c[1]:c[3],c[0]:c[2]]
+	
+def Normalize(data, sig=None, vmin=None, vmax=None):
+	if sig is None:
+		mi=np.min(data)
+		ma=np.max(data)
+	else:
+		s=sig*np.std(data)
+		mi=np.mean(data)-s
+		ma=np.mean(data)+s
+	if vmin is not None:
+		mi = vmin
+	if vmax is not None:
+		ma = vmax	
+	N=(data-mi)/(ma-mi)
+	N[N<0]=0
+	N[N>1]=1
+	return N
 	
 def imshow_sig(img,sig=1, ax=None, **kargs):
 	if ax==None:
@@ -618,9 +633,6 @@ def tukeywin(window_length, alpha=0.5):
 	w[third_condition] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[third_condition] - 1 + alpha/2))) 
 	
 	return w
-
-def Normalize(x):
-	return (x-np.min(x))/(np.max(x)-np.min(x))
 
 def overlay(ax,mask,color,**kargs):
 	m = ma.masked_array(mask,~mask)
