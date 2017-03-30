@@ -76,14 +76,17 @@ class collection:
 		data = pd.DataFrame({k:self.CH[k].ravel() for k in channels})
 		return data
 	
-	def overlay(self, chs, cols=[[0,.5,.3],[1,0,0]],ax=None, sig = None, vmin=None, vmax=None):
+	def overlay(self, chs, cols=[[0,.5,.3],[1,0,0]],ax=None, sig = None, vmin=None, vmax=None, flip=False):
 		assert len(chs)>=2
 		assert len(cols)==len(chs)
 		Data = [pySPM.SPM.Normalize(self[ch].pixels,sig=sig,vmin=vmin,vmax=vmax) for ch in chs]
 		C    = [np.stack([Data[i]*cols[i][j] for j in range(3)],axis=2) for i in range(len(chs))]
 		if ax is None:
 			ax = plt.gca()
-		ax.imshow(np.sum(C,axis=0))
+		S=np.sum(C,axis=0)
+		if flip:
+			S=np.flipud(S)
+		ax.imshow(S)
 		return C
 
 		
@@ -135,6 +138,6 @@ def overlayTriangle(chs, cols,ax=None,size=512):
 		ax.annotate(chs[j],(r*np.cos(np.radians(120*j)),r*np.sin(np.radians(120*j))),color='w',fontsize=20,va="center",ha="center")
 		RGB[j][PointInTriangle([X,Y],*centers)==0]=0
 	A=np.stack(RGB,axis=2)
-	ax.imshow(A,extent=[x[0],x[-1],y[0],y[-1]])
+	ax.imshow(A,extent=[x[0],x[-1],y[-1],y[0]])
 	ax.set_xticks([])
 	ax.set_yticks([])
