@@ -1,143 +1,215 @@
-from pySPM.SPM import SPM_image
-import pySPM
+"""
+oollection is a module to handle collection of images.
+This is specially usefull for SPM data which store several channels for the same measurement
+"""
+
 import copy
-import matplotlib.pyplot as plt
 import re
 import numpy as np
+import matplotlib.pyplot as plt
+from pySPM.SPM import SPM_image
+import pySPM
 
 def atoi(text):
+    """
+    Convert string to integer
+    """
     return int(text) if text.isdigit() else text
 
 def natural_keys(text):
-    '''
+    """
     alist.sort(key=natural_keys) sorts in human order
     http://nedbatchelder.com/blog/200712/human_sorting.html
     (See Toothy's implementation in the comments)
-    '''
-    return [ atoi(c) for c in re.split('(\d+)', text) ]
-	
-class collection:
-	"""Class to handle a collection of SPM images"""
-	
-	def __init__(self, sx=None,sy=None,unit='px', name='RawData', cls=None):
-		"""
-			Create a new collection.
-			You should provide a size.
-				sx for the x-axis
-				sy for the y-axis
-				and unit for the name of the dimensional units
-		"""
-		
-		if isinstance(cls, collection):
-			self.size = cls.size
-			self.name = cls.name
-			
-		if sy is None and sx is not None:
-			sy=sx
-			
-		self.name=name
-		self.CH = {}
-		self.size = {'x':sx,'y':sy,'unit':unit}
-	
-	def add(self, Img, name):
-		if len(self.CH)==0 and self.size['unit']=='px':
-			self.size['x']=len(Img[0])
-			self.size['y']=len(Img)
-		if name in self.CH:
-			raise KeyError('The channel {} is already present in the collection. Please delete it before')
-			return
-		self.CH[name]=Img
-	
-	def __getitem__(self, key):
-		if key not in self.CH: return None
-		return SPM_image(_type=self.name,BIN=self.CH[key],real=self.size,channel=key)
-	
-	def __setitem__(self, key, value):
-		self.add(value, key)
-		
-	def show(self, ax=None,channels=None, cmap='hot', **kargs):
-		if channels is None:
-			channels = list(self.CH.keys())
-		N=len(channels)
-		channels.sort(key=natural_keys)
-		if ax is None:
-			if N==4:
-				fig, ax = plt.subplots(2,2,figsize=(20,self[channels[0]].pixels.shape[0]*20/self[channels[0]].pixels.shape[1]))
-			else:
-				fig, ax = plt.subplots((N-1)//3+1,min(3,N),figsize=(20,((N-1)//3+1)*20/min(3,N)))
-		for i,x in enumerate(channels):
-			self[x].show(ax=ax.ravel()[i],cmap=cmap,**kargs)
-		plt.tight_layout()
-	
-	def getMultiVariate(self, channels=None):
-		import pandas as pd
-		if channels is None:
-			channels = self.CH.keys()
-		data = pd.DataFrame({k:self.CH[k].ravel() for k in channels})
-		return data
-	
-	def overlay(self, chs, cols=[[0,.5,.3],[1,0,0]],ax=None, sig = None, vmin=None, vmax=None, flip=False):
-		assert len(chs)>=2
-		assert len(cols)==len(chs)
-		Data = [pySPM.SPM.Normalize(self[ch].pixels,sig=sig,vmin=vmin,vmax=vmax) for ch in chs]
-		C    = [np.stack([Data[i]*cols[i][j] for j in range(3)],axis=2) for i in range(len(chs))]
-		if ax is None:
-			ax = plt.gca()
-		S=np.sum(C,axis=0)
-		if flip:
-			S=np.flipud(S)
-		ax.imshow(S)
-		return C
+    """
+    return [atoi(c) for c in re.split('(\\d+)', text)]
 
-		
-	def StitchCorrection(self, channel, stitches):
-		N = copy.deepcopy(self)
-		del N.CH
-		N.CH = {}
-		size = list(self.CH.values())[0]
-		S=np.zeros((size[0]/stitches[0],size[1]/stitches[1]))
-		for i in range(stitches[0]):
-			for j in range(stitches[1]):
-				S+=self.CH[channel][128*i:128*(i+1),128*j:128*(j+1)]
-		S[S==0]=1
-		for x in self.CH:
-			F = np.zeros(size)
-			for i in range(stitches[0]):
-				for j in range(stitches[1]):
-					F[128*i:128*(i+1),128*j:128*(j+1)]=self.CH[x][128*i:128*(i+1),128*j:128*(j+1)]/T
-			N.add(F,x)
-		return N
+class Collection:
+    """
+    Class to handle a collection of SPM images
+    """
 
-def Tsign(p1,p2,p3):
-	return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
+    def __init__(self, sx=None, sy=None, unit='px', name='RawData', cls=None):
+        """
+        Create a new collection.
+        You should provide a size.
+        sx for the x-axis
+        sy for the y-axis
+        and unit for the name of the dimensional units
+        """
 
-def PointInTriangle (pt,v1,v2,v3):
-    b1 = Tsign(pt, v1, v2) < 0
-    b2 = Tsign(pt, v2, v3) < 0
-    b3 = Tsign(pt, v3, v1) < 0
+        if isinstance(cls, Collection):
+            self.size = cls.size
+            self.name = cls.name
+
+        if sy is None and sx is not None:
+            sy = sx
+
+        self.name = name
+        self.channels = {}
+        self.size = {'x':sx, 'y':sy, 'unit':unit}
+
+    def add(self, Img, name):
+        """
+        Add a new Img to the collection
+        """
+
+        if len(self.channels) == 0 and self.size['unit'] == 'px':
+            self.size['x'] = len(Img[0])
+            self.size['y'] = len(Img)
+        if name in self.channels:
+            raise KeyError('The channel {} is already present in ' \
+                'the collection. Please delete it before')
+            return
+        self.channels[name] = Img
+
+    def __getitem__(self, key):
+        if key not in self.channels: return None
+        return SPM_image(_type=self.name, BIN=self.channels[key], real=self.size, channel=key)
+
+    def __setitem__(self, key, value):
+        self.add(value, key)
+
+    def show(self, ax=None, channels=None, cmap='hot', **kargs):
+        """
+        Display the images of the collection in a matplotlib plot.
+
+        ax: is the axis of the matplotib plot.
+            If None is provided, the current axis will be retrieved (or new one)
+        channels: The channels to plot.
+            If None, all will be plotted
+        cmap: The colormap to use (hot)
+        **kargs: further arguments will be passed to the show function of the generated SPM_Image
+        """
+        if channels is None:
+            channels = list(self.channels.keys())
+        channels_number = len(channels)
+        channels.sort(key=natural_keys)
+        if ax is None:
+            if channels_number == 4:
+                fig, ax = plt.subplots(2, 2, figsize=(20, \
+                    self[channels[0]].pixels.shape[0]*20 \
+                    / self[channels[0]].pixels.shape[1]))
+            else:
+                fig, ax = plt.subplots((channels_number-1)//3+1, min(3, channels_number), \
+                    figsize=(20, ((channels_number-1)//3+1)*20/min(3, channels_number)))
+        for i, x in enumerate(channels):
+            self[x].show(ax=ax.ravel()[i], cmap=cmap, **kargs)
+        plt.tight_layout()
+
+    def get_multi_variate(self, channels=None):
+        """
+        Create and return a (pandas) DataFrame of the collection
+        channels: List of the channels to use (default: None => all channels)
+
+        Note: The images will be unraveld (flattened)
+        """
+        import pandas as pd
+        if channels is None:
+            channels = self.channels.keys()
+        data = pd.DataFrame({k:self.channels[k].ravel() for k in channels})
+        return data
+
+    def overlay(self, channel_names, colors=[[0, .5, .3], [1, 0, 0]], ax=None, \
+        sig=None, vmin=None, vmax=None, flip=False):
+        """
+        Create an overlay (in color) of several channels.
+        channel_names: a list of the channels to select for the overlay
+        colors: List of [Red,Green,Blue] color to use.
+            (Its length should be identical to channel_names)
+        """
+        assert len(channel_names) >= 2
+        assert len(colors) == len(channel_names)
+        data = [pySPM.SPM.Normalize( \
+			self[ch].pixels, sig=sig, vmin=vmin, vmax=vmax) \
+			for ch in channel_names]
+        layers = [np.stack([data[i]*colors[i][j] for j in range(3)], axis=2) \
+			for i in range(len(channel_names))]
+        if ax is None:
+            ax = plt.gca()
+        overlay = np.sum(layers, axis=0)
+        if flip:
+            overlay = np.flipud(overlay)
+        ax.imshow(overlay)
+        return layers
+
+    def stitch_correction(self, channel, stitches):
+        """
+        Function to correct for anomalies seen in stitched image.
+        The function will calculate an average distribution of the stiched field
+        and average the image with it and return a new collection with the result
+
+        channel: name of the channel used as a reference
+            (take one with homogeneous intensities in the whole image)
+        stitches: a tuple/list containing the number of stiches in the image (x,y)
+        """
+        result = copy.deepcopy(self)
+        del result.channels
+        result.channels = {}
+        size = list(self.channels.values())[0]
+        S = np.zeros((size[0]/stitches[0], size[1]/stitches[1]))
+        for i in range(stitches[0]):
+            for j in range(stitches[1]):
+                S += self.channels[channel][128*i:128*(i+1), 128*j:128*(j+1)]
+        S[S == 0] = 1
+        for x in self.channels:
+            F = np.zeros(size)
+            for i in range(stitches[0]):
+                for j in range(stitches[1]):
+                    F[128*i:128*(i+1), 128*j:128*(j+1)] \
+                        = self.channels[x][128*i:128*(i+1), 128*j:128*(j+1)]/S
+            result.add(F, x)
+        return result
+
+def __Tsign(p1, p2, p3):
+    return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
+
+def PointInTriangle(pt, v1, v2, v3):
+    """
+    Is a point pt in the triangle formed by the vertices v1, v2 and v3?
+    pt,v1,v2,v3: tuple/list contai9ng the (x,y) coordinate of each vertices/point
+    """
+    b1 = __Tsign(pt, v1, v2) < 0
+    b2 = __Tsign(pt, v2, v3) < 0
+    b3 = __Tsign(pt, v3, v1) < 0
     return (b1 == b2) * (b2 == b3)
 
-def overlayTriangle(chs, cols,ax=None,size=512):
-	assert len(chs)==3
-	assert len(cols)==3
-	if ax is None:
-		ax = plt.gca()
-	p=.9
-	r=.8
-	RGB=[np.zeros((size,size)) for i in range(3)]
-	D=2*r*p*np.sin(np.radians(120))
+def overlay_triangle(channel_names, colors, ax=None, size=512):
+    """
+    Create the image of a triangle, where the color is a gradient between three colors
+    (one for each vertex).
 
-	x=np.linspace(-.7,1.1,size)
-	y=np.linspace(-1,1,size)
-	X,Y=np.meshgrid(x,y)
-	centers=[(r*p*np.cos(np.radians(120*i)),r*p*np.sin(np.radians(120*i))) for i in range(3)]
-	dist=[np.sqrt((X-centers[i][0])**2+(Y-centers[i][1])**2) for i in range(3)]
+    channel_names: a list of 3 channels
+    colors: a list of 3 [R,G,B] list color
+    ax: the matplotlib axis to plot in (if none use plt.gca())
+    size: size of the rastered image generated.
+        As there are in RGB no more than 256 values,
+        the default value of 512 should be good in most of the cases.
+    """
+    assert len(channel_names) == 3
+    assert len(colors) == 3
+    if ax is None:
+        ax = plt.gca()
+    proportion = .9
+    radius = .8
+    RGB = [np.zeros((size, size)) for i in range(3)]
+    distance = 2*radius*proportion*np.sin(np.radians(120))
 
-	for j in range(3):
-		RGB[j]=sum([cols[i][j]*np.maximum((D-dist[i])/D,0) for i in range(3)])
-		ax.annotate(chs[j],(r*np.cos(np.radians(120*j)),r*np.sin(np.radians(120*j))),color='w',fontsize=20,va="center",ha="center")
-		RGB[j][PointInTriangle([X,Y],*centers)==0]=0
-	A=np.stack(RGB,axis=2)
-	ax.imshow(A,extent=[x[0],x[-1],y[-1],y[0]])
-	ax.set_xticks([])
-	ax.set_yticks([])
+    x = np.linspace(-.7, 1.1, size)
+    y = np.linspace(-1, 1, size)
+    X, Y = np.meshgrid(x, y)
+    centers = [(radius*proportion*np.cos(np.radians(120*i)), radius*proportion*np.sin(np.radians(120*i))) for i in range(3)]
+    dist = [np.sqrt((X-centers[i][0])**2+(Y-centers[i][1])**2) for i in range(3)]
+
+    for j in range(3):
+        RGB[j] = sum([colors[i][j]*np.maximum((distance-dist[i])/distance, 0) for i in range(3)])
+        ax.annotate(channel_names[j], (radius*np.cos(np.radians(120*j)), radius*np.sin(np.radians(120*j))), \
+            color='w', \
+            fontsize=20, \
+            va="center", \
+            ha="center")
+        RGB[j][PointInTriangle([X, Y], *centers) == 0] = 0
+    image = np.stack(RGB, axis=2)
+    ax.imshow(image, extent=[x[0], x[-1], y[-1], y[0]])
+    ax.set_xticks([])
+    ax.set_yticks([])
