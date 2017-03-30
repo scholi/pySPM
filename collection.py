@@ -85,6 +85,7 @@ class collection:
 			ax = plt.gca()
 		ax.imshow(np.sum(C,axis=0))
 		return C
+
 		
 	def StitchCorrection(self, channel, stitches):
 		N = copy.deepcopy(self)
@@ -103,3 +104,37 @@ class collection:
 					F[128*i:128*(i+1),128*j:128*(j+1)]=self.CH[x][128*i:128*(i+1),128*j:128*(j+1)]/T
 			N.add(F,x)
 		return N
+
+def Tsign(p1,p2,p3):
+	return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
+
+def PointInTriangle (pt,v1,v2,v3):
+    b1 = Tsign(pt, v1, v2) < 0
+    b2 = Tsign(pt, v2, v3) < 0
+    b3 = Tsign(pt, v3, v1) < 0
+    return (b1 == b2) * (b2 == b3)
+
+def overlayTriangle(chs, cols,ax=None,size=512):
+	assert len(chs)==3
+	assert len(cols)==3
+	if ax is None:
+		ax = plt.gca()
+	p=.9
+	r=.8
+	RGB=[np.zeros((size,size)) for i in range(3)]
+	D=2*r*p*np.sin(np.radians(120))
+
+	x=np.linspace(-.7,1.1,size)
+	y=np.linspace(-1,1,size)
+	X,Y=np.meshgrid(x,y)
+	centers=[(r*p*np.cos(np.radians(120*i)),r*p*np.sin(np.radians(120*i))) for i in range(3)]
+	dist=[np.sqrt((X-centers[i][0])**2+(Y-centers[i][1])**2) for i in range(3)]
+
+	for j in range(3):
+		RGB[j]=sum([cols[i][j]*np.maximum((D-dist[i])/D,0) for i in range(3)])
+		ax.annotate(chs[j],(r*np.cos(np.radians(120*j)),r*np.sin(np.radians(120*j))),color='w',fontsize=20,va="center",ha="center")
+		RGB[j][PointInTriangle([X,Y],*centers)==0]=0
+	A=np.stack(RGB,axis=2)
+	ax.imshow(A,extent=[x[0],x[-1],y[0],y[-1]])
+	ax.set_xticks([])
+	ax.set_yticks([])
