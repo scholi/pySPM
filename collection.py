@@ -1,8 +1,9 @@
 from pySPM.SPM import SPM_image
-import pandas as pd
+import pySPM
 import copy
 import matplotlib.pyplot as plt
 import re
+import numpy as np
 
 def atoi(text):
     return int(text) if text.isdigit() else text
@@ -69,11 +70,22 @@ class collection:
 		plt.tight_layout()
 	
 	def getMultiVariate(self, channels=None):
+		import pandas as pd
 		if channels is None:
 			channels = self.CH.keys()
 		data = pd.DataFrame({k:self.CH[k].ravel() for k in channels})
 		return data
 	
+	def overlay(self, chs, cols=[[0,.5,.3],[1,0,0]],ax=None, sig = None, vmin=None, vmax=None):
+		assert len(chs)>=2
+		assert len(cols)==len(chs)
+		Data = [pySPM.SPM.Normalize(self[ch].pixels,sig=sig,vmin=vmin,vmax=vmax) for ch in chs]
+		C    = [np.stack([Data[i]*cols[i][j] for j in range(3)],axis=2) for i in range(len(chs))]
+		if ax is None:
+			ax = plt.gca()
+		ax.imshow(np.sum(C,axis=0))
+		return C
+		
 	def StitchCorrection(self, channel, stitches):
 		N = copy.deepcopy(self)
 		del N.CH
