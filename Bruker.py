@@ -25,20 +25,21 @@ class Bruker:
             elif line == b'*Scanner list':
                 self.scanners.append({})
                 mode = 'Scanner'
-            args = line.split(b": ")
-            if len(args) > 1:
-                if mode == 'Image':
-                    self.layers[-1][args[0]] = args[1:]
-                elif mode == 'Scanner':
-                    self.scanners[-1][args[0]] = args[1:]
-            if line == b"*File list end":
-                break
+            else:
+                args = line.split(b": ")
+                if len(args) > 1:
+                    if mode == 'Image':
+                        self.layers[-1][args[0]] = args[1:]
+                    elif mode == 'Scanner':
+                        self.scanners[-1][args[0]] = args[1:]
+                if line == b"*File list end":
+                    break
 
     def _get_raw_layer(self, i):
         """
         Internal function to retrieve raw data of a layer
         """
-        off = int(self.layers[i][b'data offset'][0])
+        off = int(self.layers[i][b'Data offset'][0])
         cols = int(self.layers[i][b'Number of lines'][0])
         rows = int(self.layers[i][b'Samps/line'][0])
         self.file.seek(off)
@@ -52,7 +53,7 @@ class Bruker:
         Load the SPM image contained in a channel
         """
         for i in range(len(self.layers)):
-            layer_name = self.layers[i][b'@2:Image data'][0].decode('utf8')
+            layer_name = self.layers[i][b'@2:Image Data'][0].decode('utf8')
             result = re.match(r'([^ ]+) \[([^\]]*)\] "([^"]*)"', layer_name).groups()
             if result[2] == channel:
                 bck = False
@@ -67,7 +68,7 @@ class Bruker:
                     data = self._get_raw_layer(i)*scale
 
                     zscale = result[2].split(b'/')[0]
-                    scan_size = self.layers[i][b'Scan size'][0].split()
+                    scan_size = self.layers[i][b'Scan Size'][0].split()
                     if scan_size[2][0] == 126:
                         scan_size[2] = b'u'+scan_size[2][1:]
                     size = { \

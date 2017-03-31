@@ -49,7 +49,7 @@ def funit(value, unit=None, iMag=True):
     shift = int(math.floor(math.log10(value)/3.0)) # base10 exponent
     mag = u'afpnum1kMGTPE'
     index_mag = mag.index('1')
-		# Test if unit has a scale factor (n,m,k,M,G, etc.)
+        # Test if unit has a scale factor (n,m,k,M,G, etc.)
     if len(unit) > 1 and unit[0] in mag and unit[1:] and index_mag:
         index_mag = mag.index(unit[0])
         unit = unit[1:]
@@ -416,18 +416,22 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(\
             rd = d
         else:
             rd = np.sqrt(dx**2+dy**2)
-        p = self.getProfile(x1, y1, x2, y2, width=width, ax=img)
-        profile = np.mean(p)
-        s = np.std(p)
-        p = ax.plot(l, profile, col, **kargs)
-        ax.fill_between(l, profile-s, profile+s, col=col, alpha=.2)
-        ax.fill_between(l, profile-2*s, profile+2*s, col=col, alpha=.2)
+        xvalues, p = self.getProfile(x1, y1, x2, y2, width=width, ax=img)
+        if width == 1:
+            profile = p[:,0]
+        else:
+            profile = np.mean(p)
+            s = np.std(p)
+            ax.fill_between(xvalues, profile-s, profile+s, col=col, alpha=.2)
+            ax.fill_between(xvalues, profile-2*s, profile+2*s, col=col, alpha=.2)
+        print(profile.shape)
+        p = ax.plot(xvalues, profile, col, **kargs)
         ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
         try:
             ax.set_ylabel("Height [{0}]".format(self.zscale))
         except:
             pass
-        return {'plot':p, 'l':l, 'z':z}
+        return {'plot':p, 'l':xvalues, 'z':profile}
 
     def getBinThreshold(self, percent, high=True, adaptive=False, binary=True):
         if adaptive:
