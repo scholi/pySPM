@@ -64,7 +64,7 @@ def funit(value, unit=None, iMag=True):
     unit_prefix = mag[index_mag]
     if unit_prefix == '1':
         unit_prefix = ''
-    return {'value':value, 'unit':u'{mag}{unit}'.format(mag=mag, unit=unit)}
+    return {'value':value, 'unit':u'{mag}{unit}'.format(mag=unit_prefix, unit=unit)}
 
 def getCurve(filename, channel='Normal Deflection', backward=False):
     """

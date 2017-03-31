@@ -97,7 +97,7 @@ class Collection:
             self[x].show(ax=ax.ravel()[i], cmap=cmap, **kargs)
         plt.tight_layout()
 
-    def get_multi_variate(self, channels=None):
+    def get_multivariate(self, channels=None):
         """
         Create and return a (pandas) DataFrame of the collection
         channels: List of the channels to use (default: None => all channels)
