@@ -1,4 +1,10 @@
-from pySPM.SPM import SPM_Image
+import os
+import base64
+import xml.etree.ElementTree as ET
+import struct
+import numpy as np
+import pySPM.SPM
+from pySPM.SPM import SPM_image, funit
 
 def getCurve(filename, channel='Normal Deflection', backward=False):
     """
@@ -25,8 +31,8 @@ def getCurve(filename, channel='Normal Deflection', backward=False):
     x = np.linspace(start, stop, len(vals))
     return x, vals
 
-class Nanoscan(SPM_Image):    
-   def __init__(self, filename=None, channel='Topography', backward=False, **kargs):
+class Nanoscan(SPM_image):    
+    def __init__(self, filename=None, channel='Topography', backward=False, **kargs):
         if not os.path.exists(filename):
             raise IOError('File "{0}" Not Found'.format(filename))
         if filename[-4:] != '.xml':
@@ -59,8 +65,6 @@ class Nanoscan(SPM_Image):
           
             BIN = base64.b64decode(RAW)
             recorded_size = len(BIN)/4
-            image_array = np.array(struct.unpack("<%if"%(recorded_size),BIN)).reshape( \
-                (self.size['recorded']['pixels']['y'],self.size['recorded']['pixels']['x']))
             size = {'pixels':{ \
                 'x':pixel_size[0], \
                 'y':pixel_size[1] \
@@ -69,6 +73,17 @@ class Nanoscan(SPM_Image):
                 'x':x['value'], \
                 'y':y['value'], \
             }}
+            size['recorded'] = {\
+                'pixels':{\
+                    'y':int(recorded_size/pixel_size[0]),\
+                    'x':pixel_size[0]}}
+            size['recorded']['real'] = { \
+                'x':size['real']['x'], \
+                'y':size['real']['y']*size['recorded']['pixels']['y']/float(size['pixels']['y'])}
+
+            image_array = np.array(struct.unpack("<%if"%(recorded_size),BIN)).reshape( \
+                (size['recorded']['pixels']['y'],size['recorded']['pixels']['x']))
+            
         elif self.root.tag == "channel_list": # ToF-SIMS data (old and no more used. Kept for old script compatibility)
             _type = "ToF-SIMS (xml)"
             channel = "Counts"
@@ -89,14 +104,10 @@ class Nanoscan(SPM_Image):
                     'unit':'m', \
                     'x':float(self.root.findall("./channel/axis[name='x']/variable/extent")[0].text), \
                     'y':float(self.root.findall("./channel/axis[name='y']/variable/extent")[0].text)}}}
-        SPM_Image.__init__(self, image_array, channel=channel, **kargs)
+        SPM_image.__init__(self, image_array, channel=channel, **kargs)
         self.type = _type
         self.size = size
-        self.size['recorded'] = {'pixels':{'y':int(recorded_size/size[0]), 'x':size[0]}}
-        self.size['recorded']['real'] = { \
-            'x':self.size['real']['x'],
-            'y':self.size['real']['y']*self.size['recorded']['pixels']['y']/float(self.size['pixels']['y'])}
-
+       
     def get_scanspeed(self):
         return {'value':float(self.root.findall("spm:vector//spm:direction/spm:vector/" \
                     "spm:contents/spm:name[spm:v='%s']/../spm:point_interval/spm:v" \

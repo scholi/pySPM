@@ -5,10 +5,6 @@
 Library to handle SPM data.
 """
 
-import xml.etree.ElementTree as ET
-import base64
-import struct
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
@@ -59,7 +55,7 @@ class SPM_image:
     Main class to handle SPM images
     """
     def __init__(self, BIN, channel='Topography', \
-        corr='none', real=None, zscale='?'):
+        corr='none', real=None, zscale='?', _type='Unknown'):
         self.channel = channel
         self.direction = 'Unknown'
         self.size = {'pixels':{'x':BIN.shape[1], 'y':BIN.shape[0]}}
@@ -69,7 +65,7 @@ class SPM_image:
             self.size['real'] = {'unit':'pixels', 'x':BIN.shape[1], 'y':BIN.shape[0]}
             self.size['recorded'] = {'pixels':self.size['pixels'], 'real':self.size['real']}
         self.pixels = BIN
-        self._type = "Unknown"
+        self.type = _type
         if corr.lower() == 'slope':
             self.correctSlope()
         elif corr.lower() == 'lines':
@@ -96,7 +92,7 @@ class SPM_image:
                 (ref[0]+L/2, ref[1]), color=color, \
                 fontsize=fontsize, va="bottom",ha="center")
 
-    def Offset(self, profiles, width=1, ax=None, inline=True):
+    def offset(self, profiles, width=1, ax=None, inline=True):
         offset = np.zeros(self.pixels.shape[0])
         counts = np.zeros(self.pixels.shape[0])
         for p in profiles:
@@ -223,6 +219,8 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(\
             unit = unit[1:]
         else:
             isunit = 6
+        if 'recorded' not in self.size:
+            self.size['recorded'] = self.size
         W = self.size['recorded']['real']['x']
         H = self.size['recorded']['real']['y']
         fact = int(np.floor(np.log(W)/np.log(10)/3))
@@ -448,14 +446,16 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(\
     def ResizeInfos(self):
         self.size['real']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
         self.size['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
+        self.size['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
+        self.size['pixels']['x'] = self.pixels.shape[1]
+        self.size['pixels']['y'] = self.pixels.shape[0]
+        if 'recorded' not in self.size:
+            self.size['recorded'] = self.size
         self.size['recorded']['real']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
         self.size['recorded']['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
         self.size['recorded']['pixels']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
         self.size['recorded']['pixels']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
-        self.size['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
-        self.size['pixels']['x'] = self.pixels.shape[1]
-        self.size['pixels']['y'] = self.pixels.shape[0]
-
+        
     def filterScarsRemoval(self, thresh=.5, inline=True):
         if not inline:
             C = copy.deepcopy(self)
