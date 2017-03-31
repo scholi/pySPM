@@ -40,7 +40,7 @@ class Nanoscan(SPM_image):
         self.filename = filename
         tree = ET.parse(filename)
         self.root = tree.getroot()
-        self.direction = ['forward', 'backward'][backward]
+        
         if self.root.tag == "{http://www.nanoscan.ch/SPM}scan":
             namespaces = {'spm':"http://www.nanoscan.ch/SPM"}
             _type = "Nanoscan"
@@ -107,27 +107,28 @@ class Nanoscan(SPM_image):
         SPM_image.__init__(self, image_array, channel=channel, **kargs)
         self.type = _type
         self.size = size
-       
+        self.direction = ['forward', 'backward'][backward]
+        self.namespaces = namespaces
+        
     def get_scanspeed(self):
+        print(self.direction,self.namespaces)
         return {'value':float(self.root.findall("spm:vector//spm:direction/spm:vector/" \
-                    "spm:contents/spm:name[spm:v='%s']/../spm:point_interval/spm:v" \
-                    %(self.direction), namespaces)[0].text) * self.size['pixel']['x'], \
+                    "spm:contents/spm:name[spm:v='%s']/../spm:point_interval/spm:v"%(self.direction), self.namespaces)[0].text) * self.size['pixels']['x'], \
                 'unit': self.root.findall("spm:vector//spm:direction/spm:vector/" \
-                    "spm:contents/spm:name[spm:v='%s']/../spm:point_interval_unit/spm:v" \
-                    %(self.direction), namespaces)[0].text}
+                    "spm:contents/spm:name[spm:v='%s']/../spm:point_interval_unit/spm:v"%(self.direction), self.namespaces)[0].text}
 
     def get_feedback(self):
             self.feedback = {'channel':\
                 self.root.findall('{0}/spm:z_feedback_channel/spm:v'.format(self.fbPath), namespaces)[0].text}
             self.feedback['P'] = {\
                 'value':float(self.root.findall('{0}/spm:proportional_z_gain/spm:v'\
-                    .format(self.fbPath), namespaces)[0].text),
+                    .format(self.fbPath), self.namespaces)[0].text),
                 'unit':self.root.findall('{0}/spm:proportional_z_gain_unit/spm:v'\
-                    .format(self.fbPath), namespaces)[0].text}
+                    .format(self.fbPath), self.namespaces)[0].text}
             self.feedback['I'] = {\
                 'value':float(self.root.findall('{0}/spm:integral_z_time/spm:v'\
-                    .format(fbPath), namespaces)[0].text),
+                    .format(fbPath), self.namespaces)[0].text),
                 'unit':self.root.findall('{0}/spm:integral_z_time_unit/spm:v'\
-                    .format(fbPath), namespaces)[0].text}
+                    .format(fbPath), self.namespaces)[0].text}
             if self.feedback['channel'] == 'df':
                 self.feedback['channel'] = u'?f'
