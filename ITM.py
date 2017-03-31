@@ -1,4 +1,4 @@
-from pyTOF import Block
+from pySPM import Block
 import numpy as np
 import struct
 import os.path

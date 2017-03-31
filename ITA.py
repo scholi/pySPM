@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pickle
 from pySPM.collection import Collection
 from pySPM.SPM import SPM_image
-from pyTOF import Block,utils, PCA, ITM
+from pySPM import Block,utils, PCA, ITM
 
 class ITA(ITM.ITM):
 	def __init__(self, filename):
