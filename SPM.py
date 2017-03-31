@@ -18,22 +18,10 @@ import skimage
 import skimage.exposure, skimage.filters
 import scipy.interpolate
 from skimage import transform as tf
-#import skimage.filters
 import copy
 from tqdm import tqdm
 import matplotlib as mpl
 
-# Will be removed in next deploy
-# def getSPM(filename, channel, corr=''):
-    # Fwd = SPM_image(filename, channel)
-    # Bwd = SPM_image(filename, channel, True)
-    # Fwd.pixels = (Fwd.pixels + Bwd.pixels)/2
-    # del Bwd
-    # if corr.lower() == 'slope':
-        # Fwd.correctSlope()
-    # elif corr.lower() == 'lines':
-        # Fwd.correctLines()
-    # return Fwd
 
 def funit(value, unit=None, iMag=True):
     """
@@ -66,137 +54,29 @@ def funit(value, unit=None, iMag=True):
         unit_prefix = ''
     return {'value':value, 'unit':u'{mag}{unit}'.format(mag=unit_prefix, unit=unit)}
 
-def getCurve(filename, channel='Normal Deflection', backward=False):
-    """
-    function to retrieve data which are not in the form of images.
-    This is typically used for 1D channel where the normal deflection is recorded while z is swept.
-    """
-    tree = ET.parse(filename)
-    root = tree.getroot()
-    namespace = {'spm':'http://www.nanoscan.ch/SPM'}
-    RAW = root.findall("spm:vector/spm:contents/spm:direction/spm:vector/" \
-        "spm:contents/spm:name[spm:v='{direction}']/../spm:channel/spm:vector/" \
-        "spm:contents/spm:name[spm:v='{channel}']/../spm:data/spm:v" \
-        .format(direction=['forward', 'backward'][backward], \
-        channel=channel), namespace)[0].text
-    start = float(root.findall("spm:vector/spm:contents/spm:axis/spm:vector/" \
-        "spm:contents/spm:start/spm:vector/spm:v", namespace)[0].text)
-    stop = float(root.findall("spm:vector/spm:contents/spm:axis/spm:vector/" \
-        "spm:contents/spm:stop/spm:vector/spm:v", namespace)[0].text)
-    unit = root.findall("spm:vector/spm:contents/spm:axis/spm:vector/spm:contents" \
-        "/spm:unit/spm:v", namespace)[0].text
-    BIN = base64.b64decode(RAW)
-    N = len(BIN)
-    vals = np.array(struct.unpack("<"+str(N//4)+"f", BIN))
-    x = np.linspace(start, stop, len(vals))
-    return x, vals
-
 class SPM_image:
     """
     Main class to handle SPM images
     """
-    def __init__(self, filename=None, channel='Topography', backward=False, \
-        corr='none', BIN=None, real=None, _type=None, zscale='?'):
-        if filename is None and not BIN is None:
-            self.channel = channel
-            self.direction = 'Unknown'
-            self.size = {'pixels':{'x':BIN.shape[1], 'y':BIN.shape[0]}}
-            if not real is None:
-                self.size['real'] = real
-            else: self.size['real'] = {'unit':'pixels', 'x':BIN.shape[1], 'y':BIN.shape[0]}
-            self.size['recorded'] = {'pixels':self.size['pixels'], 'real':self.size['real']}
-            self.pixels = BIN
-            if not _type is None: self.type = _type
-            else: self.type = 'RawData'
-            self.zscale = zscale
-            return
-        if not os.path.exists(filename):
-            raise IOError('File "{0}" Not Found'.format(filename))
-        if filename[-4:] != '.xml':
-            raise TypeError("Only xml files are handeled for the moment!")
-        self.filename = filename
-        tree = ET.parse(filename)
-        self.root = tree.getroot()
+    def __init__(self, BIN, channel='Topography', \
+        corr='none', real=None, zscale='?'):
         self.channel = channel
-        direction = ['forward', 'backward'][backward]
-        self.direction = direction
-        if self.root.tag == "{http://www.nanoscan.ch/SPM}scan":
-            namespaces = {'spm':"http://www.nanoscan.ch/SPM"}
-            self.type = "Nanoscan"
-            try:
-                RAW = self.root.findall("spm:vector//spm:direction/spm:vector/spm:contents" \
-                    "/spm:name[spm:v='%s']/../spm:channel//spm:contents/spm:name[spm:v='%s']" \
-                    "/../spm:data/spm:v"%(["forward", "backward"][backward], channel), \
-                    namespaces)[0].text
-            except:
-                raise 'Channel {0} in {1} scan not found'.format(channel, direction)
-                return
-            size = [int(z.text) for z in self.root.findall("spm:vector/spm:contents/spm:size/spm:contents//spm:v", namespaces)]
-            self.scanSpeed = { \
-                'value':float(self.root.findall("spm:vector//spm:direction/spm:vector/" \
-                    "spm:contents/spm:name[spm:v='%s']/../spm:point_interval/spm:v" \
-                    %(["forward", "backward"][backward]), namespaces)[0].text) * size[0], \
-                'unit': self.root.findall("spm:vector//spm:direction/spm:vector/" \
-                    "spm:contents/spm:name[spm:v='%s']/../spm:point_interval_unit/spm:v" \
-                    %(["forward", "backward"][backward]), namespaces)[0].text}
-            fbPath = "spm:vector/spm:contents/spm:instrumental_parameters/spm:contents/spm:z_control/spm:contents"
-            self.feedback = {'channel':self.root.findall('{0}/spm:z_feedback_channel/spm:v'.format(fbPath), namespaces)[0].text}
-            self.feedback['P'] = {'value':float(self.root.findall('{0}/spm:proportional_z_gain/spm:v'.format(fbPath), namespaces)[0].text),
-                    'unit':self.root.findall('{0}/spm:proportional_z_gain_unit/spm:v'.format(fbPath), namespaces)[0].text}
-            self.feedback['I'] = {'value':float(self.root.findall('{0}/spm:integral_z_time/spm:v'.format(fbPath), namespaces)[0].text),
-                    'unit':self.root.findall('{0}/spm:integral_z_time_unit/spm:v'.format(fbPath), namespaces)[0].text}
-            if self.feedback['channel'] == 'df':
-                self.feedback['channel'] = u'Δf'
-            uval = float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:fast_axis/spm:v",namespaces)[0].text)
-            udispu = self.root.findall(".//spm:area//spm:contents/spm:display_unit/spm:v",namespaces)[0].text
-            udisps = float(self.root.findall(".//spm:area/spm:contents/spm:display_scale/spm:v",namespaces)[0].text)
-            uname = self.root.findall(".//spm:area/spm:contents/spm:unit/spm:v",namespaces)[0].text
-            x = funit(uval*udisps, udispu)
-            uval = float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:slow_axis/spm:v",namespaces)[0].text)
-            y = funit(uval*udisps, udispu)
-            self.size = {'pixels':{ \
-                'x':size[0], \
-                'y':size[1] \
-                },'real':{ \
-                'unit':x['unit'], \
-                'x':x['value'], \
-                'y':y['value'], \
-                }}
-            BIN = base64.b64decode(RAW)
-            recorded_size = len(BIN)/4
-            self.size['recorded'] = {'pixels':{'y':int(recorded_size/size[0]), 'x':size[0]}}
-            self.size['recorded']['real'] = { \
-                'x':self.size['real']['x'],
-                'y':self.size['real']['y']*self.size['recorded']['pixels']['y']/float(self.size['pixels']['y'])}
-            self.pixels = np.array(struct.unpack("<%if"%(recorded_size),BIN)).reshape( \
-                (self.size['recorded']['pixels']['y'],self.size['recorded']['pixels']['x']))
-        elif self.root.tag == "channel_list":# ToF-SIMS data
-            self.type = "ToF-SIMS"
-            self.channel = "Counts"
-            x   = int(self.root.findall("./channel/axis[name='x']/count")[0].text)
-            y   = int(self.root.findall("./channel/axis[name='y']/count")[0].text)
-            RAW = self.root.findall("./channel/pixels")[0].text
-            BIN = base64.b64decode(RAW)
-            self.pixels = np.array(struct.unpack("<%if"%(x*y),BIN)).reshape(x, y)
-            self.size = {
-                'pixels':{ \
-                    'x':x, \
-                    'y':y \
-                }, 'real':{ \
-                    'unit':'m', \
-                    'x':float(self.root.findall("./channel/axis[name='x']/variable/extent")[0].text), \
-                    'y':float(self.root.findall("./channel/axis[name='y']/variable/extent")[0].text)}, \
-                'recorded':{'real':{ \
-                    'unit':'m', \
-                    'x':float(self.root.findall("./channel/axis[name='x']/variable/extent")[0].text), \
-                    'y':float(self.root.findall("./channel/axis[name='y']/variable/extent")[0].text)}}}
+        self.direction = 'Unknown'
+        self.size = {'pixels':{'x':BIN.shape[1], 'y':BIN.shape[0]}}
+        if not real is None:
+            self.size['real'] = real
+        else:
+            self.size['real'] = {'unit':'pixels', 'x':BIN.shape[1], 'y':BIN.shape[0]}
+            self.size['recorded'] = {'pixels':self.size['pixels'], 'real':self.size['real']}
+        self.pixels = BIN
+        self._type = "Unknown"
         if corr.lower() == 'slope':
             self.correctSlope()
         elif corr.lower() == 'lines':
             self.correctLines()
         elif corr.lower() == 'plane':
             self.correctPlane()
-
+        
     def addScale(self, length, ax=None, height=20, color='w', loc=4, text=True, fontsize=20):
         import matplotlib.patches
         L = length*self.size['pixels']['x']/self.size['real']['x']
