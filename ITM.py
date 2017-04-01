@@ -17,27 +17,34 @@ class ITM:
         self.Type = self.f.read(8)
         assert self.Type == b'ITStrF01'
         self.root = Block.Block(self.f)
-
-    def getSize(self):
-        """
-        Return a dict of the size of the image
-        """
-        d=self.root.goto('LateralShiftCorrection').dictList()
-        return {
-            'pixels':{
-                'X':d[b'ImageStack.Raster.Resolution.X']['long'],
-                'Y':d[b'ImageStack.Raster.Resolution.Y']['long']},
-            'real':{
-                'X':d[b'ImageStack.FieldOfView.X']['float'],
-                'Y':d[b'ImageStack.FieldOfView.Y']['float']},
-            'Scans':d[b'ImageStack.NumberOfShiftCoordinates']['long']}
-
+        d = self.root.goto('Meta/SI Image').dictList()
+        self.size = {\
+            'pixels':{\
+                'x':d[b'res_x']['long'],\
+                'y':d[b'res_y']['long']},\
+            'real':{\
+                'x':d[b'fieldofview']['float'],\
+                'y':d[b'fieldofview']['float'],\
+                'unit':'m'},\
+            'Scans':self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfScans').getULong()}
+            
+        R = [z for z in self.root.goto('MassIntervalList').getList() if z['name'].decode() == 'mi']
+        N = len(R)
+        self.peaks = {}
+        for x in R:
+            try:
+                X = self.root.goto('MassIntervalList/mi['+str(x['id'])+']')
+                d = X.dictList()
+                self.peaks[d[b'id']['long']] = d
+            except ValueError:
+                pass
+                
     def getIntensity(self):
             """
             Retieve the total Ion image
             """
             S = self.getSize()
-            X,Y = S['pixels']['X'],S['pixels']['Y']
+            X,Y = S['pixels']['x'],S['pixels']['y']
             return np.array(struct.unpack('<'+str(X*Y)+'I',zlib.decompress(self.root.goto('Meta/SI Image/intensdata').value))).reshape((Y,X))
 
     def getValues(self, pb=False):
@@ -114,7 +121,7 @@ class ITM:
         if log:
             S = np.log(S)
         ax.plot(M, S)
-        self.getMassInt()
+        self.get_masses()
         
         for P in self.peaks:
             p = self.peaks[P]
@@ -126,29 +133,36 @@ class ITM:
                 ax.fill_between(m[mask], *ax.get_ylim(), color='red', alpha=.2)
                 ax.annotate(p[b'assign']['utf16'], (m[i],ax.get_ylim()[1]), (2, -10), va='top', textcoords='offset points')
             
-    def getMassInt(self):
+    def get_masses(self, mass_list=None):
         """
         retrieve the peak list as a dictionnary
         """
-        R = [z for z in self.root.goto('MassIntervalList').getList() if z['name'].decode() == 'mi']
-        N = len(R)
-        self.peaks = {}
-        for x in R:
-            try:
-                X = self.root.goto('MassIntervalList/mi['+str(x['id'])+']')
-                d = X.dictList()
-                self.peaks[d[b'id']['long']] = d
-            except ValueError:
-                pass
+        if mass_list is None:
+            masses = self.peaks
+        else:
+            masses = mass_list
+        result = []
+        for P in masses:
+            if mass_list is None:
+                p = self.peaks[P]
+            else:
+                p = P
+            result.append({\
+                'id':p[b'id']['long'],\
+                'desc':p[b'desc']['utf16'],\
+                'assign':p[b'assign']['utf16'],\
+                'lmass':p[b'lmass']['float'],\
+                'cmass':p[b'cmass']['float'],\
+                'umass':p[b'umass']['float']})
+        return result
                 
-    def showMassInt(self):
+    def show_masses(self, mass_list=None):
         """
         Display the peak list (assignment name with lower, center and upper mass)
         """
-        self.getMassInt()
-        for P in self.peaks:
-            p = self.peaks[P]
-            print(p[b'id']['long'], p[b'desc']['utf16'], p[b'assign']['utf16'], p[b'lmass']['float'], p[b'cmass']['float'], p[b'umass']['float'])
+        for m in self.get_masses():
+            if mass_list is None or m['id'] in [z['id'] for z in mass_list]:
+                print("{id}: ({desc}) [{assign}] {lmass:.2f}u - {umass:.2f}u (center: {cmass:.2f}u)".format(**m))
             
     def showStage(self, ax = None, markers=False):
         """

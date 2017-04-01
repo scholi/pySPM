@@ -6,6 +6,7 @@ import struct
 import re
 import numpy as np
 import pySPM
+import warnings
 
 class Bruker:
     """
@@ -48,7 +49,17 @@ class Bruker:
             struct.unpack("<"+str(length)+"h", self.file.read(length*2)), \
             dtype='float64').reshape((cols, rows))
 
-    def load_image(self, channel, backward=False):
+    def load_image(self, channel="Height Sensor", backward=False, corr=None):
+        warnings.warn("Deprecated. Please use get_image() instead.", DeprecationWarning)
+        return self.get_channel(channel,backward,corr=corr)
+    
+    def list_channels(self):
+        print("Channels")
+        print("========")
+        for x in [z[b'@2:Image Data'][0] for z in self.layers]:
+            print("\t"+x.decode('utf8'))
+        
+    def get_channel(self, channel="Height Sensor", backward=False, corr=None):
         """
         Load the SPM image contained in a channel
         """
@@ -77,9 +88,10 @@ class Bruker:
                         'unit':scan_size[2].decode('utf8')}
                     image = pySPM.SPM_image( \
                           channel=channel, \
-                          backward=backward, \
                           BIN=data, \
                           real=size, \
                           _type='Bruker AFM', \
-                          zscale=zscale.decode('utf8'))
+                          zscale=zscale.decode('utf8'), \
+                          corr=corr)
                     return image
+

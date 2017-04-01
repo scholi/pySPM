@@ -55,7 +55,7 @@ class SPM_image:
     Main class to handle SPM images
     """
     def __init__(self, BIN, channel='Topography', \
-        corr='none', real=None, zscale='?', _type='Unknown'):
+        corr=None, real=None, zscale='?', _type='Unknown'):
         self.channel = channel
         self.direction = 'Unknown'
         self.size = {'pixels':{'x':BIN.shape[1], 'y':BIN.shape[0]}}
@@ -65,12 +65,13 @@ class SPM_image:
             self.size['real'] = {'unit':'pixels', 'x':BIN.shape[1], 'y':BIN.shape[0]}
         self.pixels = BIN
         self.type = _type
-        if corr.lower() == 'slope':
-            self.correctSlope()
-        elif corr.lower() == 'lines':
-            self.correctLines()
-        elif corr.lower() == 'plane':
-            self.correctPlane()
+        if corr is not None:
+            if corr.lower() == 'slope':
+                self.correct_slope()
+            elif corr.lower() == 'lines':
+                self.correct_lines()
+            elif corr.lower() == 'plane':
+                self.correct_plane()
 
     def addScale(self, length, ax=None, height=20, color='w', loc=4, text=True, fontsize=20):
         import matplotlib.patches
@@ -128,30 +129,50 @@ class SPM_image:
                         V[i] += Z
         return Y, V/width
 
-    def correctMedianDiff(self):
+    def correct_median_diff(self, inline=True):
         N = self.pixels
         N2 = np.vstack([N[1:,:], N[-1:,:]])-N # Difference of the pixel between two consecutive row
         C = np.cumsum(np.median(N2, axis=1)) # Take the median of the difference and cumsum them
         D = np.tile(C, (N.shape[0],1)).T     # Extend the vector to a matrix (row copy)
-        self.pixels = N-D
+        if inline:
+            self.pixels = N-D
+        else:
+            New = copy.deepcopy(self)
+            New.pixels = N-D
+            return New
                     
-    def correctSlope(self):
+    def correct_slope(self, inline=True):
         s = np.mean(self.pixels, axis=1)
         i = np.arange(len(s))
         fit = np.polyfit(i, s, 1)
-        self.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
+        if inline:
+            self.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
+        else:
+            New = copy.deepcopy(self)
+            New.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
+            return New
 
-    def correctPlane(self):
+    def correct_plane(self, inline=True):
         x = np.arange(self.pixels.shape[1])
         y = np.arange(self.pixels.shape[0])
         X, Y = np.meshgrid(x, y)
         Z = self.pixels
         A = np.column_stack((np.ones(Z.ravel().size), X.ravel(), Y.ravel()))
         c, resid, rank, sigma = np.linalg.lstsq(A, Z.ravel())
-        self.pixels -= c[0]*np.ones(self.pixels.shape) + c[1] * X + c[2] * Y
+        if inline:
+            self.pixels -= c[0]*np.ones(self.pixels.shape) + c[1] * X + c[2] * Y
+        else:
+            New = copy.deepcopy(self)
+            New.pixels -= c[0]*np.ones(self.pixels.shape) + c[1] * X + c[2] * Y
+            return New
 
-    def correctLines(self):
-        self.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0],1)).T
+    def correct_lines(self, inline=True):
+        if inline:
+            self.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0],1)).T
+        else:
+            New = copy.deepcopy(self)
+            New.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0],1)).T
+            return New
 
     def dist_v2(self, pixel=False):
         if pixel:
@@ -191,12 +212,14 @@ class SPM_image:
         return (0, W, 0, H)
 
     def show(self, ax=None, sig = None, cmap=None, title=None, \
-        adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, **kargs):
+        adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, wrap=None, **kargs):
         mpl.rc('axes',grid=False)
         if ax is None:
             fig, ax = plt.subplots(1, 1)
         if title == None:
             title = u"{0} - {1}".format(self.type, self.channel)
+        if wrap is not None:
+            title = "\n".join([title[i*wrap:(i+1)*wrap] for i in range(int(len(title)/wrap)+1)])
         unit = self.size['real']['unit']
         sunit = 'afpnum kMGTPE'
         if len(unit) == 1 or unit in ['pixels']:
@@ -441,7 +464,7 @@ class SPM_image:
         self.size['recorded']['pixels']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
         self.size['recorded']['pixels']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
         
-    def filterScarsRemoval(self, thresh=.5, inline=True):
+    def filter_scars_removal(self, thresh=.5, inline=True):
         if not inline:
             C = copy.deepcopy(self)
         else:

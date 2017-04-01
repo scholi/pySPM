@@ -73,7 +73,7 @@ class Nanoscan():
         else:
             raise TypeError("Unknown or wrong data type. Expecting a valid Nanoscan xml")
         
-    def get_channel(self, channel='Topography', backward=False):
+    def get_channel(self, channel='Topography', backward=False, corr=None):
         try:
             RAW = self.__grab("spm:vector//spm:direction/spm:vector/spm:contents" \
                 "/spm:name[spm:v='{direction}']/../spm:channel//spm:contents/spm:name[spm:v='{channel}']" \
@@ -93,7 +93,7 @@ class Nanoscan():
 
         image_array = np.array(struct.unpack("<%if"%(recorded_length),BIN)).reshape( \
                 (py,self.pixel_size[0]))
-        return SPM_image(image_array, channel=channel, _type=self.type, real=recorded_size)
+        return SPM_image(image_array, channel=channel, _type=self.type, real=recorded_size, corr=corr)
         
     def __grab(self, path):
         result = [z.text for z in self.root.findall(path,self.namespaces)]
