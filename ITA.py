@@ -159,12 +159,19 @@ class ITA(ITM.ITM):
         if prog:
             from tqdm import tqdm
             scans = tqdm(scans)
+        channels=[]
         for s in scans:
             assert s >= 0 and s < self.Nscan
             for m in masses:
                 ch = self.getChannelByMass(m)
+                m = self.get_masses()[ch]
+                if m['assign'] != '':
+                    channels.append(m['assign'])
+                else:
+                    channels.append("{cmass:.2f}u".format(m['cmass']))
                 Z += self.getImage(ch, s, **kargs)
-        return self.image(Z,channel="Masses: "+",".join([str(z) for z in masses]))
+              
+        return self.image(Z,channel="Masses: "+",".join(channels))
         
     def image(self, I, channel="Unknown"):
         return SPM_image(I,real=self.size['real'],_type="TOF",channel=channel)
@@ -173,10 +180,16 @@ class ITA(ITM.ITM):
         if type(masses) is int or type(masses) is float:
             masses = [masses]
         Z = np.zeros((self.sy, self.sx))
+        channels=[]
         for m in masses:
             ch = self.getChannelByMass(m)
+            m = self.get_masses()[ch]
+            if m['assign'] != '':
+                channels.append(m['assign'])
+            else:
+                channels.append("{cmass:.2f}u".format(m['cmass']))
             Z += self.getAddedImage(ch, **kargs)
-        return self.image(Z,channel="Masses: "+",".join([str(m) for m in masses]))
+        return self.image(Z,channel=",".join(channels))
         
     def getAddedImage(self, channel, **kargs):
         assert type(channel) is int
@@ -224,16 +237,20 @@ class ITA(ITM.ITM):
         return V
 
 class ITA_collection(Collection):
-    def __init__(self, filename, channels1 ,channels2=None, name=None, mass=False, strict=False):
+    def __init__(self, filename, channels1=None ,channels2=None, name=None, mass=False, strict=False):
         self.ita = ITA(filename)
         self.filename = filename
-        self.P = None
+        self.PCA = None
         if name is None:
             name = os.path.basename(filename)
         self.name = name
         Collection.__init__(self, sx=self.ita.fov, sy=self.ita.fov*self.ita.sy/self.ita.sx,\
             unit='m', name=name)
         self.msg = ""
+        if channels1 is None:
+            mass = True
+            masses = self.ita.get_masses()
+            channels1 = [x['cmass'] for x in masses if x['id'] > 1]
         CHS = [channels1]
         if channels2 is not None:
             CHS.append(channels2)
@@ -243,7 +260,15 @@ class ITA_collection(Collection):
             if type(channels) is list:
                 for x in channels:
                     if mass:
-                        self.add(self.ita.getAddedImageByMass(utils.Elts[x]), x)
+                        try:
+                            I = self.ita.getAddedImageByMass(x)
+                            m = masses[2+channels1.index(x)]
+                            if m['assign'] != '':
+                                self.add(I, m['assign'])
+                            else:
+                                self.add(I, "{cmass:.2f}u".format(cmass=x))
+                        except:
+                            pass
                     else:
                         Z, ch = self.ita.getAddedImageByName(x, strict)
                         self.msg += "{0}\n".format(x)
@@ -266,25 +291,28 @@ class ITA_collection(Collection):
                         self.add(Z, x)
             else:
                 raise TypeError("Channels should be a list or a dictionnary. Got {}".format(type(channels)))
+
     def __getitem__(self, key):
         if key not in self.channels:
             return None
         return self.channels[key]
         
-    def getPCA(self, channels=None):
+    def runPCA(self, channels=None):
         if channels is None:
             channels = self.channels.keys()
-        self.P = PCA.ITA_PCA(self, channels)
+        self.PCA = PCA.ITA_PCA(self, channels)
     
-    def showPCA(self, **kargs):
-        if self.P is None:
-            self.getPCA()
-        self.P.showPCA(**kargs)
+    def showPCA(self, num=None, **kargs):
+        if self.PCA is None:
+            self.runPCA()
+        self.PCA.showPCA(num=num,**kargs)
     
-    def loadings(self):
-        if self.P is None:
-            self.getPCA()
-        return self.P.loadings()
+    def loadings(self, num=None):
+        if self.PCA is None:
+            self.runPCA()
+        if num is None:
+            return self.PCA.loadings()
+        return self.PCA.loadings()[:num]
         
     def StitchCorrection(self, channel, stitches):
         N = ITA_collection(self.filename, [], name=self.name)

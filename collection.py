@@ -72,7 +72,7 @@ class Collection:
     def __setitem__(self, key, value):
         self.add(value, key)
 
-    def show(self, ax=None, channels=None, cmap='hot', **kargs):
+    def show(self, ax=None, channels=None, cmap='hot', ncols=3, **kargs):
         """
         Display the images of the collection in a matplotlib plot.
 
@@ -86,6 +86,7 @@ class Collection:
         if channels is None:
             channels = list(self.channels.keys())
         channels_number = len(channels)
+        assert channels_number > 0
         channels.sort(key=natural_keys)
         if ax is None:
             if channels_number == 4:
@@ -93,8 +94,12 @@ class Collection:
                     self[channels[0]].pixels.shape[0]*20 \
                     / self[channels[0]].pixels.shape[1]))
             else:
-                fig, ax = plt.subplots((channels_number-1)//3+1, min(3, channels_number), \
-                    figsize=(20, ((channels_number-1)//3+1)*20/min(3, channels_number)))
+                Ny = (channels_number-1)//ncols+1
+                Nx = min(ncols, channels_number)
+                fig, ax = plt.subplots(Ny, Nx, \
+                    figsize=(20, ((channels_number-1)//ncols+1)*20/Nx))
+        if type(ax) is not list:
+            ax = np.array(ax)
         for i, x in enumerate(channels):
             self[x].show(ax=ax.ravel()[i], cmap=cmap, **kargs)
         plt.tight_layout()
@@ -109,7 +114,10 @@ class Collection:
         import pandas as pd
         if channels is None:
             channels = self.channels.keys()
-        data = pd.DataFrame({k:self.channels[k].ravel() for k in channels})
+        if isinstance(list(self.channels.values())[0],SPM_image):
+            data = pd.DataFrame({k:self.channels[k].pixels.ravel() for k in channels})
+        else:
+            data = pd.DataFrame({k:self.channels[k].ravel() for k in channels})
         return data
 
     def overlay(self, channel_names, colors=[[0, .5, .3], [1, 0, 0]], ax=None, \
