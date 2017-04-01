@@ -5,7 +5,7 @@ from skimage import transform as tf
 
 
 class Aligner:
-    def __init__(self, fixed, other):
+    def __init__(self, fixed, other, prog=True):
         self.fixed = fixed
         self.other = other
         self.size  = fixed.shape
@@ -17,10 +17,26 @@ class Aligner:
         self.initIDX = self.getMatchingIndex()
         
         # Compute the correlation to find the best shift as first guess
+        if prog:
+            print("Progress [1/4] Improve Shift...",end='\r')
         self.ImproveShift()
+        if prog:
+            print("Progress [2/6] Improve Scale X...",end='\r')
         self.ImproveScaleX()
+        if prog:
+            print("Progress [3/6] Improve Scale Y...",end='\r')
+        self.ImproveScaleY()
+        if prog:
+            print("Progress [4/6] Improve Rotation...",end='\r')
         self.ImproveRotation()
+        if prog:
+            print("Progress [5/6] Improve Scale X...",end='\r')
         self.ImproveScaleX()
+        if prog:
+            print("Progress [6/6] Improve Scale Y...",end='\r')
+        self.ImproveScaleY()
+        if prog:
+            print("",end='\r')
 
     def ImproveShift(self):
         tform = tf.AffineTransform(scale=self.scale, rotation=self.rotation, translation=(0, 0))
@@ -54,11 +70,12 @@ class Aligner:
         elif count <= 11:
             self.ImproveScaleX(fact, count+1)
 
-    def ImproveRotation(self, delta=.1):
+    def ImproveRotation(self, delta=.1, count=0, prog=False):
         IDX1 = self.getMatchingIndex()
         IDX2 = IDX1
-        count = 0
         init = self.rotation
+        if prog:
+            print("Progress [{i}/4] Improve Rotation. Passes: {count} (max 11)".format(i=prog,count=count+1),end='\r')
         while IDX2 <= IDX1:
             IDX1 = IDX2
             count += 1
@@ -67,9 +84,9 @@ class Aligner:
             IDX2 = self.getMatchingIndex()
         self.rotation -= delta
         if delta > 0:
-            self.ImproveRotation(-delta)
+            self.ImproveRotation(-delta, count=count+1)
         elif abs(delta) > 1e-5:
-            self.ImproveRotation(abs(delta)/10.)
+            self.ImproveRotation(abs(delta)/10., count=count+1)
 
     def ImproveScaleY(self, fact=.1, count=0):
         old = self.scale
