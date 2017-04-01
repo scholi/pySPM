@@ -128,18 +128,6 @@ class SPM_image:
                         V[i] += Z
         return Y, V/width
 
-    def getSummary(self):
-        x = funit(self.size['real']['x'], self.size['real']['unit'])
-        y = funit(self.size['real']['y'], self.size['real']['unit'])
-        P = funit(self.feedback['P'])
-        I = funit(self.feedback['I'])
-        return u"""Feedback: {feedback[channel]} : P:{P[value]}{P[unit]} : I:{I[value]}{I[unit]}
-Size: {size[pixels][x]}×{size[pixels][y]} pixels = {x[value]:.3} {x[unit]}×{y[value]:.3} {y[unit]}
-Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(\
-            x=x, y=y, P=P, I=I, \
-            feedback=self.feedback, size=self.size, \
-            scanSpeed=self.scanSpeed)
-
     def correctMedianDiff(self):
         N = self.pixels
         N2 = np.vstack([N[1:,:], N[-1:,:]])-N # Difference of the pixel between two consecutive row

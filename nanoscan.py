@@ -57,6 +57,21 @@ class Nanoscan():
                 'unit':x['unit'], \
                 'x':x['value'], \
                 'y':y['value']}
+            self.feedback = {'channel':self.__grab('{0}/spm:z_feedback_channel/spm:v'.format(self.fbPath))}
+            self.feedback['P'] = {\
+                'value':float(self.__grab('{0}/spm:proportional_z_gain/spm:v'.format(self.fbPath))),\
+                'unit':self.__grab('{0}/spm:proportional_z_gain_unit/spm:v'.format(self.fbPath))}
+            self.feedback['I'] = {\
+                'value':float(self.__grab('{0}/spm:integral_z_time/spm:v'.format(self.fbPath))),\
+                'unit':self.__grab('{0}/spm:integral_z_time_unit/spm:v'.format(self.fbPath))}
+            if self.feedback['channel'] == 'df':
+                self.feedback['channel'] = u'?f'
+            self.scan_speed = {\
+                z:{\
+                    'value':float(self.__grab("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{dir}']/../spm:point_interval/spm:v".format(dir=z))) * self.pixel_size[0], \
+                    'unit': self.__grab("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{dir}']/../spm:point_interval_unit/spm:v".format(dir=z))} for z in ['forward','backward']}
+        else:
+            raise TypeError("Unknown or wrong data type. Expecting a valid Nanoscan xml")
         
     def get_channel(self, channel='Topography', backward=False):
         try:
@@ -86,25 +101,14 @@ class Nanoscan():
             result = result[0]
         return result
         
-    def get_scanspeed(self):
-        print(self.direction,self.namespaces)
-        return {'value':float(self.root.findall("spm:vector//spm:direction/spm:vector/" \
-                    "spm:contents/spm:name[spm:v='%s']/../spm:point_interval/spm:v"%(self.direction), self.namespaces)[0].text) * self.size['pixels']['x'], \
-                'unit': self.root.findall("spm:vector//spm:direction/spm:vector/" \
-                    "spm:contents/spm:name[spm:v='%s']/../spm:point_interval_unit/spm:v"%(self.direction), self.namespaces)[0].text}
-
-    def get_feedback(self):
-            self.feedback = {'channel':\
-                self.root.findall('{0}/spm:z_feedback_channel/spm:v'.format(self.fbPath), namespaces)[0].text}
-            self.feedback['P'] = {\
-                'value':float(self.root.findall('{0}/spm:proportional_z_gain/spm:v'\
-                    .format(self.fbPath), self.namespaces)[0].text),
-                'unit':self.root.findall('{0}/spm:proportional_z_gain_unit/spm:v'\
-                    .format(self.fbPath), self.namespaces)[0].text}
-            self.feedback['I'] = {\
-                'value':float(self.root.findall('{0}/spm:integral_z_time/spm:v'\
-                    .format(fbPath), self.namespaces)[0].text),
-                'unit':self.root.findall('{0}/spm:integral_z_time_unit/spm:v'\
-                    .format(fbPath), self.namespaces)[0].text}
-            if self.feedback['channel'] == 'df':
-                self.feedback['channel'] = u'?f'
+    def getSummary(self):
+        x = funit(self.size['x'], self.size['unit'])
+        y = funit(self.size['y'], self.size['unit'])
+        P = funit(self.feedback['P'])
+        I = funit(self.feedback['I'])
+        return u"""Feedback: {feedback[channel]} : P:{P[value]}{P[unit]} : I:{I[value]}{I[unit]}
+Size: {pixel_size[0]}×{pixel_size[1]} pixels = {x[value]:.3} {x[unit]}×{y[value]:.3} {y[unit]}
+Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(\
+            x=x, y=y, P=P, I=I, \
+            feedback=self.feedback, pixel_size=self.pixel_size,size=self.size, \
+            scanSpeed=self.scan_speed['forward'])
