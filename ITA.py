@@ -168,7 +168,7 @@ class ITA(ITM.ITM):
                 if m['assign'] != '':
                     channels.append(m['assign'])
                 else:
-                    channels.append("{cmass:.2f}u".format(m['cmass']))
+                    channels.append("{cmass:.2f}u".format(**m))
                 Z += self.getImage(ch, s, **kargs)
               
         return self.image(Z,channel="Masses: "+",".join(channels))
@@ -187,7 +187,7 @@ class ITA(ITM.ITM):
             if m['assign'] != '':
                 channels.append(m['assign'])
             else:
-                channels.append("{cmass:.2f}u".format(m['cmass']))
+                channels.append("{cmass:.2f}u".format(**m))
             Z += self.getAddedImage(ch, **kargs)
         return self.image(Z,channel=",".join(channels))
         
