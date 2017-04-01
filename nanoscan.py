@@ -31,8 +31,8 @@ def getCurve(filename, channel='Normal Deflection', backward=False):
     x = np.linspace(start, stop, len(vals))
     return x, vals
 
-class Nanoscan(SPM_image):    
-    def __init__(self, filename=None, channel='Topography', backward=False, **kargs):
+class Nanoscan():       
+    def __init__(self, filename=None):
         if not os.path.exists(filename):
             raise IOError('File "{0}" Not Found'.format(filename))
         if filename[-4:] != '.xml':
@@ -42,73 +42,49 @@ class Nanoscan(SPM_image):
         self.root = tree.getroot()
         
         if self.root.tag == "{http://www.nanoscan.ch/SPM}scan":
-            namespaces = {'spm':"http://www.nanoscan.ch/SPM"}
-            _type = "Nanoscan"
-            try:
-                RAW = self.root.findall("spm:vector//spm:direction/spm:vector/spm:contents" \
-                    "/spm:name[spm:v='%s']/../spm:channel//spm:contents/spm:name[spm:v='%s']" \
-                    "/../spm:data/spm:v"%(["forward", "backward"][backward], channel), \
-                    namespaces)[0].text
-            except:
-                raise 'Channel {0} in {1} scan not found'.format(channel, direction)
-                return
-            pixel_size = [int(z.text) for z in self.root.findall("spm:vector/spm:contents/spm:size/spm:contents//spm:v", namespaces)]
+            self.namespaces = {'spm':"http://www.nanoscan.ch/SPM"}
+            self.type = "Nanoscan"
             self.fbPath = "spm:vector/spm:contents/spm:instrumental_parameters/spm:contents/spm:z_control/spm:contents"
-            
-            uval = float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:fast_axis/spm:v",namespaces)[0].text)
-            udispu = self.root.findall(".//spm:area//spm:contents/spm:display_unit/spm:v",namespaces)[0].text
-            udisps = float(self.root.findall(".//spm:area/spm:contents/spm:display_scale/spm:v",namespaces)[0].text)
-            uname = self.root.findall(".//spm:area/spm:contents/spm:unit/spm:v",namespaces)[0].text
+            self.pixel_size = [int(z) for z in self.__grab("spm:vector/spm:contents/spm:size/spm:contents//spm:v")]
+            uval = float(self.__grab(".//spm:area//spm:contents/spm:size/spm:contents/spm:fast_axis/spm:v"))
+            udispu = self.__grab(".//spm:area//spm:contents/spm:display_unit/spm:v")
+            udisps = float(self.__grab(".//spm:area/spm:contents/spm:display_scale/spm:v"))
+            uname = self.__grab(".//spm:area/spm:contents/spm:unit/spm:v")
             x = funit(uval*udisps, udispu)
-            uval = float(self.root.findall(".//spm:area//spm:contents/spm:size/spm:contents/spm:slow_axis/spm:v",namespaces)[0].text)
+            uval = float(self.__grab(".//spm:area//spm:contents/spm:size/spm:contents/spm:slow_axis/spm:v"))
             y = funit(uval*udisps, udispu)
-          
-            BIN = base64.b64decode(RAW)
-            recorded_size = len(BIN)/4
-            size = {'pixels':{ \
-                'x':pixel_size[0], \
-                'y':pixel_size[1] \
-            },'real':{ \
+            self.size = {\
                 'unit':x['unit'], \
                 'x':x['value'], \
-                'y':y['value'], \
-            }}
-            size['recorded'] = {\
-                'pixels':{\
-                    'y':int(recorded_size/pixel_size[0]),\
-                    'x':pixel_size[0]}}
-            size['recorded']['real'] = { \
-                'x':size['real']['x'], \
-                'y':size['real']['y']*size['recorded']['pixels']['y']/float(size['pixels']['y'])}
+                'y':y['value']}
+        
+    def get_channel(self, channel='Topography', backward=False):
+        try:
+            RAW = self.__grab("spm:vector//spm:direction/spm:vector/spm:contents" \
+                "/spm:name[spm:v='{direction}']/../spm:channel//spm:contents/spm:name[spm:v='{channel}']" \
+                "/../spm:data/spm:v".format(direction=["forward", "backward"][backward], channel=channel))
+        except:
+            raise 'Channel {0} in {1} scan not found'.format(channel, direction)
+            return None    
 
-            image_array = np.array(struct.unpack("<%if"%(recorded_size),BIN)).reshape( \
-                (size['recorded']['pixels']['y'],size['recorded']['pixels']['x']))
-            
-        elif self.root.tag == "channel_list": # ToF-SIMS data (old and no more used. Kept for old script compatibility)
-            _type = "ToF-SIMS (xml)"
-            channel = "Counts"
-            x   = int(self.root.findall("./channel/axis[name='x']/count")[0].text)
-            y   = int(self.root.findall("./channel/axis[name='y']/count")[0].text)
-            RAW = self.root.findall("./channel/pixels")[0].text
-            BIN = base64.b64decode(RAW)
-            image_array = np.array(struct.unpack("<%if"%(x*y),BIN)).reshape(x, y)
-            size = {
-                'pixels':{ \
-                    'x':x, \
-                    'y':y \
-                }, 'real':{ \
-                    'unit':'m', \
-                    'x':float(self.root.findall("./channel/axis[name='x']/variable/extent")[0].text), \
-                    'y':float(self.root.findall("./channel/axis[name='y']/variable/extent")[0].text)}, \
-                'recorded':{'real':{ \
-                    'unit':'m', \
-                    'x':float(self.root.findall("./channel/axis[name='x']/variable/extent")[0].text), \
-                    'y':float(self.root.findall("./channel/axis[name='y']/variable/extent")[0].text)}}}
-        SPM_image.__init__(self, image_array, channel=channel, **kargs)
-        self.type = _type
-        self.size = size
-        self.direction = ['forward', 'backward'][backward]
-        self.namespaces = namespaces
+        BIN = base64.b64decode(RAW)
+        recorded_length = len(BIN)/4
+        
+        py = int(recorded_length/self.pixel_size[0])
+        recorded_size={\
+                    'x':self.size['x'], \
+                    'y':self.size['y']*py/float(self.pixel_size[1]),\
+                    'unit':self.size['unit']}
+
+        image_array = np.array(struct.unpack("<%if"%(recorded_length),BIN)).reshape( \
+                (py,self.pixel_size[0]))
+        return SPM_image(image_array, channel=channel, _type=self.type, real=recorded_size)
+        
+    def __grab(self, path):
+        result = [z.text for z in self.root.findall(path,self.namespaces)]
+        if len(result) == 1:
+            result = result[0]
+        return result
         
     def get_scanspeed(self):
         print(self.direction,self.namespaces)

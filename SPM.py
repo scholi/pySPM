@@ -63,7 +63,6 @@ class SPM_image:
             self.size['real'] = real
         else:
             self.size['real'] = {'unit':'pixels', 'x':BIN.shape[1], 'y':BIN.shape[0]}
-            self.size['recorded'] = {'pixels':self.size['pixels'], 'real':self.size['real']}
         self.pixels = BIN
         self.type = _type
         if corr.lower() == 'slope':
@@ -72,7 +71,7 @@ class SPM_image:
             self.correctLines()
         elif corr.lower() == 'plane':
             self.correctPlane()
-        
+
     def addScale(self, length, ax=None, height=20, color='w', loc=4, text=True, fontsize=20):
         import matplotlib.patches
         L = length*self.size['pixels']['x']/self.size['real']['x']
@@ -219,10 +218,8 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(\
             unit = unit[1:]
         else:
             isunit = 6
-        if 'recorded' not in self.size:
-            self.size['recorded'] = self.size
-        W = self.size['recorded']['real']['x']
-        H = self.size['recorded']['real']['y']
+        W = self.size['real']['x']
+        H = self.size['real']['y']
         fact = int(np.floor(np.log(W)/np.log(10)/3))
         isunit += fact
         W, H = W/10**(fact*3), H/10**(fact*3)
