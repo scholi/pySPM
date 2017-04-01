@@ -55,8 +55,11 @@ class Collection:
         """
 
         if len(self.channels) == 0 and self.size['unit'] == 'px':
-            self.size['x'] = len(Img[0])
-            self.size['y'] = len(Img)
+            if isinstance(Img, SPM_image):
+                self.size = {'x':Img.pixels.shape[1],'y':Img.pixels.shape[0]}
+            else:
+                self.size['x'] = len(Img[0])
+                self.size['y'] = len(Img)
         if name in self.channels:
             raise KeyError('The channel {} is already present in ' \
                 'the collection. Please delete it before')
@@ -65,9 +68,9 @@ class Collection:
 
     def __getitem__(self, key):
         if key not in self.channels: return None
-        if isinstance(type(self.channels[key]), SPM_image):
+        if isinstance(self.channels[key], SPM_image):
             return self.channels[key]
-        return SPM_image(_type=self.name, BIN=self.channels[key], real=self.size, channel=key)
+        return SPM_image(self.channels[key],_type=self.name, real=self.size, channel=key)
 
     def __setitem__(self, key, value):
         self.add(value, key)

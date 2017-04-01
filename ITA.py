@@ -76,8 +76,9 @@ class ITA(ITM.ITM):
                 ID = ch[b'id']['long']
                 Z += self.getImage(ID, s, **kargs)
         if raw:
-            return Z, self.get_masses(channels)
-        return self.image(np.flipud(Z),channel=",".join([z['assign'] for z in ch])), self.get_masses(channels)
+            return Z, channels
+        channel_title = ",".join([z[b'assign']['utf16'] for z in channels])
+        return self.image(np.flipud(Z),channel=channel_title), channels
 
     def show(self, ax=None):
         """
@@ -293,8 +294,8 @@ class ITA_collection(Collection):
                         self.msg += "{0}\n".format(x)
                         for z in ch:
                             self.msg += "\t{name} ({desc}), mass: {lower:.2f} - {upper:.2f}\n"\
-                                .format(desc=z[b'desc']['utf16'], name=z[b'assign']['utf16'],\
-                                lower=z[b'lmass']['float'], upper=z[b'umass']['float'])
+                                .format(desc=z['desc'], name=z['assign'],\
+                                lower=z['lmass'], upper=z['umass'])
                         self.add(Z, x)
             else:
                 raise TypeError("Channels should be a list or a dictionnary. Got {}".format(type(channels)))
@@ -322,17 +323,19 @@ class ITA_collection(Collection):
         return self.PCA.loadings()[:num]
         
     def StitchCorrection(self, channel, stitches):
-        N = ITA_collection(self.filename, [], name=self.name)
-        size = list(self.channels.values())[0].shape
+        N = ITA_collection(self.filename,[], name=self.name)
+        size = list(self.channels.values())[0].pixels.shape
         S = np.zeros((int(size[0]/stitches[0]), int(size[1]/stitches[1])))
         for i in range(stitches[0]):
             for j in range(stitches[1]):
-                S += self.channels[channel][128*i:128*(i+1), 128*j:128*(j+1)]
+                S += self.channels[channel].pixels[128*i:128*(i+1), 128*j:128*(j+1)]
         S[S == 0] = 1
         for x in self.channels:
             F = np.zeros(size)
             for i in range(stitches[0]):
                 for j in range(stitches[1]):
-                    F[128*i:128*(i+1), 128*j:128*(j+1)] = self.channels[x][128*i:128*(i+1), 128*j:128*(j+1)]/S
-            N.add(F, x)
+                    F[128*i:128*(i+1), 128*j:128*(j+1)] = self.channels[x].pixels[128*i:128*(i+1), 128*j:128*(j+1)]/S
+            new_channel = self[x]
+            new_channel.pixels = F
+            N.add(new_channel, x)
         return N
