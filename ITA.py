@@ -61,7 +61,7 @@ class ITA(ITM.ITM):
                 return p[b'id']['long']
         raise ValueError('Mass {:.2f} Not Found'.format(mass))
             
-    def getSumImageByName(self, names, scans=None, strict=False, prog=False, **kargs):
+    def getSumImageByName(self, names, scans=None, strict=False, prog=False, raw=False, **kargs):
         if scans is None:
             scans = range(self.Nscan)
         if type(scans) == int:
@@ -75,7 +75,9 @@ class ITA(ITM.ITM):
             for ch in channels:
                 ID = ch[b'id']['long']
                 Z += self.getImage(ID, s, **kargs)
-        return self.image(Z,channel=",".join([z['assign'] for z in ch])), self.get_masses(channels)
+        if raw:
+            return Z, self.get_masses(channels)
+        return self.image(np.flipud(Z),channel=",".join([z['assign'] for z in ch])), self.get_masses(channels)
 
     def show(self, ax=None):
         """
@@ -128,14 +130,16 @@ class ITA(ITM.ITM):
             out[s, :] = P
         return out
 
-    def getAddedImageByName(self, names, strict=False, **kargs):
+    def getAddedImageByName(self, names, strict=False, raw=False, **kargs):
         Z = np.zeros((self.sy, self.sx))
         channels = self.getChannelsByName(names, strict)
         for ch in channels:
             ID = ch[b'id']['long']
             Z += self.getAddedImage(ID, **kargs)
         ch = self.get_masses(channels)
-        return self.image(Z,channel=",".join([z['assign'] for z in ch])), ch
+        if raw:
+            return Z, ch
+        return self.image(np.flipud(Z),channel=",".join([z['assign'] for z in ch])), ch
 
     def getSavedShift(self):
         """
@@ -148,7 +152,7 @@ class ITA(ITM.ITM):
         dy = D[1::2]
         return list(zip(dx, dy))
     
-    def getSumImageByMass(self, masses, scans=None, prog=False, **kargs):
+    def getSumImageByMass(self, masses, scans=None, prog=False, raw=False, **kargs):
         if scans is None:
             scans = range(self.Nscan)
         if type(scans) is int:
@@ -170,13 +174,14 @@ class ITA(ITM.ITM):
                 else:
                     channels.append("{cmass:.2f}u".format(**m))
                 Z += self.getImage(ch, s, **kargs)
-              
-        return self.image(Z,channel="Masses: "+",".join(channels))
+        if raw:
+            return Z, channels
+        return self.image(np.flipud(Z),channel="Masses: "+",".join(channels))
         
     def image(self, I, channel="Unknown"):
         return SPM_image(I,real=self.size['real'],_type="TOF",channel=channel)
         
-    def getAddedImageByMass(self, masses, **kargs):
+    def getAddedImageByMass(self, masses, raw=False, **kargs):
         if type(masses) is int or type(masses) is float:
             masses = [masses]
         Z = np.zeros((self.sy, self.sx))
@@ -189,7 +194,9 @@ class ITA(ITM.ITM):
             else:
                 channels.append("{cmass:.2f}u".format(**m))
             Z += self.getAddedImage(ch, **kargs)
-        return self.image(Z,channel=",".join(channels))
+        if raw:
+            return Z, channels
+        return self.image(np.flipud(Z),channel=",".join(channels))
         
     def getAddedImage(self, channel, **kargs):
         assert type(channel) is int
