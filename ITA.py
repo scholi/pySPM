@@ -228,8 +228,6 @@ class ITA_collection(Collection):
         self.ita = ITA(filename)
         self.filename = filename
         self.P = None
-        self.channels = {}
-        self.channels = channels1
         if name is None:
             name = os.path.basename(filename)
         self.name = name
@@ -251,8 +249,8 @@ class ITA_collection(Collection):
                         self.msg += "{0}\n".format(x)
                         for z in ch:
                             self.msg += "\t{name} ({desc}), mass: {lower:.2f} - {upper:.2f}\n"\
-                                .format(desc=z[b'desc']['utf16'], name=z[b'assign']['utf16'],\
-                                lower=z[b'lmass']['float'], upper=z[b'umass']['float'])
+                                .format(desc=z['desc'], name=z['assign'],\
+                                lower=z['lmass'], upper=z['umass'])
                         self.add(Z, x)
             elif type(channels) is dict:
                 for x in channels:
@@ -271,7 +269,7 @@ class ITA_collection(Collection):
     def __getitem__(self, key):
         if key not in self.channels:
             return None
-        return SPM_image(_type=self.name, BIN=np.flipud(self.channels[key]), real=self.size, channel=key)
+        return self.channels[key]
         
     def getPCA(self, channels=None):
         if channels is None:

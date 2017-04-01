@@ -65,6 +65,8 @@ class Collection:
 
     def __getitem__(self, key):
         if key not in self.channels: return None
+        if isinstance(type(self.channels[key]), SPM_image):
+            return self.channels[key]
         return SPM_image(_type=self.name, BIN=self.channels[key], real=self.size, channel=key)
 
     def __setitem__(self, key, value):
