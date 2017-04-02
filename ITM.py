@@ -25,20 +25,25 @@ class ITM:
             'real':{\
                 'x':d[b'fieldofview']['float'],\
                 'y':d[b'fieldofview']['float'],\
-                'unit':'m'},\
-            'Scans':self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfScans').getULong()}
-            
-        R = [z for z in self.root.goto('MassIntervalList').getList() if z['name'].decode() == 'mi']
-        N = len(R)
+                'unit':'m'}}
+        try:
+            self.size['Scans'] = \
+                self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfScans').getULong()
+        except:
+            pass
         self.peaks = {}
-        for x in R:
-            try:
-                X = self.root.goto('MassIntervalList/mi['+str(x['id'])+']')
-                d = X.dictList()
-                self.peaks[d[b'id']['long']] = d
-            except ValueError:
-                pass
-                
+        try:
+            R = [z for z in self.root.goto('MassIntervalList').getList() if z['name'].decode() == 'mi']
+            N = len(R)
+            for x in R:
+                try:
+                    X = self.root.goto('MassIntervalList/mi['+str(x['id'])+']')
+                    d = X.dictList()
+                    self.peaks[d[b'id']['long']] = d
+                except ValueError:
+                    pass
+        except:
+            pass
     def getIntensity(self):
             """
             Retieve the total Ion image
@@ -85,7 +90,7 @@ class ITM:
         return Vals
 
     def showValues(self, pb=False):
-        from pyTOF import GUI
+        from pySPM import GUI
         GUI.ShowValues(self.getValues(pb))
         
     def getSpectrum(self):
