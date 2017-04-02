@@ -268,6 +268,12 @@ class SPM_image:
             vmin = np.percentile(img, 100-kargs['level'])
             vmax = np.percentile(img, kargs['level'])
             del kargs['level']
+        if 'vmin' in kargs:
+            vmin=kargs['vmin']
+            del kargs['vmin']
+        if 'vmax' in kargs:
+            vmax=kargs['vmax']
+            del kargs['vmax']
         if not flip:
             ax.imshow(np.flipud(img), cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
         else:
