@@ -127,7 +127,7 @@ class ITA(ITM.ITM):
             Y = tqdm(Y)
         for s in Y:
             Z = self.getSumImageByMass(masses, s, **kargs)
-            P = scipy.ndimage.map_coordinates(Z, np.vstack((y, x)))
+            P = scipy.ndimage.map_coordinates(Z.pixels, np.vstack((y, x)))
             out[s, :] = P
         return out
 
