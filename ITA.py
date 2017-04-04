@@ -10,17 +10,21 @@ import pickle
 from pySPM.collection import Collection
 from pySPM.SPM import SPM_image
 from pySPM import Block,utils, PCA, ITM
+import warnings
 
 class ITA(ITM.ITM):
     def __init__(self, filename):
         ITM.ITM.__init__(self, filename)
         self.sx = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').getLong()
         self.sy = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize').getLong()
-        self.Nscan = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'\
-            '/ImageStackScans/Image.NumberOfScans').getLong())
-        self.Nimg = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'\
-        '/ImageStackScans/Image.NumberOfImages').getLong())
-        
+        try:
+            self.Nscan = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'\
+                '/ImageStackScans/Image.NumberOfScans').getLong())
+            self.Nimg = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'\
+                '/ImageStackScans/Image.NumberOfImages').getLong())
+        except:
+            raise TypeError("Invalid file format. Maybe the file is corrupted?")
+            
         self.Width = self.root.goto('Meta/SI Image[0]/res_x').getLong()
         self.Height = self.root.goto('Meta/SI Image[0]/res_y').getLong()
         
@@ -29,7 +33,9 @@ class ITA(ITM.ITM):
             data = struct.unpack("<{0}I".format(self.Width*self.Height), RAW)
             self.img = np.array(data).reshape((self.Height, self.Width))
         except:
+            warnings.warn("No SI image found. Skipping it.")
             self.img = None
+            
         self.fov = self.root.goto('Meta/SI Image[0]/fieldofview').getDouble()
 
     def getChannelsByName(self, name, strict=False):
