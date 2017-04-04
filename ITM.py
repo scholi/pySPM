@@ -1,4 +1,4 @@
-from pySPM import Block
+from pySPM import Block, utils
 import numpy as np
 import struct
 import os.path
@@ -50,48 +50,68 @@ class ITM:
             """
             S = self.getSize()
             X,Y = S['pixels']['x'],S['pixels']['y']
-            return np.array(struct.unpack('<'+str(X*Y)+'I',zlib.decompress(self.root.goto('Meta/SI Image/intensdata').value))).reshape((Y,X))
+            return np.array(struct.unpack('<'+str(X*Y)+'I', \
+                zlib.decompress(self.root.goto('Meta/SI Image/intensdata').value))).reshape((Y,X))
 
-    def getValues(self, pb=False):
+    def get_LMIG_info(self):
+        rs = self.getValues(start=True)
+        re = self.getValues()
+        Val = [["Parameter name","Value at start","Value at end"]]
+        for i,x in enumerate(rs):
+            Val.append([x,rs[x],re[x]])
+        
+    def getValues(self, pb=False, start=False, startsWith="", nest=False, hidePrefix=True):
         """
         Beta function: Retieve a list of the values
         """
-        Vals={}
-        List=self.root.goto('propend').getList()
+        Vals = {}
+        List = self.root.goto(['propend', 'propstart'][start]).getList()
         if pb:
             import tqdm
-            List=tqdm.tqdm(List)
+            List = tqdm.tqdm(List)
         for l in List:
-            Node = self.root.goto('propend').gotoItem(l['name'],l['id'])
+            Node = self.root.goto(['propend', 'propstart'][start]).gotoItem(l['name'], l['id'])
             r = Node.getKeyValue(16)
             del Node
-            S=Vals
-            K=r['Key'].split('.')
-            for k in K:
-                if k not in S: S[k]={}
-                S=S[k]
-            S['value']=r['SVal']
+            S = Vals
+            if r['Key'].startswith(startsWith):
+                if hidePrefix:
+                    key_name = r['Key'][len(startsWith):]
+                else:
+                    key_name = r['Key']
+                if nest:
+                    K = key_name.split('.')
+                    for k in K:
+                        if k not in S:
+                            S[k] = {}
+                        S=S[k]
+                    S['value @'+['end','start'][start]] = r['SVal']
+                else:
+                    Vals[key_name] = r['SVal']
         return Vals
-        Data = self.root.goto('rawdata')
-        List=Data.getList()
-        if pb:
-            List=tqdm.tqdm(List)
-        for l in List:
-            if l['name']==b'  20':
-                Node = Data.gotoItem(l['name'],l['id'])
-                r = Node.getKeyValue()
-                del Node
-                S=Vals
-                K=r['Key'].split('.')
-                for k in K:
-                    if k not in S: S[k]={}
-                    S=S[k]
-                S['value']=r['SVal']
-        return Vals
-
-    def showValues(self, pb=False):
-        from pySPM import GUI
-        GUI.ShowValues(self.getValues(pb))
+        
+    def showValues(self, pb=False, gui=False, **kargs):
+        html = True
+        if 'html' in kargs:
+            html = kargs['html']
+            del kargs['html']
+        if gui:
+            from pySPM import GUI
+            Vals = self.getValues(pb, start=True, nest=True, **kargs)
+            Vals = utils.dict_update(Vals, self.getValues(pb, nest=True, **kargs))
+            GUI.ShowValues(Vals)
+        else:
+            Vstart = self.getValues(pb, start=True, **kargs)
+            Vend = self.getValues(pb, **kargs)
+            Table = [["Parameter Name","Value @start","Value @end"]]
+            for x in Vstart:
+                Table.append((x,Vstart[x],Vend[x]))
+            if not html:
+                print(utils.aa_table(Table, header=True))
+            else:
+                from IPython.core.display import display, HTML
+                res = utils.html_table(Table, header=True)
+                display(HTML(res))
         
     def getSpectrum(self):
         """
