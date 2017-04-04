@@ -62,6 +62,8 @@ def dict_update(d, u):
     return d
     
 def fact(x):
+    if x<2:
+        return x
     import math
     f=[]
     i=2

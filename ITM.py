@@ -32,8 +32,7 @@ class ITM:
         except:
             pass
         self.peaks = {}
-        self.values = self.getValues()
-        self.Nscan = self.values['Measurement.ScanNumber'][1]
+        self.Nscan = self.root.goto('propend/Measurement.ScanNumber').getKeyValue(16)['SVal']
         try:
             R = [z for z in self.root.goto('MassIntervalList').getList() if z['name'].decode() == 'mi']
             N = len(R)
@@ -106,7 +105,7 @@ class ITM:
             Vals = self.getValues(pb, nest=True, **kargs)
             GUI.ShowValues(Vals)
         else:
-            Vals = self.values
+            Vals = self.getValues(pb, **kargs)
             Table = [["Parameter Name","Value @start","Value @end"]]
             for x in Vals:
                 Table.append((x,*Vals[x]))
