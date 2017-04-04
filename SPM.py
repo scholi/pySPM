@@ -241,7 +241,7 @@ class SPM_image:
         extent=(0, W, 0, H)
         mi, ma = np.nanmin(self.pixels), np.nanmax(self.pixels)
         if adaptive:
-            img = np.asarray(256*(self.pixels-mi)/(ma-mi), dtype=np.uint8)
+            img = np.asarray(256**2*(self.pixels-mi)/(ma-mi), dtype=np.uint16)
             mi, ma = 0, 1
             img = skimage.exposure.equalize_adapthist(img, clip_limit=0.03)
         else:
