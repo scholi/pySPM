@@ -18,8 +18,8 @@ class ITA(ITM.ITM):
         self.sx = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').getLong()
         self.sy = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize').getLong()
         try:
-            self.Nscan = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'\
-                '/ImageStackScans/Image.NumberOfScans').getLong())
+            #self.Nscan = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'\
+            #    '/ImageStackScans/Image.NumberOfScans').getLong())
             self.Nimg = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'\
                 '/ImageStackScans/Image.NumberOfImages').getLong())
         except:
