@@ -60,34 +60,38 @@ class ITM:
         for i,x in enumerate(rs):
             Val.append([x,rs[x],re[x]])
         
-    def getValues(self, pb=False, start=False, startsWith="", nest=False, hidePrefix=True):
+    def getValues(self, pb=False, startsWith="", nest=False, hidePrefix=True):
         """
         Beta function: Retieve a list of the values
         """
         Vals = {}
-        List = self.root.goto(['propend', 'propstart'][start]).getList()
-        if pb:
-            import tqdm
-            List = tqdm.tqdm(List)
-        for l in List:
-            Node = self.root.goto(['propend', 'propstart'][start]).gotoItem(l['name'], l['id'])
-            r = Node.getKeyValue(16)
-            del Node
-            S = Vals
-            if r['Key'].startswith(startsWith):
-                if hidePrefix:
-                    key_name = r['Key'][len(startsWith):]
-                else:
-                    key_name = r['Key']
-                if nest:
-                    K = key_name.split('.')
-                    for k in K:
-                        if k not in S:
-                            S[k] = {}
-                        S=S[k]
-                    S['value @'+['end','start'][start]] = r['SVal']
-                else:
-                    Vals[key_name] = r['SVal']
+        for start in [True,False]:
+            List = self.root.goto(['propend', 'propstart'][start]).getList()
+            if pb:
+                import tqdm
+                List = tqdm.tqdm(List)
+            for l in List:
+                Node = self.root.goto(['propend', 'propstart'][start]).gotoItem(l['name'], l['id'])
+                r = Node.getKeyValue(16)
+                del Node
+                S = Vals
+                if r['Key'].startswith(startsWith):
+                    if hidePrefix:
+                        key_name = r['Key'][len(startsWith):]
+                    else:
+                        key_name = r['Key']
+                    if nest:
+                        K = key_name.split('.')
+                        for k in K:
+                            if k not in S:
+                                S[k] = {}
+                            S=S[k]
+                        S['value @'+['end','start'][start]] = r['SVal']
+                    else:
+                        if start:
+                            Vals[key_name] = [r['SVal']]
+                        else:
+                            Vals[key_name].append(r['SVal'])
         return Vals
         
     def showValues(self, pb=False, gui=False, **kargs):
@@ -97,15 +101,13 @@ class ITM:
             del kargs['html']
         if gui:
             from pySPM import GUI
-            Vals = self.getValues(pb, start=True, nest=True, **kargs)
-            Vals = utils.dict_update(Vals, self.getValues(pb, nest=True, **kargs))
+            Vals = self.getValues(pb, nest=True, **kargs)
             GUI.ShowValues(Vals)
         else:
-            Vstart = self.getValues(pb, start=True, **kargs)
-            Vend = self.getValues(pb, **kargs)
+            Vals = self.getValues(pb, **kargs)
             Table = [["Parameter Name","Value @start","Value @end"]]
-            for x in Vstart:
-                Table.append((x,Vstart[x],Vend[x]))
+            for x in Vals:
+                Table.append((x,*Vals[x]))
             if not html:
                 print(utils.aa_table(Table, header=True))
             else:
