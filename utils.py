@@ -20,6 +20,10 @@ Elts={
     'Au':197
     }
 
+def show_table(t):
+    from IPython.core.display import display, HTML
+    display(HTML(html_table(t)))
+    
 def html_table(t, header=False):
     S = "<table>"
     if header:
@@ -56,3 +60,15 @@ def dict_update(d, u):
         else:
             d[k] = u[k]
     return d
+    
+def fact(x):
+    import math
+    f=[]
+    i=2
+    while True:
+        while x%i == 0:
+            f.append(i)
+            x /= i
+        i += 1
+        if x == 1:
+            return f
