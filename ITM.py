@@ -1,5 +1,6 @@
 from pySPM import Block, utils
 import numpy as np
+import matplotlib.pyplot as plt
 import struct
 import os.path
 import zlib
@@ -32,6 +33,7 @@ class ITM:
         except:
             pass
         self.peaks = {}
+        self.MeasData = {}
         self.Nscan = int(self.root.goto('propend/Measurement.ScanNumber').getKeyValue(16)['SVal'])
         try:
             R = [z for z in self.root.goto('MassIntervalList').getList() if z['name'].decode() == 'mi']
@@ -45,6 +47,7 @@ class ITM:
                     pass
         except:
             pass
+            
     def getIntensity(self):
             """
             Retieve the total Ion image
@@ -122,7 +125,8 @@ class ITM:
         The parameters sf and k0 will be read from the file (calibration used by iontof) in case they are None
         The binning just multiply the channels in order to get the correct answer (used for the ITA files for the moment)
         """
-        V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
+        if sf is None or k0 is None:
+            V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
         if sf is None:
             sf = V.goto('sf').getDouble()
         if k0 is None:
@@ -137,7 +141,31 @@ class ITM:
         D = np.array(struct.unpack("<{0}f".format(len(RAW)//4), RAW))
         ch = np.arange(len(D))
         return channel2mass(ch,binning=2),D
+        
+    def getMeasData(self, name='Instrument.LMIG.Emission_Current'):
+        """
+        Allows to recover the data saved during the measurements.
+        This function is like getValues, but instead of giving the values at the beginning and at the end, 
+        it track the changes of them during the measurement.
+        """
+        if self.MeasData:
+            return self.MeasData[name]
+        for child in self.root.goto('rawdata'):
+            if child.name == b'  20':
+                r = child.getKeyValue()
+                if not r['Key'] in self.MeasData:
+                    self.MeasData[r['Key']] = []
+                self.MeasData[r['Key']].append(r['Value'])
+        return self.MeasData[name]
 
+    def showMeasData(self, name='Instrument.LMIG.Emission_Current', ax=None, **kargs):
+        Time = float(self.getValues(startsWith="Measurement.AcquisitionTime")[''][1].split()[0])
+        MeasData = self.getMeasData(name)
+        t = np.linspace(0, Time, len(MeasData))
+        if ax is None:
+            ax = plt.gca()
+        ax.plot(t,MeasData,**kargs)
+        
     def showSpectrum(self, low=0, high=None,ax=None, log = False):
         """
         Plot the (summed) spectrum
@@ -212,29 +240,29 @@ class ITM:
                 RAW += zlib.decompress(child.value)
         Blocks = {}
         Block = []
-        PixelOrder = np.array((self.size['pixels']['y'],self.size['pixels']['x']))
+        PixelOrder = np.zeros((self.size['pixels']['y'], self.size['pixels']['x']))
         i = 0
         while i < len(RAW):
             b = RAW[i:i+4]
             if b[3:4] == b'\xc0':
-                if Block:
+                if len(Block):
                     Blocks[(x,y)] = Block
-                    b = b[:3] + b'\x00'
-                    x = struct.unpack('<I',b)[0]
-                    i += 4
-                    b = RAW[i:i+4]
-                    if b[3:4] != b'\xd0':
-                        raise TypeError("Expecting a D0 block at {}".format(i+3))
-                    b = b[:3] + b'\x00'
-                    y = struct.unpack('<I',b)[0]
-                    i += 4
-                    b = RAW[i:i+4]
-                    if b[3:4] != b'\x40':
-                        raise TypeError("Expecting a 40 block at {}".format(i+3))
-                    b = b[:3] + b'\x00'
-                    Block = []
-                    id = struct.unpack('<I',b)[0]
-                    PixelOrder[y,x] = id
+                b = b[:3] + b'\x00'
+                x = struct.unpack('<I',b)[0]
+                i += 4
+                b = RAW[i:i+4]
+                if b[3:4] != b'\xd0':
+                    raise TypeError("Expecting a D0 block at {}".format(i+3))
+                b = b[:3] + b'\x00'
+                y = struct.unpack('<I',b)[0]
+                i += 4
+                b = RAW[i:i+4]
+                if b[3:4] != b'\x40':
+                    raise TypeError("Expecting a 40 block at {}".format(i+3))
+                b = b[:3] + b'\x00'
+                Block = []
+                id = struct.unpack('<I',b)[0]
+                PixelOrder[y,x] = id
             else:
                 Block.append(struct.unpack('<I',b)[0])
             i += 4
