@@ -32,7 +32,7 @@ class ITM:
         except:
             pass
         self.peaks = {}
-        self.Nscan = self.root.goto('propend/Measurement.ScanNumber').getKeyValue(16)['SVal']
+        self.Nscan = int(self.root.goto('propend/Measurement.ScanNumber').getKeyValue(16)['SVal'])
         try:
             R = [z for z in self.root.goto('MassIntervalList').getList() if z['name'].decode() == 'mi']
             N = len(R)
@@ -115,7 +115,20 @@ class ITM:
                 from IPython.core.display import display, HTML
                 res = utils.html_table(Table, header=True)
                 display(HTML(res))
-        
+    
+    def channel2mass(self, channels, sf=None, k0=None, binning = 1):
+        """
+        Calculate the mass from the time of flight
+        The parameters sf and k0 will be read from the file (calibration used by iontof) in case they are None
+        The binning just multiply the channels in order to get the correct answer (used for the ITA files for the moment)
+        """
+        V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
+        if sf is None:
+            sf = V.goto('sf').getDouble()
+        if k0 is None:
+            k0 = V.goto('k0').getDouble()
+        return ((binning*channels-k0)/(sf))**2
+    
     def getSpectrum(self):
         """
         Retieve a mass,spectrum array
@@ -123,12 +136,7 @@ class ITM:
         RAW = zlib.decompress(self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IITFSpecArray/CorrectedData').value)
         D = np.array(struct.unpack("<{0}f".format(len(RAW)//4), RAW))
         ch = np.arange(len(D))
-        V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
-        sf = V.goto('sf').getDouble()
-        k0 = V.goto('k0').getDouble()
-        chW = V.goto('channelwidth').getDouble()*1e-6
-        masses = ((ch-k0/2)/(sf/2))**2
-        return masses,D
+        return channel2mass(ch,binning=2),D
 
     def showSpectrum(self, low=0, high=None,ax=None, log = False):
         """
@@ -183,6 +191,54 @@ class ITM:
                 'cmass':p[b'cmass']['float'],\
                 'umass':p[b'umass']['float']})
         return result
+        
+    def getRawData(self, scan=0):
+        """
+        Function which allows you to read and parse the raw data.
+        With this you are able to reconstruct the data.
+        Somehow the number of channel is double in the raw data compared
+        to the compressed version saved in the ITA files.
+        """
+        found = False
+        RAW = b''
+        for child in self.root.goto('rawdata'):
+            if child.name == b'   6':
+                S = child.getULong()
+                if S == scan:
+                    found = True
+                elif found:
+                    break
+            elif child.name == b'  14':
+                RAW += zlib.decompress(child.value)
+        Blocks = {}
+        Block = []
+        PixelOrder = np.array((self.size['pixels']['y'],self.size['pixels']['x']))
+        i = 0
+        while i < len(RAW):
+            b = RAW[i:i+4]
+            if b[3:4] == b'\xc0':
+                if Block:
+                    Blocks[(x,y)] = Block
+                    b = b[:3] + b'\x00'
+                    x = struct.unpack('<I',b)[0]
+                    i += 4
+                    b = RAW[i:i+4]
+                    if b[3:4] != b'\xd0':
+                        raise TypeError("Expecting a D0 block at {}".format(i+3))
+                    b = b[:3] + b'\x00'
+                    y = struct.unpack('<I',b)[0]
+                    i += 4
+                    b = RAW[i:i+4]
+                    if b[3:4] != b'\x40':
+                        raise TypeError("Expecting a 40 block at {}".format(i+3))
+                    b = b[:3] + b'\x00'
+                    Block = []
+                    id = struct.unpack('<I',b)[0]
+                    PixelOrder[y,x] = id
+            else:
+                Block.append(struct.unpack('<I',b)[0])
+            i += 4
+        return PixelOrder,Blocks
                 
     def show_masses(self, mass_list=None):
         """
