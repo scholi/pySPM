@@ -52,8 +52,7 @@ class ITM:
             """
             Retieve the total Ion image
             """
-            S = self.getSize()
-            X,Y = S['pixels']['x'],S['pixels']['y']
+            X,Y = self.size['pixels']['x'],self.size['pixels']['y']
             return np.array(struct.unpack('<'+str(X*Y)+'I', \
                 zlib.decompress(self.root.goto('Meta/SI Image/intensdata').value))).reshape((Y,X))
 
@@ -226,27 +225,32 @@ class ITM:
         With this you are able to reconstruct the data.
         Somehow the number of channel is double in the raw data compared
         to the compressed version saved in the ITA files.
+        scan: The scan number. Start at 0
         """
+        assert scan < self.Nscan
         found = False
         RAW = b''
-        for child in self.root.goto('rawdata'):
-            if child.name == b'   6':
-                S = child.getULong()
-                if S == scan:
-                    found = True
-                elif found:
+        list_ = self.root.goto('rawdata').getList()
+        startFound = False
+        for x in list_:
+            if x['name'] == b'   6':
+                if not startFound:
+                    startFound = x['id'] == scan
+                else:
                     break
-            elif child.name == b'  14':
+            elif startFound and x['name'] == b'  14':
+                self.root.f.seek(x['bidx'])
+                child = Block.Block(self.root.f)
                 RAW += zlib.decompress(child.value)
         Blocks = {}
-        Block = []
+        _Block = []
         PixelOrder = np.zeros((self.size['pixels']['y'], self.size['pixels']['x']))
         i = 0
         while i < len(RAW):
             b = RAW[i:i+4]
             if b[3:4] == b'\xc0':
-                if len(Block):
-                    Blocks[(x,y)] = Block
+                if len(_Block):
+                    Blocks[(x,y)] = _Block
                 b = b[:3] + b'\x00'
                 x = struct.unpack('<I',b)[0]
                 i += 4
@@ -260,11 +264,11 @@ class ITM:
                 if b[3:4] != b'\x40':
                     raise TypeError("Expecting a 40 block at {}".format(i+3))
                 b = b[:3] + b'\x00'
-                Block = []
+                _Block = []
                 id = struct.unpack('<I',b)[0]
                 PixelOrder[y,x] = id
             else:
-                Block.append(struct.unpack('<I',b)[0])
+                _Block.append(struct.unpack('<I',b)[0])
             i += 4
         return PixelOrder,Blocks
                 
