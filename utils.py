@@ -89,3 +89,22 @@ def htmlTable(t, show=True, header=False):
         display(HTML(s))
     else:
         return s
+        
+def moving_average(x,N):
+    import numpy as np
+    assert len(x) > N
+    c = np.cumsum(x)
+    return (c[N:]-c[:-N])/N
+
+def butter_lowpass(cutOff, fs, order=5):
+    import scipy.signal
+    nyq = 0.5 * fs
+    normalCutoff = cutOff / nyq
+    b, a = scipy.signal.butter(order, normalCutoff, btype='low', analog = True)
+    return b, a
+
+def butter_lowpass_filter(data, cutOff, fs, order=4):
+    import scipy.signal
+    b, a = butter_lowpass(cutOff, fs, order=order)
+    y = scipy.signal.lfilter(b, a, data)
+    return y
