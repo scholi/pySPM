@@ -92,11 +92,11 @@ class SPM_image:
                 (ref[0]+L/2, ref[1]), color=color, \
                 fontsize=fontsize, va="bottom",ha="center")
 
-    def offset(self, profiles, width=1, ax=None, inline=True):
+    def offset(self, profiles, width=1, ax=None, inline=True, **kargs):
         offset = np.zeros(self.pixels.shape[0])
         counts = np.zeros(self.pixels.shape[0])
         for p in profiles:
-            y, D = self.getRowProfile(*p, width=width, ax=ax)
+            y, D = self.getRowProfile(*p, width=width, ax=ax, **kargs)
             counts[y] += 1
             offset[y[1:]] += np.diff(D)
         counts[counts == 0] = 1
@@ -111,11 +111,11 @@ class SPM_image:
             C.pixels = self.pixels - np.flipud(np.repeat(offset, self.pixels.shape[1], axis=1))
             return C
 
-    def getRowProfile(self, x1, y1, x2, y2, width=1, ax=None):
+    def getRowProfile(self, x1, y1, x2, y2, width=1, ax=None, **kargs):
         if y2 < y1:
                 x1, y1, x2, y2 = x2, y2, x1, y1
         if ax is not None:
-            ax.plot((x1, x2), (y1, y2), 'w-')
+            ax.plot((x1, x2), (y1, y2), **kargs)
         x = np.arange(self.pixels.shape[1])
         y = np.arange(self.pixels.shape[0])
         I = scipy.interpolate.interp2d(x, y, np.flipud(self.pixels))
@@ -299,6 +299,7 @@ class SPM_image:
         pixels=False, img=None, imgColor='w-', **kargs):
         if ax == None:
             fig, ax = plt.subplots(1, 1)
+        xvalues, p = self.getProfile(x1, y1, x2, y2, width=width, ax=img)
         d  = np.sqrt((x2-x1)**2+(y2-y1)**2)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
@@ -308,7 +309,7 @@ class SPM_image:
             rd = d
         else:
             rd = np.sqrt(dx**2+dy**2)
-        xvalues, p = self.getProfile(x1, y1, x2, y2, width=width, ax=img)
+        xvalues = np.linspace(0,rd,len(p))
         if width == 1:
             profile = p[:,0]
         else:
