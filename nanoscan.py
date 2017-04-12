@@ -40,7 +40,7 @@ class Nanoscan():
         self.filename = filename
         tree = ET.parse(filename)
         self.root = tree.getroot()
-        
+
         if self.root.tag == "{http://www.nanoscan.ch/SPM}scan":
             self.namespaces = {'spm':"http://www.nanoscan.ch/SPM"}
             self.type = "Nanoscan"
@@ -65,14 +65,14 @@ class Nanoscan():
                 'value':float(self.__grab('{0}/spm:integral_z_time/spm:v'.format(self.fbPath))),\
                 'unit':self.__grab('{0}/spm:integral_z_time_unit/spm:v'.format(self.fbPath))}
             if self.feedback['channel'] == 'df':
-                self.feedback['channel'] = u'?f'
+                self.feedback['channel'] = u'Δf'
             self.scan_speed = {\
                 z:{\
                     'value':float(self.__grab("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{dir}']/../spm:point_interval/spm:v".format(dir=z))) * self.pixel_size[0], \
                     'unit': self.__grab("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{dir}']/../spm:point_interval_unit/spm:v".format(dir=z))} for z in ['forward','backward']}
         else:
             raise TypeError("Unknown or wrong data type. Expecting a valid Nanoscan xml")
-        
+
     def get_channel(self, channel='Topography', backward=False, corr=None):
         try:
             RAW = self.__grab("spm:vector//spm:direction/spm:vector/spm:contents" \
@@ -84,7 +84,7 @@ class Nanoscan():
 
         BIN = base64.b64decode(RAW)
         recorded_length = len(BIN)/4
-        
+
         py = int(recorded_length/self.pixel_size[0])
         recorded_size={\
                     'x':self.size['x'], \
@@ -94,13 +94,20 @@ class Nanoscan():
         image_array = np.array(struct.unpack("<%if"%(recorded_length),BIN)).reshape( \
                 (py,self.pixel_size[0]))
         return SPM_image(image_array, channel=channel, _type=self.type, real=recorded_size, corr=corr)
-        
+
     def __grab(self, path):
         result = [z.text for z in self.root.findall(path,self.namespaces)]
         if len(result) == 1:
             result = result[0]
         return result
-        
+
+    def arraySummary(self):
+        from pySPM.utils import htmlTable
+        res = [y.format(**self.__dict__) for y in \
+            ["{filename}","{pixel_size[0]}×{pixel_size[1]}","{size[x][value]}×{size[y][value]} {size[x][unit]}",\
+            "{scan_speed[forward][value]} {scan_speed[forward][unit]}",\
+             "{feedback[channel]}","{P[value]:.2f} {P[unit]}","{I[value]:.2f} {I[unit]}"]]
+
     def getSummary(self):
         x = funit(self.size['x'], self.size['unit'])
         y = funit(self.size['y'], self.size['unit'])
@@ -112,3 +119,14 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(\
             x=x, y=y, P=P, I=I, \
             feedback=self.feedback, pixel_size=self.pixel_size,size=self.size, \
             scanSpeed=self.scan_speed['forward'])
+            
+    @staticmethod
+    def show_dir_summary(path):
+        from pySPM.utils import htmlTable
+        res = [["Filename","pixel size","real size","scan_speed","feedback","P","I"]]
+        for x in os.listdir(path):
+            A = pySPM.Nanoscan(path+x)
+            res.append([y.format(f=os.path.basename(A.filename),**A.__dict__) for y in \
+            ["{f}","{pixel_size[0]}×{pixel_size[1]}","{size[x]}×{size[y]} {size[unit]}","{scan_speed[forward][value]} {scan_speed[forward][unit]}",\
+             "{feedback[channel]}","{feedback[P][value]:.2f} {feedback[P][unit]}","{feedback[I][value]:.2f} {feedback[I][unit]}"]])
+        htmlTable(res,header=True)

@@ -74,3 +74,18 @@ def fact(x):
         i += 1
         if x == 1:
             return f
+            
+def htmlTable(t, show=True, header=False):
+    import html
+    s="<table><tr>"
+    if header:
+        s+="<th>"+"</th><th>".join([html.escape(str(y)) for y in t[0]])+"</th></tr><tr>"
+        t=t[1:]
+    s+="".join([\
+        "<tr><td>"+"</td><td>".join([\
+            html.escape(str(y)) for y in x]) + "</td></tr>" for x in t])+"</table>"
+    if show:
+        from IPython.display import display, HTML
+        display(HTML(s))
+    else:
+        return s
