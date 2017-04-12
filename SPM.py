@@ -278,6 +278,9 @@ class SPM_image:
             ax.imshow(np.flipud(img), cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
         else:
             ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
+        if pixels:
+            ax.set_xlim((0,self.pixels.shape[1]))
+            ax.set_ylim((self.pixels.shape[0],0));
             
         if not pixels:
             if isunit != 6:
@@ -328,8 +331,8 @@ class SPM_image:
     def getBinThreshold(self, percent, high=True, adaptive=False, binary=True):
         if adaptive:
             if binary:
-                return skimage.filters.threshold_adaptive(self.pixels, percent)
-            return np.ones(self.pixels.shape)*skimage.filters.threshold_adaptive(self.pixels, percent)
+                return self.pixels > skimage.filters.threshold_local(self.pixels, percent)
+            return skimage.filters.threshold_local(self.pixels, percent)
         mi = np.min(self.pixels)
         norm = (self.pixels-mi)/(np.max(self.pixels)-mi)
         if high:
@@ -339,7 +342,37 @@ class SPM_image:
         if binary:
             return r
         return np.ones(self.pixels.shape)*r
-
+    
+    def spline_offset(self, X, Y, Z=None, inline=True, ax=None, **kargs):
+        """
+        subtract a spline interpolated by points corrdinates.
+        if Z is None, the image values will be used (default)
+        """
+        if ax is not None:
+            if 'num' in kargs and kargs['num']:
+                text_color = 'k'
+                if 'text_color' in kargs:
+                    text_color = kargs['text_color']
+                    del kargs['text_color']
+                for i in range(len(X)):
+                    l = self.pixels.shape[1]-X[i] < 20
+                    ax.annotate(str(i),(X[i],Y[i]),([5,-5][l],0), textcoords='offset pixels', va="center", ha=["left","right"][l], color=text_color);
+                del kargs['num']
+            ax.plot(X,Y,'o',**kargs)
+        import scipy.interpolate
+        T = self.pixels - np.min(self.pixels)
+        if Z is None:
+            Z = [T[Y[i],X[i]] for i in range(len(X))]
+        x = np.arange(self.pixels.shape[1])
+        y = np.arange(self.pixels.shape[0])
+        xx, yy = np.meshgrid(x,y)
+        I = scipy.interpolate.SmoothBivariateSpline(X,Y,Z)
+        z = I.ev(xx,yy)
+        if inline:
+            self.pixels -= z
+        else:
+            return z
+      
     def getShadowMask(self, angle, BIN=None, pb=False):
         if BIN is not None: 
             BIN = BIN*1.0
