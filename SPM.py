@@ -343,7 +343,7 @@ class SPM_image:
             return r
         return np.ones(self.pixels.shape)*r
     
-    def spline_offset(self, X, Y, Z=None, inline=True, ax=None, **kargs):
+    def spline_offset(self, X, Y, Z=None, inline=True, ax=None, output='img', **kargs):
         """
         subtract a spline interpolated by points corrdinates.
         if Z is None, the image values will be used (default)
@@ -360,7 +360,7 @@ class SPM_image:
                 del kargs['num']
             ax.plot(X,Y,'o',**kargs)
         import scipy.interpolate
-        T = self.pixels - np.min(self.pixels)
+        T = np.flipud(self.pixels) - np.min(self.pixels)
         if Z is None:
             Z = [T[Y[i],X[i]] for i in range(len(X))]
         x = np.arange(self.pixels.shape[1])
@@ -370,9 +370,17 @@ class SPM_image:
         z = I.ev(xx,yy)
         if inline:
             self.pixels -= z
-        else:
             return z
-      
+        else:
+            if output == 'img':
+                New = copy.deepcopy(self)
+                New.pixels -= z
+                return New
+            elif output == 'spline':
+                return z
+            else:
+                raise ValueError("The output parameter should be either 'img' or 'spline'")
+        
     def getShadowMask(self, angle, BIN=None, pb=False):
         if BIN is not None: 
             BIN = BIN*1.0
