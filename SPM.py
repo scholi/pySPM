@@ -18,6 +18,11 @@ import copy
 from tqdm import tqdm
 import matplotlib as mpl
 
+try:
+    from skimage.filters import threshold_local
+except:
+    # For compatibility with old versions of skimage
+    from skimage.filters import threshold_adaptive as threshold_local
 
 def funit(value, unit=None, iMag=True):
     """
@@ -331,8 +336,8 @@ class SPM_image:
     def getBinThreshold(self, percent, high=True, adaptive=False, binary=True):
         if adaptive:
             if binary:
-                return self.pixels > skimage.filters.threshold_local(self.pixels, percent)
-            return skimage.filters.threshold_local(self.pixels, percent)
+                return self.pixels > threshold_local(self.pixels, percent)
+            return threshold_local(self.pixels, percent)
         mi = np.min(self.pixels)
         norm = (self.pixels-mi)/(np.max(self.pixels)-mi)
         if high:
