@@ -8,10 +8,12 @@ import numpy as np
 import pySPM
 import warnings
 
+
 class Bruker:
     """
     Class to handle SPM images recorded by a Bruker AFM
     """
+
     def __init__(self, path):
         self.path = path
         self.file = open(self.path, 'rb')
@@ -45,36 +47,39 @@ class Bruker:
         rows = int(self.layers[i][b'Samps/line'][0])
         self.file.seek(off)
         length = cols*rows
-        return np.array( \
-            struct.unpack("<"+str(length)+"h", self.file.read(length*2)), \
+        return np.array(
+            struct.unpack("<"+str(length)+"h", self.file.read(length*2)),
             dtype='float64').reshape((cols, rows))
 
     def load_image(self, channel="Height Sensor", backward=False, corr=None):
-        warnings.warn("Deprecated. Please use get_image() instead.", DeprecationWarning)
-        return self.get_channel(channel,backward,corr=corr)
-    
+        warnings.warn(
+            "Deprecated. Please use get_image() instead.", DeprecationWarning)
+        return self.get_channel(channel, backward, corr=corr)
+
     def list_channels(self):
         print("Channels")
         print("========")
         for x in [z[b'@2:Image Data'][0] for z in self.layers]:
             print("\t"+x.decode('utf8'))
-        
+
     def get_channel(self, channel="Height Sensor", backward=False, corr=None):
         """
         Load the SPM image contained in a channel
         """
         for i in range(len(self.layers)):
             layer_name = self.layers[i][b'@2:Image Data'][0].decode('utf8')
-            result = re.match(r'([^ ]+) \[([^\]]*)\] "([^"]*)"', layer_name).groups()
+            result = re.match(
+                r'([^ ]+) \[([^\]]*)\] "([^"]*)"', layer_name).groups()
             if result[2] == channel:
                 bck = False
                 if self.layers[i][b'Line Direction'][0] == b'Retrace':
                     bck = True
                 if bck == backward:
-                    result = re.match(r'[A-Z]+ \[([^\]]+)\] \([0-9\.]+ [^\)]+\) ([0-9\.]+) V', \
-                          self.layers[i][b'@2:Z scale'][0].decode('utf8')).groups()
+                    result = re.match(r'[A-Z]+ \[([^\]]+)\] \([0-9\.]+ [^\)]+\) ([0-9\.]+) V',
+                                      self.layers[i][b'@2:Z scale'][0].decode('utf8')).groups()
                     scale = float(result[1])/65536.0
-                    result = self.scanners[0][b'@'+result[0].encode('utf8')][0].split()
+                    result = self.scanners[0][
+                        b'@'+result[0].encode('utf8')][0].split()
                     scale *= float(result[1])
                     data = self._get_raw_layer(i)*scale
 
@@ -82,16 +87,15 @@ class Bruker:
                     scan_size = self.layers[i][b'Scan Size'][0].split()
                     if scan_size[2][0] == 126:
                         scan_size[2] = b'u'+scan_size[2][1:]
-                    size = { \
-                        'x':float(scan_size[0]), \
-                        'y':float(scan_size[1]), \
-                        'unit':scan_size[2].decode('utf8')}
-                    image = pySPM.SPM_image( \
-                          channel=channel, \
-                          BIN=data, \
-                          real=size, \
-                          _type='Bruker AFM', \
-                          zscale=zscale.decode('utf8'), \
-                          corr=corr)
+                    size = {
+                        'x': float(scan_size[0]),
+                        'y': float(scan_size[1]),
+                        'unit': scan_size[2].decode('utf8')}
+                    image = pySPM.SPM_image(
+                        channel=channel,
+                        BIN=data,
+                        real=size,
+                        _type='Bruker AFM',
+                        zscale=zscale.decode('utf8'),
+                        corr=corr)
                     return image
-

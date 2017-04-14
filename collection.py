@@ -10,11 +10,13 @@ import matplotlib.pyplot as plt
 from pySPM.SPM import SPM_image
 import pySPM
 
+
 def atoi(text):
     """
     Convert string to integer
     """
     return int(text) if text.isdigit() else text
+
 
 def natural_keys(text):
     """
@@ -23,6 +25,7 @@ def natural_keys(text):
     (See Toothy's implementation in the comments)
     """
     return [atoi(c) for c in re.split('(\\d+)', text)]
+
 
 class Collection:
     """
@@ -47,7 +50,7 @@ class Collection:
 
         self.name = name
         self.channels = {}
-        self.size = {'x':sx, 'y':sy, 'unit':unit}
+        self.size = {'x': sx, 'y': sy, 'unit': unit}
 
     def add(self, Img, name):
         """
@@ -56,21 +59,23 @@ class Collection:
 
         if len(self.channels) == 0 and self.size['unit'] == 'px':
             if isinstance(Img, SPM_image):
-                self.size = {'x':Img.pixels.shape[1],'y':Img.pixels.shape[0]}
+                self.size = {'x': Img.pixels.shape[
+                    1], 'y': Img.pixels.shape[0]}
             else:
                 self.size['x'] = len(Img[0])
                 self.size['y'] = len(Img)
         if name in self.channels:
-            raise KeyError('The channel {} is already present in ' \
-                'the collection. Please delete it before')
+            raise KeyError('The channel {} is already present in '
+                           'the collection. Please delete it before')
             return
         self.channels[name] = Img
 
     def __getitem__(self, key):
-        if key not in self.channels: return None
+        if key not in self.channels:
+            return None
         if isinstance(self.channels[key], SPM_image):
             return self.channels[key]
-        return SPM_image(self.channels[key],_type=self.name, real=self.size, channel=key)
+        return SPM_image(self.channels[key], _type=self.name, real=self.size, channel=key)
 
     def __setitem__(self, key, value):
         self.add(value, key)
@@ -93,14 +98,15 @@ class Collection:
         channels.sort(key=natural_keys)
         if ax is None:
             if channels_number == 4:
-                fig, ax = plt.subplots(2, 2, figsize=(20, \
-                    self[channels[0]].pixels.shape[0]*20 \
-                    / self[channels[0]].pixels.shape[1]))
+                fig, ax = plt.subplots(2, 2, figsize=(20,
+                                                      self[channels[0]].pixels.shape[
+                                                          0]*20
+                                                      / self[channels[0]].pixels.shape[1]))
             else:
                 Ny = (channels_number-1)//ncols+1
                 Nx = min(ncols, channels_number)
-                fig, ax = plt.subplots(Ny, Nx, \
-                    figsize=(20, ((channels_number-1)//ncols+1)*20/Nx))
+                fig, ax = plt.subplots(Ny, Nx,
+                                       figsize=(20, ((channels_number-1)//ncols+1)*20/Nx))
         if type(ax) is not list:
             ax = np.array(ax)
         for i, x in enumerate(channels):
@@ -117,14 +123,16 @@ class Collection:
         import pandas as pd
         if channels is None:
             channels = self.channels.keys()
-        if isinstance(list(self.channels.values())[0],SPM_image):
-            data = pd.DataFrame({k:self.channels[k].pixels.ravel() for k in channels})
+        if isinstance(list(self.channels.values())[0], SPM_image):
+            data = pd.DataFrame(
+                {k: self.channels[k].pixels.ravel() for k in channels})
         else:
-            data = pd.DataFrame({k:self.channels[k].ravel() for k in channels})
+            data = pd.DataFrame(
+                {k: self.channels[k].ravel() for k in channels})
         return data
 
-    def overlay(self, channel_names, colors=[[0, .5, .3], [1, 0, 0]], ax=None, \
-        sig=None, vmin=None, vmax=None, flip=False):
+    def overlay(self, channel_names, colors=[[0, .5, .3], [1, 0, 0]], ax=None,
+                sig=None, vmin=None, vmax=None, flip=False):
         """
         Create an overlay (in color) of several channels.
         channel_names: a list of the channels to select for the overlay
@@ -133,11 +141,11 @@ class Collection:
         """
         assert len(channel_names) >= 2
         assert len(colors) == len(channel_names)
-        data = [pySPM.SPM.Normalize( \
-			self[ch].pixels, sig=sig, vmin=vmin, vmax=vmax) \
-			for ch in channel_names]
-        layers = [np.stack([data[i]*colors[i][j] for j in range(3)], axis=2) \
-			for i in range(len(channel_names))]
+        data = [pySPM.SPM.Normalize(
+            self[ch].pixels, sig=sig, vmin=vmin, vmax=vmax)
+            for ch in channel_names]
+        layers = [np.stack([data[i]*colors[i][j] for j in range(3)], axis=2)
+                  for i in range(len(channel_names))]
         if ax is None:
             ax = plt.gca()
         overlay = np.sum(layers, axis=0)
@@ -174,8 +182,10 @@ class Collection:
             result.add(F, x)
         return result
 
+
 def __Tsign(p1, p2, p3):
     return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
+
 
 def PointInTriangle(pt, v1, v2, v3):
     """
@@ -186,6 +196,7 @@ def PointInTriangle(pt, v1, v2, v3):
     b2 = __Tsign(pt, v2, v3) < 0
     b3 = __Tsign(pt, v3, v1) < 0
     return (b1 == b2) * (b2 == b3)
+
 
 def overlay_triangle(channel_names, colors, ax=None, size=512):
     """
@@ -211,16 +222,19 @@ def overlay_triangle(channel_names, colors, ax=None, size=512):
     x = np.linspace(-.7, 1.1, size)
     y = np.linspace(-1, 1, size)
     X, Y = np.meshgrid(x, y)
-    centers = [(radius*proportion*np.cos(np.radians(120*i)), radius*proportion*np.sin(np.radians(120*i))) for i in range(3)]
-    dist = [np.sqrt((X-centers[i][0])**2+(Y-centers[i][1])**2) for i in range(3)]
+    centers = [(radius*proportion*np.cos(np.radians(120*i)), radius *
+                proportion*np.sin(np.radians(120*i))) for i in range(3)]
+    dist = [np.sqrt((X-centers[i][0])**2+(Y-centers[i][1])**2)
+            for i in range(3)]
 
     for j in range(3):
-        RGB[j] = sum([colors[i][j]*np.maximum((distance-dist[i])/distance, 0) for i in range(3)])
-        ax.annotate(channel_names[j], (radius*np.cos(np.radians(120*j)), radius*np.sin(np.radians(120*j))), \
-            color='w', \
-            fontsize=20, \
-            va="center", \
-            ha="center")
+        RGB[j] = sum(
+            [colors[i][j]*np.maximum((distance-dist[i])/distance, 0) for i in range(3)])
+        ax.annotate(channel_names[j], (radius*np.cos(np.radians(120*j)), radius*np.sin(np.radians(120*j))),
+                    color='w',
+                    fontsize=20,
+                    va="center",
+                    ha="center")
         RGB[j][PointInTriangle([X, Y], *centers) == 0] = 0
     image = np.stack(RGB, axis=2)
     ax.imshow(image, extent=[x[0], x[-1], y[-1], y[0]])

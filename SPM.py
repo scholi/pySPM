@@ -11,7 +11,8 @@ import scipy
 import scipy.ndimage
 import scipy.optimize
 import skimage
-import skimage.exposure, skimage.filters
+import skimage.exposure
+import skimage.filters
 import scipy.interpolate
 from skimage import transform as tf
 import copy
@@ -24,6 +25,7 @@ except:
     # For compatibility with old versions of skimage
     from skimage.filters import threshold_adaptive as threshold_local
 
+
 def funit(value, unit=None, iMag=True):
     """
     Convert a value and unit to proper value
@@ -35,10 +37,10 @@ def funit(value, unit=None, iMag=True):
         unit = value['unit']
         value = value['value']
     import math
-    shift = int(math.floor(math.log10(value)/3.0)) # base10 exponent
+    shift = int(math.floor(math.log10(value)/3.0))  # base10 exponent
     mag = u'afpnum1kMGTPE'
     index_mag = mag.index('1')
-        # Test if unit has a scale factor (n,m,k,M,G, etc.)
+    # Test if unit has a scale factor (n,m,k,M,G, etc.)
     if len(unit) > 1 and unit[0] in mag and unit[1:] and index_mag:
         index_mag = mag.index(unit[0])
         unit = unit[1:]
@@ -53,21 +55,24 @@ def funit(value, unit=None, iMag=True):
     unit_prefix = mag[index_mag]
     if unit_prefix == '1':
         unit_prefix = ''
-    return {'value':value, 'unit':u'{mag}{unit}'.format(mag=unit_prefix, unit=unit)}
+    return {'value': value, 'unit': u'{mag}{unit}'.format(mag=unit_prefix, unit=unit)}
+
 
 class SPM_image:
     """
     Main class to handle SPM images
     """
-    def __init__(self, BIN, channel='Topography', \
-        corr=None, real=None, zscale='?', _type='Unknown'):
+
+    def __init__(self, BIN, channel='Topography',
+                 corr=None, real=None, zscale='?', _type='Unknown'):
         self.channel = channel
         self.direction = 'Unknown'
-        self.size = {'pixels':{'x':BIN.shape[1], 'y':BIN.shape[0]}}
+        self.size = {'pixels': {'x': BIN.shape[1], 'y': BIN.shape[0]}}
         if not real is None:
             self.size['real'] = real
         else:
-            self.size['real'] = {'unit':'pixels', 'x':BIN.shape[1], 'y':BIN.shape[0]}
+            self.size['real'] = {'unit': 'pixels',
+                                 'x': BIN.shape[1], 'y': BIN.shape[0]}
         self.pixels = BIN
         self.type = _type
         if corr is not None:
@@ -88,14 +93,15 @@ class SPM_image:
             ref[1] = self.size['pixels']['y'] - ref[1] - height
         if ax is None:
             ax = plt.gca()
-        ax.add_patch(matplotlib.patches.Rectangle(ref, width=L, height=height, color=color))
+        ax.add_patch(matplotlib.patches.Rectangle(
+            ref, width=L, height=height, color=color))
         if text:
             r = funit(length, self.size['real']['unit'])
             if r['unit'][0] == 'u':
                 r['unit'] = '$\\mu$' + r['unit'][1:]
-            ax.annotate("{value:.01f} {unit}".format(**r), \
-                (ref[0]+L/2, ref[1]), color=color, \
-                fontsize=fontsize, va="bottom",ha="center")
+            ax.annotate("{value:.01f} {unit}".format(**r),
+                        (ref[0]+L/2, ref[1]), color=color,
+                        fontsize=fontsize, va="bottom", ha="center")
 
     def offset(self, profiles, width=1, ax=None, inline=True, **kargs):
         offset = np.zeros(self.pixels.shape[0])
@@ -109,52 +115,59 @@ class SPM_image:
         offset = np.cumsum(offset)
         offset = offset.reshape((self.pixels.shape[1], 1))
         if inline:
-            self.pixels = self.pixels - np.flipud(np.repeat(offset, self.pixels.shape[1], axis=1))
+            self.pixels = self.pixels - \
+                np.flipud(np.repeat(offset, self.pixels.shape[1], axis=1))
             return True
         else:
             C = copy.deepcopy(self)
-            C.pixels = self.pixels - np.flipud(np.repeat(offset, self.pixels.shape[1], axis=1))
+            C.pixels = self.pixels - \
+                np.flipud(np.repeat(offset, self.pixels.shape[1], axis=1))
             return C
 
     def getRowProfile(self, x1, y1, x2, y2, width=1, ax=None, **kargs):
         if y2 < y1:
-                x1, y1, x2, y2 = x2, y2, x1, y1
+            x1, y1, x2, y2 = x2, y2, x1, y1
         if ax is not None:
             ax.plot((x1, x2), (y1, y2), **kargs)
         x = np.arange(self.pixels.shape[1])
         y = np.arange(self.pixels.shape[0])
         I = scipy.interpolate.interp2d(x, y, np.flipud(self.pixels))
-        
+
         Y = np.arange(y1, y2+1)
         V = np.zeros(len(Y))
         for w in np.arange(width):
-                xl = np.linspace(x1-(width-1)/2.+w, x2-(width-1)/2.+w, len(Y))
-                for i in range(len(Y)):
-                        Z = I(xl[i], Y[i])
-                        V[i] += Z
+            xl = np.linspace(x1-(width-1)/2.+w, x2-(width-1)/2.+w, len(Y))
+            for i in range(len(Y)):
+                Z = I(xl[i], Y[i])
+                V[i] += Z
         return Y, V/width
 
     def correct_median_diff(self, inline=True):
         N = self.pixels
-        N2 = np.vstack([N[1:,:], N[-1:,:]])-N # Difference of the pixel between two consecutive row
-        C = np.cumsum(np.median(N2, axis=1)) # Take the median of the difference and cumsum them
-        D = np.tile(C, (N.shape[0],1)).T     # Extend the vector to a matrix (row copy)
+        # Difference of the pixel between two consecutive row
+        N2 = np.vstack([N[1:, :], N[-1:, :]])-N
+        # Take the median of the difference and cumsum them
+        C = np.cumsum(np.median(N2, axis=1))
+        # Extend the vector to a matrix (row copy)
+        D = np.tile(C, (N.shape[0], 1)).T
         if inline:
             self.pixels = N-D
         else:
             New = copy.deepcopy(self)
             New.pixels = N-D
             return New
-                    
+
     def correct_slope(self, inline=True):
         s = np.mean(self.pixels, axis=1)
         i = np.arange(len(s))
         fit = np.polyfit(i, s, 1)
         if inline:
-            self.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
+            self.pixels -= np.tile(np.polyval(fit,
+                                              i).reshape(len(i), 1), len(i))
         else:
             New = copy.deepcopy(self)
-            New.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
+            New.pixels -= np.tile(np.polyval(fit,
+                                             i).reshape(len(i), 1), len(i))
             return New
 
     def correct_plane(self, inline=True):
@@ -165,7 +178,8 @@ class SPM_image:
         A = np.column_stack((np.ones(Z.ravel().size), X.ravel(), Y.ravel()))
         c, resid, rank, sigma = np.linalg.lstsq(A, Z.ravel())
         if inline:
-            self.pixels -= c[0]*np.ones(self.pixels.shape) + c[1] * X + c[2] * Y
+            self.pixels -= c[0] * \
+                np.ones(self.pixels.shape) + c[1] * X + c[2] * Y
         else:
             New = copy.deepcopy(self)
             New.pixels -= c[0]*np.ones(self.pixels.shape) + c[1] * X + c[2] * Y
@@ -173,16 +187,18 @@ class SPM_image:
 
     def correct_lines(self, inline=True):
         if inline:
-            self.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0],1)).T
+            self.pixels -= np.tile(np.mean(self.pixels,
+                                           axis=1).T, (self.pixels.shape[0], 1)).T
         else:
             New = copy.deepcopy(self)
-            New.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0],1)).T
+            New.pixels -= np.tile(np.mean(self.pixels, axis=1).T,
+                                  (self.pixels.shape[0], 1)).T
             return New
 
     def dist_v2(self, pixel=False):
         if pixel:
-            dx=1
-            dy=1
+            dx = 1
+            dy = 1
         else:
             dx = self.size['real']['x']/self.size['pixels']['x']
             dy = self.size['real']['y']/self.size['pixels']['y']
@@ -206,7 +222,7 @@ class SPM_image:
         tf[0, 0] = np.mean(tf)
         tf /= 2
         tf *= 1-np.exp(-d * k)
-    
+
         recon_tf = np.ones(tf.shape) / (tf+l*np.ones(tf.shape) / np.conj(tf))
         tf *= recon_tf
         return np.real(np.fft.ifft2(np.fft.fft2(work_image)*recon_tf))
@@ -216,15 +232,16 @@ class SPM_image:
         H = self.size['recorded']['real']['y']
         return (0, W, 0, H)
 
-    def show(self, ax=None, sig = None, cmap=None, title=None, \
-        adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, wrap=None, **kargs):
-        mpl.rc('axes',grid=False)
+    def show(self, ax=None, sig=None, cmap=None, title=None,
+             adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, wrap=None, **kargs):
+        mpl.rc('axes', grid=False)
         if ax is None:
             fig, ax = plt.subplots(1, 1)
         if title == None:
             title = u"{0} - {1}".format(self.type, self.channel)
         if wrap is not None:
-            title = "\n".join([title[i*wrap:(i+1)*wrap] for i in range(int(len(title)/wrap)+1)])
+            title = "\n".join([title[i*wrap:(i+1)*wrap]
+                               for i in range(int(len(title)/wrap)+1)])
         unit = self.size['real']['unit']
         sunit = 'afpnum kMGTPE'
         if len(unit) == 1 or unit in ['pixels']:
@@ -243,7 +260,7 @@ class SPM_image:
             cmap = 'gray'
             if unit == 'm' and self.channel == "Topography":
                 cmap = 'hot'
-        extent=(0, W, 0, H)
+        extent = (0, W, 0, H)
         mi, ma = np.nanmin(self.pixels), np.nanmax(self.pixels)
         if adaptive:
             img = np.asarray(256**2*(self.pixels-mi)/(ma-mi), dtype=np.uint16)
@@ -255,8 +272,8 @@ class SPM_image:
             vmin = mi+dmin
             vmax = ma+dmax
         else:
-            std  = np.nanstd(img)
-            avg  = np.nanmean(img)
+            std = np.nanstd(img)
+            avg = np.nanmean(img)
             vmin = avg - sig * std
             vmax = avg + sig * std
         mpl.rc('axes', grid=False)
@@ -274,19 +291,19 @@ class SPM_image:
             vmax = np.percentile(img, kargs['level'])
             del kargs['level']
         if 'vmin' in kargs:
-            vmin=kargs['vmin']
+            vmin = kargs['vmin']
             del kargs['vmin']
         if 'vmax' in kargs:
-            vmax=kargs['vmax']
+            vmax = kargs['vmax']
             del kargs['vmax']
         if not flip:
             ax.imshow(np.flipud(img), cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
         else:
             ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
         if pixels:
-            ax.set_xlim((0,self.pixels.shape[1]))
-            ax.set_ylim((self.pixels.shape[0],0));
-            
+            ax.set_xlim((0, self.pixels.shape[1]))
+            ax.set_ylim((self.pixels.shape[0], 0))
+
         if not pixels:
             if isunit != 6:
                 u = sunit[isunit]
@@ -303,12 +320,12 @@ class SPM_image:
     def getProfile(self, x1, y1, x2, y2, width=1, ax=None, imgColor='w-'):
         return getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax)
 
-    def plotProfile(self, x1, y1, x2, y2, ax=None, width=1, col='b-', \
-        pixels=False, img=None, imgColor='w-', **kargs):
+    def plotProfile(self, x1, y1, x2, y2, ax=None, width=1, col='b-',
+                    pixels=False, img=None, imgColor='w-', **kargs):
         if ax == None:
             fig, ax = plt.subplots(1, 1)
         xvalues, p = self.getProfile(x1, y1, x2, y2, width=width, ax=img)
-        d  = np.sqrt((x2-x1)**2+(y2-y1)**2)
+        d = np.sqrt((x2-x1)**2+(y2-y1)**2)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
         if not img is None:
@@ -317,21 +334,22 @@ class SPM_image:
             rd = d
         else:
             rd = np.sqrt(dx**2+dy**2)
-        xvalues = np.linspace(0,rd,len(p))
+        xvalues = np.linspace(0, rd, len(p))
         if width == 1:
-            profile = p[:,0]
+            profile = p[:, 0]
         else:
             profile = np.mean(p)
             s = np.std(p)
             ax.fill_between(xvalues, profile-s, profile+s, col=col, alpha=.2)
-            ax.fill_between(xvalues, profile-2*s, profile+2*s, col=col, alpha=.2)
+            ax.fill_between(xvalues, profile-2*s,
+                            profile+2*s, col=col, alpha=.2)
         p = ax.plot(xvalues, profile, col, **kargs)
         ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
         try:
             ax.set_ylabel("Height [{0}]".format(self.zscale))
         except:
             pass
-        return {'plot':p, 'l':xvalues, 'z':profile}
+        return {'plot': p, 'l': xvalues, 'z': profile}
 
     def getBinThreshold(self, percent, high=True, adaptive=False, binary=True):
         if adaptive:
@@ -347,7 +365,7 @@ class SPM_image:
         if binary:
             return r
         return np.ones(self.pixels.shape)*r
-    
+
     def spline_offset(self, X, Y, Z=None, inline=True, ax=None, output='img', **kargs):
         """
         subtract a spline interpolated by points corrdinates.
@@ -361,18 +379,19 @@ class SPM_image:
                     del kargs['text_color']
                 for i in range(len(X)):
                     l = self.pixels.shape[1]-X[i] < 20
-                    ax.annotate(str(i),(X[i],Y[i]),([5,-5][l],0), textcoords='offset pixels', va="center", ha=["left","right"][l], color=text_color);
+                    ax.annotate(str(i), (X[i], Y[i]), ([
+                                5, -5][l], 0), textcoords='offset pixels', va="center", ha=["left", "right"][l], color=text_color)
                 del kargs['num']
-            ax.plot(X,Y,'o',**kargs)
+            ax.plot(X, Y, 'o', **kargs)
         import scipy.interpolate
         T = np.flipud(self.pixels) - np.min(self.pixels)
         if Z is None:
-            Z = [T[Y[i],X[i]] for i in range(len(X))]
+            Z = [T[Y[i], X[i]] for i in range(len(X))]
         x = np.arange(self.pixels.shape[1])
         y = np.arange(self.pixels.shape[0])
-        xx, yy = np.meshgrid(x,y)
-        I = scipy.interpolate.SmoothBivariateSpline(X,Y,Z)
-        z = I.ev(xx,yy)
+        xx, yy = np.meshgrid(x, y)
+        I = scipy.interpolate.SmoothBivariateSpline(X, Y, Z)
+        z = I.ev(xx, yy)
         if inline:
             self.pixels -= z
             return z
@@ -384,23 +403,24 @@ class SPM_image:
             elif output == 'spline':
                 return z
             else:
-                raise ValueError("The output parameter should be either 'img' or 'spline'")
-        
+                raise ValueError(
+                    "The output parameter should be either 'img' or 'spline'")
+
     def getShadowMask(self, angle, BIN=None, pb=False):
-        if BIN is not None: 
+        if BIN is not None:
             BIN = BIN*1.0
         slope = np.tan(np.radians(angle))
         neg = False
         if slope < 0:
             neg = True
             slope = -slope
-            topo  = np.fliplr(self.pixels)
+            topo = np.fliplr(self.pixels)
             if BIN is not None:
                 BIN = np.fliplr(BIN)
         else:
             topo = self.pixels
         x = np.linspace(0, self.size['real']['x'], self.pixels.shape[1])
-        if self.size['real']['unit'] == 'um': 
+        if self.size['real']['unit'] == 'um':
             x *= 1e-6
         elif self.size['real']['unit'] == 'nm':
             x *= 1e-9
@@ -417,7 +437,7 @@ class SPM_image:
                     cut -= 1
                 if xi == cut:
                     if BIN is not None:
-                        AFM_bin_shadow[yi, xi]=BIN[yi, xi]
+                        AFM_bin_shadow[yi, xi] = BIN[yi, xi]
                     continue
                 # Cut has been found
                 if BIN is not None:
@@ -439,7 +459,8 @@ class SPM_image:
                         y1 = BIN[yi, cut]
                         y2 = BIN[yi, cut+1]
                         yint = (((y2-y1)/(x2-x1))*(x_cut-x1))+y1
-                    else: yint = BIN[yi, xi]
+                    else:
+                        yint = BIN[yi, xi]
                     AFM_bin_shadow[yi, xi] = yint
                 mask[yi, xi] = 1
         if neg:
@@ -448,17 +469,17 @@ class SPM_image:
         if BIN is not None:
             return (mask, AFM_bin_shadow)
         return mask
-    
+
     def adjust_position(self, fixed):
         """ Shift the current pixels to match a fixed image """
         adj = copy.deepcopy(self)
         cor = np.fft.fft2(fixed.pixels)
-        cor = np.abs( np.fft.ifft2( np.conj(cor) * np.fft.fft2(self.pixels) ) )
+        cor = np.abs(np.fft.ifft2(np.conj(cor) * np.fft.fft2(self.pixels)))
         cor = cor / fixed.pixels.size
         ypeak, xpeak = np.unravel_index(cor.argmax(), cor.shape)
         shift = [-(ypeak-1), -(xpeak-1)]
         adj.pixels = np.roll(self.pixels, shift[0], axis=0)
-        adj.pixels = np.roll( adj.pixels, shift[1], axis=1)
+        adj.pixels = np.roll(adj.pixels, shift[1], axis=1)
         return adj
 
     def align(self, tform, cut=True):
@@ -470,39 +491,39 @@ class SPM_image:
         if tform.translation[0] >= 0:
             cut[2] -= tform.translation[0]
         elif tform.translation[0] < 0:
-            cut[0]-=tform.translation[0]
+            cut[0] -= tform.translation[0]
         if tform.translation[1] >= 0:
-            cut[1]+=tform.translation[1]
+            cut[1] += tform.translation[1]
         elif tform.translation[1] < 0:
-            cut[3]+=tform.translation[1]
+            cut[3] += tform.translation[1]
         cut = [int(x) for x in cut]
         New.cut(cut, inplace=True)
         return New, cut
 
     def getFFT(self):
-            return np.fft.fftshift(np.fft.fft2(self.pixels))
+        return np.fft.fftshift(np.fft.fft2(self.pixels))
 
     def getRmask(self):
-            x = np.linspace(-1, 1, self.pixels.shape[1])
-            y = np.linspace(-1, 1, self.pixels.shape[0])
-            X, Y = np.meshgrid(x, y)
-            R = np.sqrt(X**2+Y**2)
-            return R
+        x = np.linspace(-1, 1, self.pixels.shape[1])
+        y = np.linspace(-1, 1, self.pixels.shape[0])
+        X, Y = np.meshgrid(x, y)
+        R = np.sqrt(X**2+Y**2)
+        return R
 
     def corrFit2d(self, nx=2, ny=1):
         r, z = fit2d(self.pixels, nx, ny)
         self.pixels -= z
 
     def filterLowPass(self, p, inline=True):
-            F = self.getFFT()
-            mask = self.getRmask() < p
-            if inline:
-                self.pixels = np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
-            else:
-                C = copy.deepcopy(self)
-                C.pixels = np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
-                return C
-    
+        F = self.getFFT()
+        mask = self.getRmask() < p
+        if inline:
+            self.pixels = np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
+        else:
+            C = copy.deepcopy(self)
+            C.pixels = np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
+            return C
+
     def ResizeInfos(self):
         self.size['real']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
         self.size['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
@@ -511,11 +532,15 @@ class SPM_image:
         self.size['pixels']['y'] = self.pixels.shape[0]
         if 'recorded' not in self.size:
             self.size['recorded'] = self.size
-        self.size['recorded']['real']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
-        self.size['recorded']['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
-        self.size['recorded']['pixels']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
-        self.size['recorded']['pixels']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
-        
+        self.size['recorded']['real'][
+            'x'] *= self.pixels.shape[1]/self.size['pixels']['x']
+        self.size['recorded']['real'][
+            'y'] *= self.pixels.shape[0]/self.size['pixels']['y']
+        self.size['recorded']['pixels'][
+            'x'] *= self.pixels.shape[1]/self.size['pixels']['x']
+        self.size['recorded']['pixels'][
+            'y'] *= self.pixels.shape[0]/self.size['pixels']['y']
+
     def filter_scars_removal(self, thresh=.5, inline=True):
         if not inline:
             C = copy.deepcopy(self)
@@ -528,7 +553,7 @@ class SPM_image:
             mask = np.abs(b-a) < .5*(np.abs(c-a))
             C.pixels[y, mask] = b[mask]
         return C
-        
+
     def cut(self, c, inplace=False):
         if not inplace:
             new = copy.deepcopy(self)
@@ -539,11 +564,13 @@ class SPM_image:
             self.pixels = cut(self.pixels, c)
             self.ResizeInfos()
 
+
 def cut(img, c):
     if c[2]-c[0] == img.shape[1] and c[3]-c[1] == img.shape[0]:
         raise Exception("Reshaping the same array again?")
     return img[c[1]:c[3], c[0]:c[2]]
-    
+
+
 def Normalize(data, sig=None, vmin=None, vmax=None):
     if sig is None:
         mi = np.min(data)
@@ -555,12 +582,13 @@ def Normalize(data, sig=None, vmin=None, vmax=None):
     if vmin is not None:
         mi = vmin
     if vmax is not None:
-        ma = vmax   
+        ma = vmax
     N = (data-mi)/(ma-mi)
     N[N < 0] = 0
     N[N > 1] = 1
     return N
-    
+
+
 def imshow_sig(img, sig=1, ax=None, **kargs):
     if ax == None:
         fig, ax = plt.subplots(1, 1)
@@ -569,12 +597,13 @@ def imshow_sig(img, sig=1, ax=None, **kargs):
     vmin = avg - sig * std
     vmax = avg + sig * std
     ax.imshow(img, vmin=vmin, vmax=vmax, **kargs)
-    
+
+
 def adjust_position(fixed, to_adjust, shift=False):
     """ Shift the current pixels to match a fixed image """
     adj = copy.deepcopy(to_adjust)
     cor = np.fft.fft2(fixed)
-    cor = np.abs( np.fft.ifft2( np.conj(cor) * np.fft.fft2(to_adjust) ) )
+    cor = np.abs(np.fft.ifft2(np.conj(cor) * np.fft.fft2(to_adjust)))
     cor = cor / to_adjust.size
     ypeak, xpeak = np.unravel_index(cor.argmax(), cor.shape)
     shift = [-(ypeak-1), -(xpeak-1)]
@@ -584,51 +613,57 @@ def adjust_position(fixed, to_adjust, shift=False):
         return adj, shift
     return adj
 
+
 def tukeyfy(A, alpha):
     tuky = tukeywin(A.shape[0], alpha)
     tukx = tukeywin(A.shape[1], alpha)
     tuk = np.multiply(tukx[:, None].T, tuky[:, None])
     return A * tuk
 
+
 def tukeywin(window_length, alpha=0.5):
     '''The Tukey window, also known as the tapered cosine window, can be regarded as a cosine lobe of width \alpha * N / 2
     that is convolved with a rectangle window of width (1 - \alpha / 2). At \alpha = 1 it becomes rectangular, and
     at \alpha = 0 it becomes a Hann window.
-    
+
     We use the same reference as MATLAB to provide the same results in case users compare a MATLAB output to this function
     output
-    
+
     Reference
     ---------
     http://www.mathworks.com/access/helpdesk/help/toolbox/signal/tukeywin.html
-    
+
     '''
     # Special cases
     if alpha <= 0:
-        return np.ones(window_length) #rectangular window
+        return np.ones(window_length)  # rectangular window
     elif alpha >= 1:
         return np.hanning(window_length)
-    
+
     # Normal case
     x = np.linspace(0, 1, window_length)
     w = np.ones(x.shape)
-    
+
     # first condition 0 <= x < alpha/2
     first_condition = x < alpha/2
-    w[first_condition] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[first_condition] - alpha/2) ))
-    
+    w[first_condition] = 0.5 * \
+        (1 + np.cos(2*np.pi/alpha * (x[first_condition] - alpha/2)))
+
     # second condition already taken care of
-    
+
     # third condition 1 - alpha / 2 <= x <= 1
     third_condition = x >= (1 - alpha/2)
-    w[third_condition] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[third_condition] - 1 + alpha/2))) 
+    w[third_condition] = 0.5 * \
+        (1 + np.cos(2*np.pi/alpha * (x[third_condition] - 1 + alpha/2)))
     return w
+
 
 def overlay(ax, mask, color, **kargs):
     m = ma.masked_array(mask, ~mask)
     col = np.array(colors.colorConverter.to_rgba(color))
     I = col[:, None, None].T*m[:, :, None]
-    ax.imshow(I, **kargs);
+    ax.imshow(I, **kargs)
+
 
 def NormP(x, p, trunk=True):
     thresh_high = np.percentile(x, 100-p)
@@ -644,6 +679,7 @@ def NormP(x, p, trunk=True):
         r[r > 1] = 1
     return r
 
+
 def BeamProfile(target, source, mu=1e-6):
     """
     Calculate the PSF by deconvolution of the target
@@ -653,40 +689,48 @@ def BeamProfile(target, source, mu=1e-6):
     target = target-np.mean(target)
     tf = np.fft.fft2(source)
     tf /= np.size(tf)
-    recon_tf = np.conj(tf) / ( np.abs(tf)**2 + mu)
-    return np.fft.fftshift(np.real(np.fft.ifft2( np.fft.fft2(target) * recon_tf )))
+    recon_tf = np.conj(tf) / (np.abs(tf)**2 + mu)
+    return np.fft.fftshift(np.real(np.fft.ifft2(np.fft.fft2(target) * recon_tf)))
+
 
 def BeamProfile1D(target, source, mu=1e-6):
     source = 2*source-1
     tf = np.fft.fft(source)
     tf /= np.size(tf)
-    recon_tf = np.conj(tf) / ( np.abs(tf)**2 + mu)
-    F = np.fft.fft(target) * recon_tf 
+    recon_tf = np.conj(tf) / (np.abs(tf)**2 + mu)
+    F = np.fft.fft(target) * recon_tf
     return np.fft.fftshift(np.real(np.fft.ifft(F))), F
 
+
 def ZoomCenter(img, sx, sy=None):
-    if sy is None: sy=sx
-    return img[ \
-        (img.shape[1]-sy)//2 : (img.shape[1]+sy)//2, \
+    if sy is None:
+        sy = sx
+    return img[
+        (img.shape[1]-sy)//2: (img.shape[1]+sy)//2,
         (img.shape[0]-sx)//2:(img.shape[0]+sx)//2]
+
 
 def px2real(x, y, size, ext):
     rx = ext[0]+(x/size[1])*(ext[1]-ext[0])
     ry = ext[2]+(y/size[0])*(ext[3]-ext[2])
     return rx, ry
 
+
 def real2px(x, y, size, ext):
     px = size[1]*(x-ext[0])/(ext[1]-ext[0])
     py = size[0]*(y-ext[2])/(ext[3]-ext[2])
     return px, py
 
+
 def gaussian(x, mu, sig, A=1):
     return A*np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
 
+
 def stat(x):
-    print("Min: {mi:.3f}, Max: {ma:.3f}, Mean: {mean:.3f}, Std: {std:.3f}".format( \
-        mi=np.min(x),ma=np.max(x), \
+    print("Min: {mi:.3f}, Max: {ma:.3f}, Mean: {mean:.3f}, Std: {std:.3f}".format(
+        mi=np.min(x), ma=np.max(x),
         mean=np.mean(x), std=np.std(x)))
+
 
 def fit2d(Z, dx=2, dy=1):
     x = np.arange(Z.shape[1], dtype=np.float)
@@ -705,6 +749,7 @@ def fit2d(Z, dx=2, dy=1):
         Z2 += r[dx+i]*(Y**i)
     return r, Z2
 
+
 def align(img, tform):
     New = tf.warp(img, tform, preserve_range=True)
     Cut = [0, 0] + list(img.shape)
@@ -719,6 +764,7 @@ def align(img, tform):
     Cut = [int(x) for x in Cut]
     New = cut(New, Cut)
     return New, Cut
+
 
 def getProfile(I, x1, y1, x2, y2, width=1, ax=None):
     d = np.sqrt((x2-x1)**2+(y2-y1)**2)
@@ -737,7 +783,8 @@ def getProfile(I, x1, y1, x2, y2, width=1, ax=None):
         N = scipy.ndimage.map_coordinates(I, np.vstack((y, x)))
         P.append(N)
     return np.linspace(0, d, int(d)+1), np.vstack(P).T
-        
+
+
 def dist_v2(img):
     x2 = np.arange(img.shape[1])
     x2 = (np.minimum(x2, img.shape[1]-x2))**2
