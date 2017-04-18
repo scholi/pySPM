@@ -350,23 +350,35 @@ class SPM_image:
         else:
             rd = np.sqrt(dx**2+dy**2)
         xvalues = np.linspace(0, rd, len(p))
+        
         if width == 1:
             profile = p[:, 0]
         else:
             profile = np.mean(p,axis=1)
             s = np.std(p)
-            ax.fill_between(xvalues, profile-s, profile+s, color=col, alpha=.2)
-            ax.fill_between(xvalues, profile-2*s,
-                            profile+2*s, color=col, alpha=.2)
-        p = ax.plot(xvalues, profile, color=col, **kargs)
+            for ns in range(1,kargs.get('sig',2)+1):
+                ax.fill_between(xvalues, profile-ns*s, profile+ns*s, color=col, alpha=.2)
+
+        Plot = ax.plot(xvalues, profile, color=col)
+        if kargs.get('min',False):
+            minStyle = kargs.get('minStyle',kargs.get('minmaxStyle','--'))
+            minColor = kargs.get('minColor',kargs.get('minmaxColor',col))
+            minMarker = kargs.get('minMarker',kargs.get('minmaxMarker',''))
+            ax.plot(xvalues, np.min(p, axis=1), color=minColor, linestyle=minStyle, marker=minMarker)
+        if kargs.get('max',False):
+            maxStyle = kargs.get('maxStyle',kargs.get('minmaxStyle','--'))
+            maxColor = kargs.get('maxColor',kargs.get('minmaxColor',col))
+            maxMarker = kargs.get('maxMarker',kargs.get('minmaxMarker',''))
+            ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, marker=maxMarker)
+            
         ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
         try:
             ax.set_ylabel("Height [{0}]".format(self.zscale))
         except:
             pass
-        return {'plot': p, 'l': xvalues, 'z': profile}
+        return {'plot': Plot, 'l': xvalues, 'z': profile}
 
-    def getBinThreshold(self, percent, high=True, adaptive=False, binary=True):
+    def getBinThreshold(self, percent, high=True, adaptive=False, binary=True, img=False):
         if adaptive:
             if binary:
                 return self.pixels > threshold_local(self.pixels, percent)
@@ -377,9 +389,17 @@ class SPM_image:
             r = norm > percent
         else:
             r = norm < percent
-        if binary:
-            return r
-        return np.ones(self.pixels.shape)*r
+        if not img:
+            if binary:
+                return r
+            return np.ones(self.pixels.shape)*r
+        else:
+            I = copy.deepcopy(self)
+            if binary:
+                I.pixels = r
+            else:
+                I.pixels = np.ones(self.pixels.shape)*r
+            return I
 
     def spline_offset(self, X, Y, Z=None, inline=True, ax=None, output='img', **kargs):
         """
