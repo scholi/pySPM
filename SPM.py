@@ -334,14 +334,14 @@ class SPM_image:
         warnings.DeprecationWarning("plotProfile() is replaced by plot_profile()")
         self.plot_profile(*args, **kargs)
         
-    def get_profile(self, x1, y1, x2, y2, width=1, ax=None, imgColor='w'):
-        return getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, color=imgColor)
+    def get_profile(self, x1, y1, x2, y2, width=1, ax=None, alpha=0, imgColor='w'):
+        return getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor)
 
     def plot_profile(self, x1, y1, x2, y2, ax=None, width=1, col='C0',
-                    pixels=False, img=None, imgColor='w', **kargs):
+                    pixels=False, img=None, imgColor='w', alpha=0, **kargs):
         if ax == None:
             fig, ax = plt.subplots(1, 1)
-        xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, ax=img, imgColor=imgColor)
+        xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, ax=img, alpha=alpha, imgColor=imgColor)
         d = np.sqrt((x2-x1)**2+(y2-y1)**2)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
@@ -781,7 +781,7 @@ def align(img, tform):
     return New, Cut
 
 
-def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w'):
+def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w', alpha=0):
     d = np.sqrt((x2-x1)**2+(y2-y1)**2)
     P = []
     if not ax is None:
@@ -790,6 +790,9 @@ def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w'):
         ax.plot([x1, x2], [y1, y2], color)
         ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color)
         ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color)
+        if alpha>0:
+            import matplotlib.patches
+            ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),width, d, -np.degrees(np.arctan2(x2-x1,y2-y1)), color=color, alpha=alpha))
     for w in np.linspace(-width/2, width/2, width):
         dx = -w*(y2-y1)/d
         dy = w*(x2-x1)/d
