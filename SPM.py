@@ -124,11 +124,19 @@ class SPM_image:
                 np.flipud(np.repeat(offset, self.pixels.shape[1], axis=1))
             return C
 
-    def getRowProfile(self, x1, y1, x2, y2, width=1, ax=None, **kargs):
+    def getRowProfile(self, x1, y1, x2, y2, width=1, col='C1', ax=None, alpha=0, **kargs):
         if y2 < y1:
             x1, y1, x2, y2 = x2, y2, x1, y1
         if ax is not None:
-            ax.plot((x1, x2), (y1, y2), **kargs)
+            d = np.sqrt((x2-x1)**2+(y2-y1)**2)
+            dx = -width/2*(y2-y1)/d
+            dy = width/2*(x2-x1)/d
+            ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], col)
+            ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], col)
+            ax.plot((x1, x2), (y1, y2), col, **kargs)
+            if alpha>0:
+                import matplotlib.patches
+                ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),width, d, np.arctan2(x2-x1,y2-y1), color=col, alpha=alpha))
         x = np.arange(self.pixels.shape[1])
         y = np.arange(self.pixels.shape[0])
         I = scipy.interpolate.interp2d(x, y, np.flipud(self.pixels))
