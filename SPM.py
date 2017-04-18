@@ -136,7 +136,7 @@ class SPM_image:
             ax.plot((x1, x2), (y1, y2), col, **kargs)
             if alpha>0:
                 import matplotlib.patches
-                ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),width, d, np.arctan2(x2-x1,y2-y1), color=col, alpha=alpha))
+                ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),width, d, -np.degrees(np.arctan2(x2-x1,y2-y1)), color=col, alpha=alpha))
         x = np.arange(self.pixels.shape[1])
         y = np.arange(self.pixels.shape[0])
         I = scipy.interpolate.interp2d(x, y, np.flipud(self.pixels))
