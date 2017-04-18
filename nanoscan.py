@@ -137,8 +137,11 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(
         res = [["Filename", "pixel size", "real size",
                 "scan_speed", "feedback", "P", "I"]]
         for x in os.listdir(path):
-            A = pySPM.Nanoscan(path+x)
-            res.append([y.format(f=os.path.basename(A.filename), **A.__dict__) for y in
+            try:
+                A = pySPM.Nanoscan(path+x)
+                res.append([y.format(f=os.path.basename(A.filename), **A.__dict__) for y in
                         ["{f}", "{pixel_size[0]}×{pixel_size[1]}", "{size[x]}×{size[y]} {size[unit]}", "{scan_speed[forward][value]} {scan_speed[forward][unit]}",
                          "{feedback[channel]}", "{feedback[P][value]:.2f} {feedback[P][unit]}", "{feedback[I][value]:.2f} {feedback[I][unit]}"]])
+            except:
+                print("Cannot read image \""+x+"\" skipping it")
         htmlTable(res, header=True)
