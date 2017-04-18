@@ -358,7 +358,6 @@ class SPM_image:
             ax.fill_between(xvalues, profile-s, profile+s, color=col, alpha=.2)
             ax.fill_between(xvalues, profile-2*s,
                             profile+2*s, color=col, alpha=.2)
-        print(profile.shape,xvalues.shape)
         p = ax.plot(xvalues, profile, color=col, **kargs)
         ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
         try:
