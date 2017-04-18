@@ -18,6 +18,7 @@ from skimage import transform as tf
 import copy
 from tqdm import tqdm
 import matplotlib as mpl
+import warnings
 
 try:
     from skimage.filters import threshold_local
@@ -324,20 +325,26 @@ class SPM_image:
                 ax.set_ylabel(u'y [{0}]'.format(unit))
         if title != None:
             ax.set_title(title)
+            
+    def getProfile(self, *args, **kargs):
+        warnings.DeprecationWarning("getProfile() is replaced by get_profile()")
+        self.get_profile(*args, **kargs)
+        
+    def plotProfile(self, *args, **kargs):
+        warnings.DeprecationWarning("plotProfile() is replaced by plot_profile()")
+        self.plot_profile(*args, **kargs)
+        
+    def get_profile(self, x1, y1, x2, y2, width=1, ax=None, imgColor='w'):
+        return getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, color=imgColor)
 
-    def getProfile(self, x1, y1, x2, y2, width=1, ax=None, imgColor='w-'):
-        return getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax)
-
-    def plotProfile(self, x1, y1, x2, y2, ax=None, width=1, col='b-',
-                    pixels=False, img=None, imgColor='w-', **kargs):
+    def plot_profile(self, x1, y1, x2, y2, ax=None, width=1, col='C0',
+                    pixels=False, img=None, imgColor='w', **kargs):
         if ax == None:
             fig, ax = plt.subplots(1, 1)
-        xvalues, p = self.getProfile(x1, y1, x2, y2, width=width, ax=img)
+        xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, ax=img, imgColor=imgColor)
         d = np.sqrt((x2-x1)**2+(y2-y1)**2)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
-        if not img is None:
-            img.plot([x1, x2], [y1, y2], imgColor)
         if pixels:
             rd = d
         else:
@@ -346,12 +353,13 @@ class SPM_image:
         if width == 1:
             profile = p[:, 0]
         else:
-            profile = np.mean(p)
+            profile = np.mean(p,axis=1)
             s = np.std(p)
-            ax.fill_between(xvalues, profile-s, profile+s, col=col, alpha=.2)
+            ax.fill_between(xvalues, profile-s, profile+s, color=col, alpha=.2)
             ax.fill_between(xvalues, profile-2*s,
-                            profile+2*s, col=col, alpha=.2)
-        p = ax.plot(xvalues, profile, col, **kargs)
+                            profile+2*s, color=col, alpha=.2)
+        print(profile.shape,xvalues.shape)
+        p = ax.plot(xvalues, profile, color=col, **kargs)
         ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
         try:
             ax.set_ylabel("Height [{0}]".format(self.zscale))
@@ -774,15 +782,15 @@ def align(img, tform):
     return New, Cut
 
 
-def getProfile(I, x1, y1, x2, y2, width=1, ax=None):
+def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w'):
     d = np.sqrt((x2-x1)**2+(y2-y1)**2)
     P = []
     if not ax is None:
         dx = -width/2*(y2-y1)/d
         dy = width/2*(x2-x1)/d
-        ax.plot([x1, x2], [y1, y2], 'w')
-        ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], 'w')
-        ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], 'w')
+        ax.plot([x1, x2], [y1, y2], color)
+        ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color)
+        ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color)
     for w in np.linspace(-width/2, width/2, width):
         dx = -w*(y2-y1)/d
         dy = w*(x2-x1)/d
