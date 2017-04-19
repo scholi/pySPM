@@ -337,8 +337,8 @@ class SPM_image:
     def get_profile(self, x1, y1, x2, y2, width=1, ax=None, alpha=0, imgColor='w'):
         return getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor)
 
-    def plot_profile(self, x1, y1, x2, y2, ax=None, width=1, col='C0',
-                    pixels=False, img=None, imgColor='w', alpha=0, **kargs):
+    def plot_profile(self, x1, y1, x2, y2, ax=None, width=1, pixels=False, img=None, imgColor='w', alpha=0, **kargs):
+        col = kargs.get('color',kargs.get('col','C0'))
         if ax == None:
             fig, ax = plt.subplots(1, 1)
         xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, ax=img, alpha=alpha, imgColor=imgColor)
