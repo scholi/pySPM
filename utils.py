@@ -100,7 +100,6 @@ def htmlTable(t, show=True, header=False):
     else:
         return s
 
-
 def moving_average(x, N):
     import numpy as np
     assert len(x) > N

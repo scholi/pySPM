@@ -395,6 +395,7 @@ class SPM_image:
             return np.ones(self.pixels.shape)*r
         else:
             I = copy.deepcopy(self)
+            I.channel = "Threshold from "+I.channel
             if binary:
                 I.pixels = r
             else:
