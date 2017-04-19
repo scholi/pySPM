@@ -1,3 +1,5 @@
+import numpy as np
+
 Elts = {
     'B': [10, 11],
     'C': 12,
@@ -119,3 +121,15 @@ def butter_lowpass_filter(data, cutOff, fs, order=4):
     b, a = butter_lowpass(cutOff, fs, order=order)
     y = scipy.signal.lfilter(b, a, data)
     return y
+
+def Gauss(x, x0, s, A=None):
+    R = np.exp(-(x-x0)**2/(2*s**2))
+    if A is None:
+        return R /(s*np.sqrt(2*np.pi))
+    return A*R
+    
+def Lorentz(x, x0, gamma, A=None):
+    R = 1/((x-x0)**2+(.5*gamma)**2)
+    if A is None:
+        return .5*gamma*R/np.pi
+    return A*R*(.5*gamma)**2
