@@ -182,6 +182,7 @@ class ITM:
         if ax is None:
             ax = plt.gca()
         ax.plot(t, MeasData, **kargs)
+        ax.set_xlabel("Time [s]");
 
     def showSpectrum(self, low=0, high=None, ax=None, log=False):
         """
