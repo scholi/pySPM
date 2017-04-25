@@ -176,8 +176,8 @@ class ITM:
         
         Meas = self.getMeasData(name)
         
-        MeasData = [x[1] for x in MeasData]
-        MeasIdx = [x[0] for x in MeasData]
+        MeasData = [x[1] for x in Meas]
+        MeasIdx = [x[0] for x in Meas]
         t = np.interp(MeasIdx,idx, time)
         if ax is None:
             ax = plt.gca()
