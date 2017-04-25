@@ -245,7 +245,7 @@ class SPM_image:
              adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, wrap=None, **kargs):
         mpl.rc('axes', grid=False)
         if ax is None:
-            fig, ax = plt.subplots(1, 1)
+            ax = plt.gca()
         if title == None:
             title = u"{0} - {1}".format(self.type, self.channel)
         if wrap is not None:
@@ -269,7 +269,6 @@ class SPM_image:
             cmap = 'gray'
             if unit == 'm' and self.channel == "Topography":
                 cmap = 'hot'
-        extent = (0, W, 0, H)
         mi, ma = np.nanmin(self.pixels), np.nanmax(self.pixels)
         if adaptive:
             img = np.asarray(256**2*(self.pixels-mi)/(ma-mi), dtype=np.uint16)
@@ -285,7 +284,6 @@ class SPM_image:
             avg = np.nanmean(img)
             vmin = avg - sig * std
             vmax = avg + sig * std
-        mpl.rc('axes', grid=False)
         if not pixels:
             xp = np.linspace(0, self.pixels.shape[1], 11)
             xr = np.linspace(0, W, 11)
@@ -564,19 +562,16 @@ class SPM_image:
         self.size['real']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
         self.size['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
         self.size['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
-        self.size['pixels']['x'] = self.pixels.shape[1]
-        self.size['pixels']['y'] = self.pixels.shape[0]
-        if 'recorded' not in self.size:
-            self.size['recorded'] = self.size
-        self.size['recorded']['real'][
-            'x'] *= self.pixels.shape[1]/self.size['pixels']['x']
-        self.size['recorded']['real'][
-            'y'] *= self.pixels.shape[0]/self.size['pixels']['y']
-        self.size['recorded']['pixels'][
-            'x'] *= self.pixels.shape[1]/self.size['pixels']['x']
-        self.size['recorded']['pixels'][
-            'y'] *= self.pixels.shape[0]/self.size['pixels']['y']
-
+        self.size['pixels']['x'] = int(self.pixels.shape[1])
+        self.size['pixels']['y'] = int(self.pixels.shape[0])
+        if 'recorded' in self.size:
+            self.size['recorded']['real']['x'] \
+                *= (self.pixels.shape[1]/self.size['pixels']['x'])
+            self.size['recorded']['real']['y'] \
+                *= (self.pixels.shape[0]/self.size['pixels']['y'])
+            self.size['recorded']['pixels']['x'] = int(self.pixels.shape[1])
+            self.size['recorded']['pixels']['y'] = int(self.pixels.shape[0])
+        
     def filter_scars_removal(self, thresh=.5, inline=True):
         if not inline:
             C = copy.deepcopy(self)
