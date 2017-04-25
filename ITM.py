@@ -71,7 +71,7 @@ class ITM:
         for i, x in enumerate(rs):
             Val.append([x, rs[x], re[x]])
 
-    def getValues(self, pb=False, set=[], startsWith="", nest=False, hidePrefix=True):
+    def getValues(self, pb=False, names=[], startsWith="", nest=False, hidePrefix=True):
         """
         Beta function: Retieve a list of the values
         """
@@ -87,7 +87,7 @@ class ITM:
                 r = Node.getKeyValue(16)
                 del Node
                 S = Vals
-                if r['Key'].startswith(startsWith) or r['Key'] in set:
+                if r['Key'] in names or ( names==[] and r['Key'].startswith(startsWith) ):
                     if hidePrefix:
                         key_name = r['Key'][len(startsWith):]
                     else:
