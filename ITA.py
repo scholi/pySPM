@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pickle
 from pySPM.collection import Collection
 from pySPM.SPM import SPM_image
-from pySPM import Block, utils, PCA, ITM
+from pySPM import Block, utils, ITM
 import warnings
 
 
@@ -325,6 +325,7 @@ class ITA_collection(Collection):
         return self.channels[key]
 
     def runPCA(self, channels=None):
+        from pySPM import PCA
         if channels is None:
             channels = self.channels.keys()
         self.PCA = PCA.ITA_PCA(self, channels)

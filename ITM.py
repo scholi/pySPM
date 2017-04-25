@@ -37,8 +37,11 @@ class ITM:
             pass
         self.peaks = {}
         self.MeasData = {}
-        self.Nscan = int(self.root.goto(
-            'propend/Measurement.ScanNumber').getKeyValue(16)['SVal'])
+        try:
+            self.Nscan = int(self.root.goto('propend/Measurement.ScanNumber').getKeyValue(16)['SVal'])
+        except:
+            self.Nscan = None
+            
         try:
             R = [z for z in self.root.goto('MassIntervalList').getList() if z[
                 'name'].decode() == 'mi']
@@ -68,7 +71,7 @@ class ITM:
         for i, x in enumerate(rs):
             Val.append([x, rs[x], re[x]])
 
-    def getValues(self, pb=False, startsWith="", nest=False, hidePrefix=True):
+    def getValues(self, pb=False, set=[], startsWith="", nest=False, hidePrefix=True):
         """
         Beta function: Retieve a list of the values
         """
@@ -84,7 +87,7 @@ class ITM:
                 r = Node.getKeyValue(16)
                 del Node
                 S = Vals
-                if r['Key'].startswith(startsWith):
+                if r['Key'].startswith(startsWith) or r['Key'] in set:
                     if hidePrefix:
                         key_name = r['Key'][len(startsWith):]
                     else:
@@ -149,14 +152,15 @@ class ITM:
         ch = np.arange(len(D))
         return channel2mass(ch, binning=2), D
 
-    def getMeasData(self, name='Instrument.LMIG.Emission_Current'):
+    def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog = False):
         """
         Allows to recover the data saved during the measurements.
         This function is like getValues, but instead of giving the values at the beginning and at the end, 
         it track the changes of them during the measurement.
         """
-        if self.MeasData:
+        if name in self.MeasData:
             return self.MeasData[name]
+            
         for child in self.root.goto('rawdata'):
             if child.name == b'  20':
                 r = child.getKeyValue()
