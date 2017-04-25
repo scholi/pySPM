@@ -152,7 +152,7 @@ class ITM:
         ch = np.arange(len(D))
         return channel2mass(ch, binning=2), D
 
-    def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog = False):
+    def getMeasData(self, name='Instrument.LMIG.Emission_Current'):
         """
         Allows to recover the data saved during the measurements.
         This function is like getValues, but instead of giving the values at the beginning and at the end, 
@@ -161,19 +161,24 @@ class ITM:
         if name in self.MeasData:
             return self.MeasData[name]
             
-        for child in self.root.goto('rawdata'):
+        for idx, child in enumerate(self.root.goto('rawdata')):
             if child.name == b'  20':
                 r = child.getKeyValue()
                 if not r['Key'] in self.MeasData:
                     self.MeasData[r['Key']] = []
-                self.MeasData[r['Key']].append(r['Value'])
+                self.MeasData[r['Key']].append((idx,r['Value']))
         return self.MeasData[name]
 
     def showMeasData(self, name='Instrument.LMIG.Emission_Current', ax=None, **kargs):
-        Time = float(self.getValues(
-            startsWith="Measurement.AcquisitionTime")[''][1].split()[0])
-        MeasData = self.getMeasData(name)
-        t = np.linspace(0, Time, len(MeasData))
+        t = self.getMeasData('Measurement.AcquisitionTime')
+        idx = [x[0] for x in t]
+        time = [x[1] for x in t]
+        
+        Meas = self.getMeasData(name)
+        
+        MeasData = [x[1] for x in MeasData]
+        MeasIdx = [x[0] for x in MeasData]
+        t = np.interp(MeasIdx,idx, time)
         if ax is None:
             ax = plt.gca()
         ax.plot(t, MeasData, **kargs)
