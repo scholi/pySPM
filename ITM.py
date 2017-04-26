@@ -150,7 +150,7 @@ class ITM:
             'filterdata/TofCorrection/Spectrum/Reduced Data/IITFSpecArray/CorrectedData').value)
         D = np.array(struct.unpack("<{0}f".format(len(RAW)//4), RAW))
         ch = np.arange(len(D))
-        return channel2mass(ch, binning=2), D
+        return self.channel2mass(ch, binning=2), D
 
     def getMeasData(self, name='Instrument.LMIG.Emission_Current'):
         """
@@ -184,7 +184,7 @@ class ITM:
         ax.plot(t, MeasData, **kargs)
         ax.set_xlabel("Time [s]");
 
-    def showSpectrum(self, low=0, high=None, ax=None, log=False):
+    def showSpectrum(self, low=0, high=None, ax=None, log=False, showPeaks=True):
         """
         Plot the (summed) spectrum
         low and high: mass boundary of the plotted data
@@ -204,17 +204,17 @@ class ITM:
             S = np.log(S)
         ax.plot(M, S)
         self.get_masses()
-
-        for P in self.peaks:
-            p = self.peaks[P]
-            c = p[b'cmass']['float']
-            mask = (m >= p[b'lmass']['float'])*(m <= p[b'umass']['float'])
-            if c >= low and c <= high:
-                i = np.argmin(abs(m-c))
-                ax.axvline(m[i], color='red')
-                ax.fill_between(m[mask], *ax.get_ylim(), color='red', alpha=.2)
-                ax.annotate(p[b'assign']['utf16'], (m[i], ax.get_ylim()[
-                            1]), (2, -10), va='top', textcoords='offset points')
+        if showPeaks:
+            for P in self.peaks:
+                p = self.peaks[P]
+                c = p[b'cmass']['float']
+                mask = (m >= p[b'lmass']['float'])*(m <= p[b'umass']['float'])
+                if c >= low and c <= high:
+                    i = np.argmin(abs(m-c))
+                    ax.axvline(m[i], color='red')
+                    ax.fill_between(m[mask], *ax.get_ylim(), color='red', alpha=.2)
+                    ax.annotate(p[b'assign']['utf16'], (m[i], ax.get_ylim()[
+                                1]), (2, -10), va='top', textcoords='offset points')
 
     def get_masses(self, mass_list=None):
         """
