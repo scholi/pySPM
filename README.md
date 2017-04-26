@@ -1,9 +1,18 @@
+# pySPM
 pySPM is a python library (python3, but should be compatible with python2) in order to read, handle and plot Scanning Probe Microscopy (SPM) images.
 
-For now it support nanoscan .xml file format, bruker, as well as ToF-SIMS ITA, ITM and ITS file formats.
+For now it support the following formats:
+* nanoscan .xml file format
+* bruker
+* ToF-SIMS
+	* ITA
+	* ITM
+	* ITS
 
 
-News
-====
+## News
 
 The pyTOF library was merged with the pySPM one.
+
+## Documentation
+[read the documentation](doc/pySPM Documentation.ipynb)
