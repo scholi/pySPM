@@ -15,4 +15,4 @@ For now it support the following formats:
 The pyTOF library was merged with the pySPM one.
 
 ## Documentation
-[read the documentation](../blob/master/doc/pySPM%20Documentation.ipynb)
+[read the documentation](../master/doc/pySPM%20Documentation.ipynb)
