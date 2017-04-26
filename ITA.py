@@ -182,15 +182,16 @@ class ITA(ITM.ITM):
             from tqdm import tqdm
             scans = tqdm(scans)
         channels = []
-        for s in scans:
+        for i,s in enumerate(scans):
             assert s >= 0 and s < self.Nscan
             for m in masses:
                 ch = self.getChannelByMass(m)
                 m = self.get_masses()[ch]
-                if m['assign'] != '':
-                    channels.append(m['assign'])
-                else:
-                    channels.append("{cmass:.2f}u".format(**m))
+                if i == 0:
+                    if m['assign'] != '':
+                        channels.append(m['assign'])
+                    else:
+                        channels.append("{cmass:.2f}u".format(**m))
                 Z += self.getImage(ch, s, **kargs)
         if raw:
             return Z, channels
