@@ -127,6 +127,10 @@ class ITA(ITM.ITM):
         return Shifts
 
     def getXsectionByMass(self, x1, y1, x2, y2, masses, N=None, prog=False, ax=None, col='w-', **kargs):
+        if True:
+            y1 = self.Height-1-y1
+            y2 = self.Height-1-y2
+            
         if N is None:
             N = int(np.sqrt((x2-x1)**2+(y2-y1)**2))+1
         x = np.linspace(x1, x2, N)
