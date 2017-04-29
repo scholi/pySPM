@@ -83,7 +83,13 @@ class SPM_image:
                 self.correct_lines()
             elif corr.lower() == 'plane':
                 self.correct_plane()
-
+                
+    def __add__(self, b):
+        New = copy.deepcopy(self)
+        New.pixels += b.pixels
+        New.channel += " + "+b.channel
+        return New
+        
     def addScale(self, length, ax=None, height=20, color='w', loc=4, text=True, fontsize=20):
         import matplotlib.patches
         L = length*self.size['pixels']['x']/self.size['real']['x']
