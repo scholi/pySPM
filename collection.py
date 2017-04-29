@@ -234,7 +234,7 @@ def overlay_triangle(channel_names, colors, ax=None, size=512):
                     color='w',
                     fontsize=20,
                     va="center",
-                    ha="center")
+                    ha="left")
         RGB[j][PointInTriangle([X, Y], *centers) == 0] = 0
     image = np.stack(RGB, axis=2)
     ax.imshow(image, extent=[x[0], x[-1], y[-1], y[0]])
