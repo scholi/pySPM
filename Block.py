@@ -17,6 +17,47 @@ class Block:
         """
         Init the class
         fp: file pointer (the one created by open(...) of an ITA,ITM,ITS, etc... file pointing at the beginning of a block
+        
+        Each block start with one byte of type followed by 4 bytes that should always be \x19\x00\x00\x00 (all those 5 bytes are saved in self.Type)
+        Then follows 5 uint32: length, z, u ,x ,y
+            length: The length of the block's name
+            z: Not used. My guess is that it's the block ID. So it starts at 0 and is increased for all following Blocks of the same name.
+                We usually find the ID from the children's list (see below) and this information is never used as it's redundant.
+            u: The number of children / sub-blocks. Might be = 0 even if the black has children. Check the value L (defined below) if so
+            x: The length of the block's value
+            y: Redundant. Seems to be always = x
+        Then follow length-bytes representing the name of the block
+        Then follow x-bytes forming the value of the block
+        
+        Blocks of types \x01\x19\x00\x00\x00 and \x03\x19\x00\x00\x00 are blocks that contains sub-blocks. There is no big difference between the two. I guess that types \x01 is the first one and type \x03 are the continuation blocks
+            Those block have a value which starts with 41-bytes.
+                3 uint32 -> (length, nums, ID).
+                    length: We actually don't need it. It's a redundant information. That is the length of the sub-headers. (It stop just before the sub-blocks names)
+                    nums: redundant info. Not used
+                    ID: Block ID
+                9 unknown padding bytes
+                1 uint32 -> L
+                    The variable u (see above) contains the number of children. If u == 0, then L will tell the correct number of children
+                8 unknown padding bytes
+                1 uint64 -> NextBlock
+                    Big blocks can be chunked in several ones. NextBlock tells the position in the file of the next chunk. If = 0, then it's the last chunk
+            Then 33 bytes for each sub-block follows:
+                3 uint32 -> index, slen, id
+                    index: The position of the sub-block name in the header
+                    slen: The length of the sub-block name (which is store later). So basically the sub-block name is: Block.value[index:index+slen]
+                    id: start at 0 and increase monotonically for sub-blocks having the same name
+                4 unknown padding bytes
+                2 uint64 -> blen, bidx
+                    blen: Block length
+                    bidx: Position of the Block in the file
+            All the names of all sub-blocks follows (concatenated). You need to use their name length (see slen above) in order to chunk them properly
+            You should then go to the position NextBlock in the file and read the block their. It's the continuation of the current one.
+            
+        Blocks of types \x00\x19\x00\x00\s00 have no children and only a value, usually formed by a string (UTF-16), an int or a float.
+        The type of the value was not discovered to be written in the Block. The user should deduce it depending on the block's name and location.
+        
+        Blocks of type \x80\x19\x00\x00\x00 have it's values compressed with zlib (notice the \x78\x5e at the beginning which is typical for zlib encoded data)
+            Once decompressed it usually store an array in binary.
         """
         self.f = fp
         self.offset = self.f.tell()
