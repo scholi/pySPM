@@ -1,3 +1,5 @@
+# *-* encoding: utf-8 *-*
+
 import os
 import base64
 import xml.etree.ElementTree as ET

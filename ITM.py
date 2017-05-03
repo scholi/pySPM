@@ -134,7 +134,7 @@ class ITM:
             Vals = self.getValues(pb, **kargs)
             Table = [["Parameter Name", "Value @start", "Value @end"]]
             for x in Vals:
-                Table.append((x, *Vals[x]))
+                Table.append(tuple([x]+Vals[x]))
             if not html:
                 print(utils.aa_table(Table, header=True))
             else:
