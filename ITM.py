@@ -13,6 +13,21 @@ class ITM:
         """
         Create the ITM object out of the filename.
         Note that this works for all .ITA,.ITM, .ITS files as they have the same structure
+        
+        The ITM has the speciality to contain the "rawdata" block. Which contains a lot of sub-blocks all having a name which concists of spaces followed by numbers.
+            Blocks: '  20': Contains parameters of the ToF-SIMS recorder during the measurement such as the Emission Current and the Suppressor Voltages.
+                    All the parameters saves have the sames names that the ones found in propend and propstart.
+                    '   2': Is the start block. Contains no info
+                    '   3': It's the end block. Contains a byte (unknown meaning)
+                    '   6': Uint32 indicating the scan number
+                    '   7': uint64 telling the pixel id of the next '  14' block. The id is the scanNumber*(width*height)+height*row+col
+                    '  14': binary block compressed with zlib. The raw data are encoded by a suite of uint32.
+                            The sequence is as follow. The first 4-btyes should end with \xC0, the the second with \xD0, the third to \x40, the a suite of uint32 which don't end with \xc0
+                            and the sequence starts again. Each sequence tell:
+                                The first uint32 terminating by \xC0 tells the x coordinates of the pixel location (just replace the \xC0 byte by 0 and read it as a uint32)
+                                The second uint32 terminating by\cD0 telld the y coord. of the pixel
+                                The third terminating by \x40 tells the pixel number (increasing monotonically. I know iontof like to write 10 times the same information everywhere)
+                                The rest are the detected peaks measured in channel unit for that specific pixel. In order to get the mass see the channel2mass function
         """
         self.filename = filename
         assert os.path.exists(filename)
@@ -132,6 +147,12 @@ class ITM:
         Calculate the mass from the time of flight
         The parameters sf and k0 will be read from the file (calibration used by iontof) in case they are None
         The binning just multiply the channels in order to get the correct answer (used for the ITA files for the moment)
+        default values for uncalibrated spectrum are sf = 100'000 &  k0 = 0
+        The time can be retrieved by knowing the channel width (typically 100ps). So time = channel * channelWidth
+        The mass = (2*q*U/L**2)*(channel*channelWidth)**2
+        L is the path length, thus twice the columns length and is about 2m I think
+        For an extractor of 2keV and L=2m, 1u = (time[s]*310620.843175[u**.5/s])**2 = [channel/sf]**2 => sf is about 32000 for k0 = 0
+        Caution. If data are binned, the channel number should be multiplied by the binning factor in order to use the same sf and k0 factor!
         """
         if sf is None or k0 is None:
             V = self.root.goto(
