@@ -101,6 +101,6 @@ class SlicerApp(QWidget):
         self.fig.tight_layout()
 
 app = QApplication(sys.argv)
-window = SlicerApp(r"C:\Users\ols\ownCloud\ToFSIMS\Micropat_auto__ @micropat2 (-)_2.ita")
+window = SlicerApp()
 window.show()
 sys.exit(app.exec_())
