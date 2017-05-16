@@ -1,12 +1,14 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QFileDialog, QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QFileDialog, QWidget, QAction, QProgressBar, QStatusBar
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QCoreApplication
 from slicer import Ui_slicer
 import os
 import re
 import pySPM
 import numpy as np
+from pySPM.utils import CDF
+from scipy import optimize as opt
 
 class SlicerApp(QWidget):
     def __init__(self, filename=None):
@@ -17,7 +19,7 @@ class SlicerApp(QWidget):
         self.canvas = self.ui.mpl.canvas
         self.fig = self.ui.mpl.canvas.fig
         self.initPlotLayout()
-        
+        self.level = None
         if filename is None:
             if len(sys.argv) < 2:
                 self.path, _ = QFileDialog.getOpenFileName(self,"ITA Image", "","(*.ITA)")
@@ -28,6 +30,8 @@ class SlicerApp(QWidget):
             self.path = filename
         if not os.path.exists(self.path):
             raise Exception("File \"{}\" is not found".format(self.path))
+        if os.path.exists(self.path+".level.npy"):
+            self.level = np.load(self.path+".level.npy")
         self.curs = [0,0,0]
         self.volume = None
         self.ITA = pySPM.ITA(self.path) 
@@ -39,25 +43,67 @@ class SlicerApp(QWidget):
         self.ui.peakList.show()
         self.ui.peakList.cellClicked.connect(self.load_channel)
         self.canvas.mpl_connect('button_press_event', self.on_pick)
+        self.flatAction = QAction("Flatten substrate from this channel")
+        self.flatAction.triggered.connect(self.flatten)
+        self.ui.correction.stateChanged.connect(self.plot)
+        self.ui.peakList.addAction(self.flatAction)
+        self.ui.status.setText("IDLE")
+    
+    def flatline(self, y):
+        for x in range(self.volume.shape[1]):
+            popt, pcov = opt.curve_fit(CDF, np.arange(self.volume.shape[2]), self.volume[y,x,:], (10, self.volume.shape[2]/2, 1))
+            self.level[y, x] = popt[1]
+         
+    def flatten(self):
+        from scipy import optimize as opt
+        self.ui.status.setText("Start the flattening...")
+        self.level = np.zeros(self.volume.shape[:2])
+        self.ui.pb.setMaximum(self.volume.shape[0])
+        for y in range(self.volume.shape[0]):
+            self.ui.pb.setValue(y)
+            self.flatline(y)
+            QCoreApplication.processEvents()
+            self.ax.clear()
+            self.ax.imshow(self.level)
+            self.canvas.draw()
+        self.ui.pb.setValue(0)
+        self.ui.status.setText("Flattening finished")
+        np.save(self.path+".level", self.level)
         
     def load_channel(self, row, col):
+        self.ui.status.setText("Loading channel...")
         id = row
         vol = []
         for i in range(self.ITA.Nscan):
-            x = self.ITA.getImage(id,i)
+            x = self.ITA.getImage(id, i)
             vol.append(x)
-        self.volume = np.stack([x for x in vol],axis=2)
+        self.volume = np.stack([x for x in vol], axis=2)
+        if not self.level is None:
+            self.corrected = np.zeros(self.volume.shape)
+            z = np.arange(self.ITA.Nscan)
+            self.ui.pb.setMaximum(self.level.shape[0])
+            for y in np.arange(self.level.shape[0]):
+                self.ui.pb.setValue(y)
+                for x in np.arange(self.level.shape[1]):
+                    nz = z-self.level[y,x] + np.max(self.level)
+                    self.corrected[y,x,:] = np.interp(z,nz,self.volume[y,x,:],left=0, right=0)
+            self.ui.pb.setValue(0)
         self.plot()
+        self.ui.status.setText("IDLE")
         
     def plot(self):
+        if self.ui.correction.isChecked():
+            A = self.corrected
+        else:
+            A = self.volume
         self.axXY.clear()
         self.axXZ.clear()
         self.axYZ.clear()
-        if self.volume == None:
+        if self.volume is None:
             return
-        self.axXY.imshow(self.volume[:,:,self.curs[2]])
-        self.axXZ.imshow(self.volume[self.curs[1],:,:].T)
-        self.axYZ.imshow(self.volume[:,self.curs[0],:].T)
+        self.axXY.imshow(A[:,:,self.curs[2]])
+        self.axXZ.imshow(A[self.curs[1],:,:].T)
+        self.axYZ.imshow(A[:,self.curs[0],:].T)
         self.axXY.axhline(self.curs[1])
         self.axXY.axvline(self.curs[0])
         self.axXZ.axhline(self.curs[2])
@@ -70,6 +116,8 @@ class SlicerApp(QWidget):
         self.canvas.draw()
         
     def on_pick(self, event):
+        if not event.inaxes in [self.axYZ,self.axXZ,self.axXY]:
+            return
         x = event.xdata
         y = event.ydata
         axis = [self.axYZ,self.axXZ,self.axXY].index(event.inaxes)
@@ -87,8 +135,8 @@ class SlicerApp(QWidget):
             self.curs[2] = ydata
         else:
             print("Click event not handled")
+        self.curs = [np.clip(0,self.curs[i],self.volume.shape[i]-1) for i in range(3)]
         self.plot()
-            
         
     def initPlotLayout(self):
         """
