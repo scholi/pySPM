@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import stats, optimize as opt
 
 Elts = {
     'B': [10, 11],
@@ -132,3 +133,51 @@ def Lorentz(x, x0, gamma, A=None):
     if A is None:
         return .5*gamma*R/np.pi
     return A*R*(.5*gamma)**2
+
+def CDF(x,a,x0,sig):
+    return a*stats.norm.cdf((x-x0),scale=sig)
+
+def fitCDF1line(A):
+    line = np.zeros(A.shape[1])
+    for x in range(A.shape[1]):
+        popt, pcov = opt.curve_fit(CDF, np.arange(A.shape[0]), A[:,x], (10, A.shape[0]/2, 1))
+        line[x] = popt[1]
+    return line
+    
+def zfit_level(A, processes=4):
+    import multiprocessing as mp
+    level = np.array(mp.Pool(processes).map(fitCDF1line, (A[:,i,:] for i in range(A.shape[1]))))
+    return level
+    
+def in_ipynb():
+    try:
+        cfg = get_ipython().config 
+        if 'IPKernelApp' in cfg:
+            return True
+        else:
+            return False
+    except NameError:
+        return False
+
+class ProgressBar:
+    def __init__(self, seq=None, min=0, max=100, value=0):        
+        if seq is not None:
+            self.min = 0
+            self.max = len(seq)-1
+            self.value = 0
+        else:
+            self.min = min
+            self.max = max
+            self.value = value
+        if in_ipynb():
+            from ipywidgets import IntProgress
+            from IPython.display import display
+            self.pb = IntProgress(min=self.min,max=self.max,value=self.value)
+            display(self.pb)
+        else:
+            self.pb = None
+            
+    def set_value(self, value):
+        self.value = value
+        if self.pb:
+            self.pb.value = value

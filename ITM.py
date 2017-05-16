@@ -173,7 +173,7 @@ class ITM:
         ch = np.arange(len(D))
         return self.channel2mass(ch, binning=2), D
 
-    def getMeasData(self, name='Instrument.LMIG.Emission_Current'):
+    def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False):
         """
         Allows to recover the data saved during the measurements.
         This function is like getValues, but instead of giving the values at the beginning and at the end, 
@@ -181,29 +181,43 @@ class ITM:
         """
         if name in self.MeasData:
             return self.MeasData[name]
-            
-        for idx, child in enumerate(self.root.goto('rawdata')):
-            if child.name == b'  20':
-                r = child.getKeyValue()
-                if not r['Key'] in self.MeasData:
-                    self.MeasData[r['Key']] = []
-                self.MeasData[r['Key']].append((idx,r['Value']))
+        rawdata = self.root.goto('rawdata')
+        L = rawdata.getList()
+        i = 1
+        while L[-i]['name'] !=  b'  20':
+            i += 1
+        max_index = L[-i]['id']
+        if prog:
+            pb = utils.ProgressBar(max=len(L))
+        for i,elt in enumerate(L):
+            if prog:
+                pb.set_value(i)
+            if elt['name'] != b'  20':
+                continue
+            idx = elt['bidx']
+            self.f.seek(idx)
+            child = Block.Block(self.f)
+            r = child.getKeyValue()
+            if not r['Key'] in self.MeasData:
+                self.MeasData[r['Key']] = []
+            self.MeasData[r['Key']].append((idx,r['Value']))
         return self.MeasData[name]
 
-    def showMeasData(self, name='Instrument.LMIG.Emission_Current', ax=None, **kargs):
+    def showMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, **kargs):
         t = self.getMeasData('Measurement.AcquisitionTime')
         idx = [x[0] for x in t]
         time = [x[1] for x in t]
         
-        Meas = self.getMeasData(name)
+        Meas = self.getMeasData(name,prog=prog)
         
         MeasData = [x[1] for x in Meas]
         MeasIdx = [x[0] for x in Meas]
         t = np.interp(MeasIdx,idx, time)
         if ax is None:
             ax = plt.gca()
-        ax.plot(t, MeasData, **kargs)
+        p = ax.plot(t, MeasData, **kargs)
         ax.set_xlabel("Time [s]");
+        return p
 
     def showSpectrum(self, low=0, high=None, ax=None, log=False, showPeaks=True):
         """

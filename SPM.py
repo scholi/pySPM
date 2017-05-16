@@ -362,8 +362,8 @@ class SPM_image:
             s = np.std(p)
             for ns in range(1,kargs.get('sig',2)+1):
                 ax.fill_between(xvalues, profile-ns*s, profile+ns*s, color=col, alpha=.2)
-
-        Plot = ax.plot(xvalues, profile, color=col)
+        
+        Plot = ax.plot(xvalues, profile, color=col,linestyle=kargs.get('linestyle','-'))
         if kargs.get('min',False):
             minStyle = kargs.get('minStyle',kargs.get('minmaxStyle','--'))
             minColor = kargs.get('minColor',kargs.get('minmaxColor',col))
