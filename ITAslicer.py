@@ -85,8 +85,8 @@ class SlicerApp(QWidget):
             for y in np.arange(self.level.shape[0]):
                 self.ui.pb.setValue(y)
                 for x in np.arange(self.level.shape[1]):
-                    nz = z-self.level[y,x] + np.max(self.level)
-                    self.corrected[y,x,:] = np.interp(z,nz,self.volume[y,x,:],left=0, right=0)
+                    dz = int(-self.level[y,x] + np.max(self.level))
+                    self.corrected[y,x,dz:] = self.volume[y,x,:self.volume.shape[2]-dz]
             self.ui.pb.setValue(0)
         self.plot()
         self.ui.status.setText("IDLE")
