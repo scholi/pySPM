@@ -41,6 +41,8 @@ class SlicerApp(QWidget):
             self.ui.peakList.setItem(i, 1, QTableWidgetItem("{:.2f}u".format((x['cmass']))))
             self.ui.peakList.setItem(i, 2, QTableWidgetItem("{:.2f}u".format(x['umass'] - x['lmass'])))
         self.ui.peakList.show()
+        self.ui.cmap.currentIndexChanged.connect(self.plot)
+        self.ui.prof1daxis.currentIndexChanged.connect(self.plot)
         self.ui.peakList.cellClicked.connect(self.load_channel)
         self.canvas.mpl_connect('button_press_event', self.on_pick)
         self.flatAction = QAction("Flatten substrate from this channel")
@@ -96,14 +98,16 @@ class SlicerApp(QWidget):
             A = self.corrected
         else:
             A = self.volume
+        cmap = self.ui.cmap.currentText()
         self.axXY.clear()
         self.axXZ.clear()
         self.axYZ.clear()
+        self.ax.clear()
         if self.volume is None:
             return
-        self.axXY.imshow(A[:,:,self.curs[2]])
-        self.axXZ.imshow(A[self.curs[1],:,:].T)
-        self.axYZ.imshow(A[:,self.curs[0],:].T)
+        self.axXY.imshow(A[:,:,self.curs[2]],cmap=cmap)
+        self.axXZ.imshow(A[self.curs[1],:,:].T,cmap=cmap)
+        self.axYZ.imshow(A[:,self.curs[0],:].T,cmap=cmap)
         self.axXY.axhline(self.curs[1])
         self.axXY.axvline(self.curs[0])
         self.axXZ.axhline(self.curs[2])
@@ -113,6 +117,15 @@ class SlicerApp(QWidget):
         self.axXY.set_title("XY")
         self.axXZ.set_title("XZ")
         self.axYZ.set_title("YZ")
+        if self.ui.prof1daxis.currentText() in 'XYZ':
+            i = 'XYZ'.index(self.ui.prof1daxis.currentText())
+            self.ax.set_xlabel("XYZ"[i])
+            if i==0:
+                self.ax.plot(A[:,self.curs[0],self.curs[2]])
+            elif i==1:
+                self.ax.plot(A[self.curs[1],:,self.curs[2]])
+            elif i==2:
+                self.ax.plot(A[self.curs[1],self.curs[0],:])
         self.canvas.draw()
         
     def on_pick(self, event):
