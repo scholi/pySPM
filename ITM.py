@@ -70,7 +70,27 @@ class ITM:
                     pass
         except:
             pass
-
+    def get_summary(self):
+        """
+        Retrieve a summary of the important data concerning the measurement
+        """
+        values = self.getValues(start=False,names=["Instrument.SputterGun.Energy","Instrument.SputterGun.Species",
+            "Instrument.LMIG.Extractor","Instrument.LMIG.Lens_Source","Instrument.Analyzer.ExtractionDelay",
+            "Analysis.AcquisitionTime","Analysis.SputterTime","Analysis.TotalScans","Analysis.TotalTime"])
+        
+        return {
+            'pixels': self.size['pixels'],
+            'fov': self.root.goto('Meta/SI Image[0]/fieldofview').getDouble(),
+            'LMIG':{'Extractor': values["Instrument.LMIG.Extractor"][0], 'Lens_Source':values["Instrument.LMIG.Lens_Source"][0]},
+            'ExtractionDelay': values["Instrument.Analyzer.ExtractionDelay"][0],
+            'SputterSpecies': values.get('Instrument.SputterGun.Species',['Off'])[0],
+            'SputterEnergy': values.get('Instrument.SputterGun.Energy',['Off'])[0],
+            'AnalysisTime':  values["Analysis.AcquisitionTime"][0],
+            'SputterTime':  values["Analysis.SputterTime"][0],
+            'Scans': values["Analysis.TotalScans"][0],
+            'TotalTime':  values["Analysis.TotalTime"][0],
+            }
+        
     def getIntensity(self):
         """
         Retieve the total Ion image
@@ -86,12 +106,17 @@ class ITM:
         for i, x in enumerate(rs):
             Val.append([x, rs[x], re[x]])
 
-    def getValues(self, pb=False, names=[], startsWith="", nest=False, hidePrefix=True):
+    def getValues(self, pb=False, start=True,end=True,names=[], startsWith="", nest=False, hidePrefix=True):
         """
         Beta function: Retieve a list of the values
         """
         Vals = {}
-        for start in [True, False]:
+        startEnd = []
+        if start:
+            startEnd.append(True)
+        if end:
+            startEnd.append(False)
+        for start in startEnd:
             List = self.root.goto(['propend', 'propstart'][start]).getList()
             if pb:
                 import tqdm
@@ -115,10 +140,11 @@ class ITM:
                             S = S[k]
                         S['value @'+['end', 'start'][start]] = r['SVal']
                     else:
-                        if start:
-                            Vals[key_name] = [r['SVal']]
-                        else:
+                        if key_name in Vals:
                             Vals[key_name].append(r['SVal'])
+                        else:
+                            Vals[key_name] = [r['SVal']]
+                            
         return Vals
 
     def showValues(self, pb=False, gui=False, **kargs):
