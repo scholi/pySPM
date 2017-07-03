@@ -80,7 +80,7 @@ class Collection:
     def __setitem__(self, key, value):
         self.add(value, key)
 
-    def show(self, ax=None, channels=None, cmap='hot', ncols=3, **kargs):
+    def show(self, ax=None, channels=None, cmap='hot', ncols=3, width=20, **kargs):
         """
         Display the images of the collection in a matplotlib plot.
 
@@ -98,15 +98,15 @@ class Collection:
         channels.sort(key=natural_keys)
         if ax is None:
             if channels_number == 4:
-                fig, ax = plt.subplots(2, 2, figsize=(20,
+                fig, ax = plt.subplots(2, 2, figsize=(width,
                                                       self[channels[0]].pixels.shape[
-                                                          0]*20
+                                                          0]*width
                                                       / self[channels[0]].pixels.shape[1]))
             else:
                 Ny = (channels_number-1)//ncols+1
                 Nx = min(ncols, channels_number)
                 fig, ax = plt.subplots(Ny, Nx,
-                                       figsize=(20, ((channels_number-1)//ncols+1)*20/Nx))
+                                       figsize=(width, ((channels_number-1)//ncols+1)*width/Nx))
         if type(ax) is not list:
             ax = np.array(ax)
         for i, x in enumerate(channels):
