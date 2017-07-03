@@ -331,15 +331,28 @@ class SPM_image:
             ax.set_title(title)
             
     def getProfile(self, *args, **kargs):
-        warnings.DeprecationWarning("getProfile() is replaced by get_profile()")
-        self.get_profile(*args, **kargs)
+        warnings.warn("getProfile() is replaced by get_profile()", DeprecationWarning, stacklevel=2)
+        return self.get_profile(*args, **kargs)
         
     def plotProfile(self, *args, **kargs):
-        warnings.DeprecationWarning("plotProfile() is replaced by plot_profile()")
-        self.plot_profile(*args, **kargs)
+        warnings.warn("plotProfile() is replaced by plot_profile()", DeprecationWarning, stacklevel=2)
+        return self.plot_profile(*args, **kargs)
         
-    def get_profile(self, x1, y1, x2, y2, width=1, ax=None, alpha=0, imgColor='w'):
-        return getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor)
+    def get_profile(self, x1, y1, x2, y2, width=1, ax=None, alpha=0, imgColor='w', pixels=False):
+        """
+        retrieve the profile of the image between pixel x1,y1 and x2,y2
+        ax: defines the matplotlib axis on which the position of the profile should be drawn (in not None)
+        width: the width of the profile (for averaging/statistics)
+        """
+        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor)
+        dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
+        dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
+        if pixels:
+            rd = d
+        else:
+            rd = np.sqrt(dx**2+dy**2)
+        xvalues = np.linspace(0, rd, len(p))
+        return xvalues, p
 
     def plot_profile(self, x1, y1, x2, y2, ax=None, width=1, pixels=False, img=None, imgColor='w', alpha=0, **kargs):
         col = kargs.get('color',kargs.get('col','C0'))
