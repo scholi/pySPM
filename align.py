@@ -2,10 +2,9 @@
 
 import numpy as np
 from skimage import transform as tf
-
+from scipy.ndimage.filters import gaussian_filter
 
 class Aligner:
-
     def __init__(self, fixed, other, prog=True):
         self.fixed = fixed
         self.other = other
@@ -16,7 +15,8 @@ class Aligner:
         self.rotation = 0
 
         self.initIDX = self.getMatchingIndex()
-
+    
+    def compute(self):
         # Compute the correlation to find the best shift as first guess
         if prog:
             print("Progress [1/4] Improve Shift...", end='\r')
@@ -49,6 +49,10 @@ class Aligner:
         self.trans = (cord[1]-self.size[0]/2, cord[0]-self.size[1]/2)
 
     def getTf(self):
+        """
+        Get the Afdfine transform.
+        You can apply it to a pySPM Image (img) with: img.align(this.getTf())
+        """
         return tf.AffineTransform(scale=self.scale, rotation=self.rotation, translation=self.trans)
 
     def getMatchingIndex(self):
@@ -113,3 +117,73 @@ class Aligner:
 
     def __repr__(self):
         return u"Scale: ({scale[0]},{scale[1]})\nRotation: {rot:.6f} deg.\nTranslation: ({trans[0]},{trans[1]})".format(rot=self.rotation, scale=self.scale, trans=self.trans)
+
+def ApplyShift(Img, shift):
+    dx, dy = [int(x) for x in shift]
+    return np.pad(Img,((max(0,dy),max(0,-dy)),(max(0,-dx),max(0,dx))),
+                mode='constant', constant_values=0)[max(0,-dy):max(0,-dy)+Img.shape[0],
+                                                    max(0,dx):max(0,dx)+Img.shape[1]]
+
+def AutoShift(Ref, Img, Delta = 50, shift=(0,0), step=5, gauss=5, mean=True):
+    """Function to find the best shift between two images by using brute force
+    It shift the two iumages and calculate a difference score between the two.
+    The function will return the shift which gives the lowerst score (least difference)
+    The score is the norm of the difference between the two images where all non-overlaping parts of the images
+    due to the shifts are set to 0. The score is then normes by the effective area.
+    In order to avoid the errors due to shot-noise, the images are gaussian blured.
+  
+    Delta: shifts between shift[0/1]-Delta and shift[0/1]+Delta will be tested
+    step: The step between tested delta values
+    gauss: For noisy image it is better to use a gaussian filter in order to improve the score accuracy.
+           The value is the gaussian size.
+    mean: If True, the mean value of each image are subtracted. This is prefered when the intensities of the two images does not match perfectly.
+          Set it to False if you know that the intensities of your two images are identical
+    Note: This function was developed as the maximum in FFT correlation does not seems to give very acurate
+          result for images with low counts. If the shifts is expected to be big, the first guess shift can be calculated
+          by FFT correlation. ie.:
+          s = np.fft.fftshift( np.abs( np.fft.ifft2( np.fft.fft2(Reference) * np.conj(np.fft.fft2(Image)))))
+          shift = [x-s.shape[i]/2 for i,x in enumerate(np.unravel_index(np.argmax(s), s.shape))]
+    """
+    
+    if mean:
+        Ref -= np.mean(Ref)
+        Img -= np.mean(Img)
+        
+    # blur the images for score calculation
+    if gauss in [0,None,False]:
+        im1 = Ref
+        im2 = Img
+    else:
+        im1 = gaussian_filter( Ref, gauss)
+        im2 = gaussian_filter( Img, gauss)
+        
+    # the following two variables save the best score
+    best = (0,0)
+    Dbest = Ref.shape[0]*Ref.shape[1]*max(np.max(im2),np.max(im1))
+    tested = {}
+    # Sweep through all possible shifts (brute force)
+    for Dy in np.arange(shift[1]-Delta, shift[1]+Delta+1, step):
+        dy = int(Dy)
+        for Dx in np.arange(shift[0]-Delta, shift[0]+Delta+1, step):
+            dx = int(Dx)
+            corr2 = ApplyShift(im2, (dx,dy))[:Ref.shape[0],:Ref.shape[1]]
+            
+            # Create a copy of the reference and erase parts which are not overlaping with img
+            Or = np.copy(im1)
+            if dy < 0:
+                Or[dy:,:] = 0
+            else:
+                Or[:dy,:] = 0
+            if dx < 0:
+                Or[:,:-dx] = 0
+            else:
+                Or[:,dx:] = 0
+                
+            # calculate the score: absolute of the differendces normed by the overlaping area
+            D = np.sum(np.abs( Or - corr2 )) / ((Ref.shape[0]-2*dy)*(Ref.shape[1]-2*dx))
+            tested[(dx,dy)] = D
+            if D < Dbest:
+                Dbest = D
+                best = (dx,dy)
+                
+    return best, Dbest, tested
