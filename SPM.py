@@ -580,7 +580,6 @@ class SPM_image:
     def ResizeInfos(self):
         self.size['real']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
         self.size['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
-        self.size['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
         self.size['pixels']['x'] = int(self.pixels.shape[1])
         self.size['pixels']['y'] = int(self.pixels.shape[0])
         if 'recorded' in self.size:
@@ -600,9 +599,10 @@ class SPM_image:
             b = self.pixels[y-1, :]
             c = self.pixels[y, :]
             a = self.pixels[y+1, :]
-            mask = np.abs(b-a) < .5*(np.abs(c-a))
+            mask = np.abs(b-a) < thresh*(np.abs(c-a))
             C.pixels[y, mask] = b[mask]
-        return C
+        if not inline:
+            return C
 
     def cut(self, c, inplace=False):
         if not inplace:
@@ -800,7 +800,7 @@ def fit2d(Z, dx=2, dy=1):
     return r, Z2
 
 
-def align(img, tform):
+def Align(img, tform):
     New = tf.warp(img, tform, preserve_range=True)
     Cut = [0, 0] + list(img.shape)
     if tform.translation[0] >= 0:
