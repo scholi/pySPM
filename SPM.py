@@ -800,7 +800,7 @@ def fit2d(Z, dx=2, dy=1):
     return r, Z2
 
 
-def Align(img, tform):
+def Align(img, tform, cut=True):
     New = tf.warp(img, tform, preserve_range=True)
     Cut = [0, 0] + list(img.shape)
     if tform.translation[0] >= 0:
@@ -812,7 +812,8 @@ def Align(img, tform):
     elif tform.translation[1] < 0:
         Cut[3] += tform.translation[1]
     Cut = [int(x) for x in Cut]
-    New = cut(New, Cut)
+    if cut:
+        New = cut(New, Cut)
     return New, Cut
 
 
@@ -822,9 +823,14 @@ def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w', alpha=0):
     if not ax is None:
         dx = -width/2*(y2-y1)/d
         dy = width/2*(x2-x1)/d
-        ax.plot([x1, x2], [y1, y2], color)
-        ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color)
-        ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color)
+        if type(color) in [tuple, list]:
+            ax.plot([x1, x2], [y1, y2], color=color)
+            ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color=color)
+            ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color=color)
+        else:
+            ax.plot([x1, x2], [y1, y2], color)
+            ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color)
+            ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color)
         if alpha>0:
             import matplotlib.patches
             ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),width, d, -np.degrees(np.arctan2(x2-x1,y2-y1)), color=color, alpha=alpha))
