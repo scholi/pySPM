@@ -310,9 +310,9 @@ class SPM_image:
             vmax = kargs['vmax']
             del kargs['vmax']
         if not flip:
-            ax.imshow(np.flipud(img), cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
+            r = ax.imshow(np.flipud(img), cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
         else:
-            ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
+            r = ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
         if pixels:
             ax.set_xlim((0, self.pixels.shape[1]))
             ax.set_ylim((self.pixels.shape[0], 0))
@@ -329,7 +329,8 @@ class SPM_image:
                 ax.set_ylabel(u'y [{0}]'.format(unit))
         if title != None:
             ax.set_title(title)
-            
+        return r
+        
     def getProfile(self, *args, **kargs):
         warnings.warn("getProfile() is replaced by get_profile()", DeprecationWarning, stacklevel=2)
         return self.get_profile(*args, **kargs)
@@ -375,18 +376,18 @@ class SPM_image:
             s = np.std(p)
             for ns in range(1,kargs.get('sig',2)+1):
                 ax.fill_between(xvalues, profile-ns*s, profile+ns*s, color=col, alpha=.2)
-        
-        Plot = ax.plot(xvalues, profile, color=col,linestyle=kargs.get('linestyle','-'))
+        lab = kargs.get("label",None)
+        Plot = ax.plot(xvalues, profile, color=col,linestyle=kargs.get('linestyle','-'), label=lab)
         if kargs.get('min',False):
             minStyle = kargs.get('minStyle',kargs.get('minmaxStyle','--'))
             minColor = kargs.get('minColor',kargs.get('minmaxColor',col))
             minMarker = kargs.get('minMarker',kargs.get('minmaxMarker',''))
-            ax.plot(xvalues, np.min(p, axis=1), color=minColor, linestyle=minStyle, marker=minMarker)
+            ax.plot(xvalues, np.min(p, axis=1), color=minColor, linestyle=minStyle, marker=minMarker, label=lab)
         if kargs.get('max',False):
             maxStyle = kargs.get('maxStyle',kargs.get('minmaxStyle','--'))
             maxColor = kargs.get('maxColor',kargs.get('minmaxColor',col))
             maxMarker = kargs.get('maxMarker',kargs.get('minmaxMarker',''))
-            ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, marker=maxMarker)
+            ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, marker=maxMarker, label=lab)
             
         ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
         try:
@@ -730,13 +731,15 @@ def NormP(x, p, trunk=True):
     return r
 
 
-def BeamProfile(target, source, mu=1e-6):
+def BeamProfile(target, source, mu=1e-6, tukey=0):
     """
     Calculate the PSF by deconvolution of the target
     with the source using a Tikhonov regularization of factor mu.
     """
     source = 2*source-1
     target = target-np.mean(target)
+    if tukey>0:
+        target = tukeyfy(target, tukey)
     tf = np.fft.fft2(source)
     tf /= np.size(tf)
     recon_tf = np.conj(tf) / (np.abs(tf)**2 + mu)
@@ -756,9 +759,8 @@ def ZoomCenter(img, sx, sy=None):
     if sy is None:
         sy = sx
     return img[
-        (img.shape[1]-sy)//2: (img.shape[1]+sy)//2,
-        (img.shape[0]-sx)//2:(img.shape[0]+sx)//2]
-
+        img.shape[0]//2-sy//2: img.shape[0]//2 + sy//2,
+        img.shape[1]//2-sx//2: img.shape[1]//2 + sx//2]
 
 def px2real(x, y, size, ext):
     rx = ext[0]+(x/size[1])*(ext[1]-ext[0])
@@ -817,8 +819,10 @@ def Align(img, tform, cut=True):
     return New, Cut
 
 
-def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w', alpha=0):
+def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w', alpha=0, N=None):
     d = np.sqrt((x2-x1)**2+(y2-y1)**2)
+    if N is None:
+        N = int(d)+1
     P = []
     if not ax is None:
         dx = -width/2*(y2-y1)/d
@@ -837,11 +841,11 @@ def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w', alpha=0):
     for w in np.linspace(-width/2, width/2, width):
         dx = -w*(y2-y1)/d
         dy = w*(x2-x1)/d
-        x = np.linspace(x1+dx, x2+dx, int(d)+1)
-        y = np.linspace(y1+dy, y2+dy, int(d)+1)
-        N = scipy.ndimage.map_coordinates(I, np.vstack((y, x)))
-        P.append(N)
-    return np.linspace(0, d, int(d)+1), np.vstack(P).T
+        x = np.linspace(x1+dx, x2+dx, N)
+        y = np.linspace(y1+dy, y2+dy, N)
+        M = scipy.ndimage.map_coordinates(I, np.vstack((y, x)))
+        P.append(M)
+    return np.linspace(0, d, N), np.vstack(P).T
 
 
 def dist_v2(img):
@@ -851,3 +855,24 @@ def dist_v2(img):
     y2 = (np.minimum(y2, img.shape[0] - y2))**2
     X, Y = np.meshgrid(x2, y2)
     return np.sqrt(X+Y)
+
+def getTikTf(Img, mu):
+    import scipy
+    def fit(x, a ,A, bg, x0):
+        return bg+(A-bg)*np.exp(-abs(x-x0)/a)
+    
+    x = np.arange(Img.shape[1])
+    y = np.arange(Img.shape[0])
+    X, Y = np.meshgrid(x, y)
+    x0 = Img.shape[1]/2
+    y0 = Img.shape[0]/2
+    R = np.sqrt((X-x0)**2+(Y-y0)**2)
+    
+    Z = BeamProfile(Img, Img, mu=mu)
+    zoom = ZoomCenter(Z, 800)
+    P = zoom[zoom.shape[0]//2, :]
+    popt, pcov = scipy.optimize.curve_fit(fit, np.arange(len(P)), P, (1,np.max(zoom), 0, len(P)/2))
+    bg = popt[2]
+    a = popt[0]
+    return bg+np.exp(-np.abs(R)/a)
+  
