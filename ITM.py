@@ -8,7 +8,6 @@ import re
 
 
 class ITM:
-
     def __init__(self, filename):
         """
         Create the ITM object out of the filename.
@@ -70,6 +69,7 @@ class ITM:
                     pass
         except:
             pass
+    
     def get_summary(self):
         """
         Retrieve a summary of the important data concerning the measurement
@@ -81,14 +81,17 @@ class ITM:
         return {
             'pixels': self.size['pixels'],
             'fov': self.root.goto('Meta/SI Image[0]/fieldofview').getDouble(),
-            'LMIG':{'Extractor': values["Instrument.LMIG.Extractor"][0], 'Lens_Source':values["Instrument.LMIG.Lens_Source"][0]},
+            'LMIG': {
+                'Extractor': values["Instrument.LMIG.Extractor"][0],
+                'Lens_Source':values["Instrument.LMIG.Lens_Source"][0]},
             'ExtractionDelay': values["Instrument.Analyzer.ExtractionDelay"][0],
             'SputterSpecies': values.get('Instrument.SputterGun.Species',['Off'])[0],
             'SputterEnergy': values.get('Instrument.SputterGun.Energy',['Off'])[0],
-            'AnalysisTime':  values["Analysis.AcquisitionTime"][0],
-            'SputterTime':  values["Analysis.SputterTime"][0],
+            'AnalysisTime': values["Analysis.AcquisitionTime"][0],
+            'SputterTime': values["Analysis.SputterTime"][0],
             'Scans': values["Analysis.TotalScans"][0],
             'TotalTime':  values["Analysis.TotalTime"][0],
+            'peaks': self.get_masses(),
             }
         
     def getIntensity(self):
