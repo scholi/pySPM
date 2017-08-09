@@ -7,6 +7,7 @@ import binascii
 import struct
 import numpy as np
 
+
 class Block:
     """
     Class to handle a iontof-Block
@@ -87,35 +88,38 @@ class Block:
         if not self.Type[0:1] in [b'\x01', b'\x03']:
             return []
         if self.List is None:
-            self.createList()
+            return self.createList()
         return self.List
 
-    def createList(self):
+    def createList(self, limit=None):
         """
         Generate a list (self.List) containing all the children (sub-blocks) of the current Block
         """
-        length, nums, ID, L, NextBlock = struct.unpack('<III9xI8xQ', self.value[:41])
-        self.nums = L
-        self.subType = ID
+        offset = self.offset
         self.List = []
-        N = self.head['u']
-        if N == 0:
-            N = self.nums
-        for i in range(N):
-            S = dict(\
-                zip(['index', 'slen', 'id', 'blen', 'bidx'],\
-                struct.unpack('<III4xQQ', self.value[42+33*i:42+33*i+32])))
-            S['name'] = self.value[S['index']:S['index']+S['slen']]
-            self.List.append(S)
-        if NextBlock > 0:
-            self.f.seek(NextBlock)
-            try:
-                _next = Block(self.f)
-                self.List += _next.getList()
-                del _next
-            except:
-                pass
-
+        while True:
+            self.f.seek(offset)
+            head = dict(zip(['length', 'z', 'u', 'x', 'y'], \
+                struct.unpack('<5x5I', self.f.read(25))))
+            name = self.f.read(head['length'])
+            data = self.f.tell()
+            length, nums, ID, L, NextBlock = struct.unpack('<III9xI8xQ', self.f.read(41))
+            N = head['u']
+            if N == 0:
+                N = nums
+            for i in range(N):                
+                self.f.seek(data+42+33*i)
+                S = dict(\
+                    zip(['index', 'slen', 'id', 'blen', 'bidx'],\
+                    struct.unpack('<III4xQQ', self.f.read(32))))
+                self.f.seek(data+S['index'])
+                S['name'] = self.f.read(S['slen'])
+                self.List.append(S)
+            if NextBlock == 0:
+                break
+            offset = NextBlock
+        return self.List
+            
     def getString(self):
         """
         Decode the value of the Block to UTF-16 (standard for all strings in this fileformat)
