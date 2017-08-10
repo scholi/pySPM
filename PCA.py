@@ -31,9 +31,10 @@ class PCA:
         corrmat = self.corr()
         sns.heatmap(corrmat).xaxis.tick_top()
 
-    def hinton(self, max_weight=None, ax=None):
+    def hinton(self, max_weight=None, ax=None, matrix = None, xlabel=None, ylabel=None):
         """Draw Hinton diagram for visualizing a weight matrix."""
-        matrix = self.corr()
+        if matrix is None:
+            matrix = self.corr()
         ax = ax if ax is not None else plt.gca()
 
         if not max_weight:
@@ -47,16 +48,21 @@ class PCA:
         for (x, y), w in np.ndenumerate(matrix):
             color = 'red' if w > 0 else 'blue'
             size = np.sqrt(np.abs(w))
-            rect = plt.Rectangle([x - size / 2, y - size / 2], size, size,
+            rect = plt.Rectangle([y - size / 2, x - size / 2], size, size,
                                  facecolor=color, edgecolor=color)
             ax.add_patch(rect)
 
-        nticks = matrix.shape[0]
+        nxticks = matrix.shape[1]
+        nyticks = matrix.shape[0]
+        if xlabel is None:
+            xlabel = list(matrix.columns)
+        if ylabel is None:
+            ylabel = list(matrix.index)
         ax.xaxis.tick_top()
-        ax.set_xticks(range(nticks))
-        ax.set_xticklabels(list(matrix.columns), rotation=90)
-        ax.set_yticks(range(nticks))
-        ax.set_yticklabels(matrix.columns)
+        ax.set_xticks(range(nxticks))
+        ax.set_xticklabels(xlabel, rotation=90)
+        ax.set_yticks(range(nyticks))
+        ax.set_yticklabels(ylabel)
         ax.grid(False)
 
         ax.autoscale_view()
@@ -96,7 +102,7 @@ class PCA:
         ax.grid(True)
         ax.plot(x, y, "o-")
         ax.set_xticks(x)
-        ax.set_xticklabels(["Comp."+str(i) for i in x], rotation=60)
+        ax.set_xticklabels(["PC"+str(i) for i in x], rotation=60)
         ax.set_ylabel("Variance")
 
     def pc(self, id=0):

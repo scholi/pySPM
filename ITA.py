@@ -11,7 +11,7 @@ from pySPM.collection import Collection
 from pySPM.SPM import SPM_image
 from pySPM import Block, utils, ITM
 import warnings
-
+import copy
 
 class ITA(ITM.ITM):
 
@@ -353,16 +353,15 @@ class ITA_collection(Collection):
         S = np.zeros((int(size[0]/stitches[0]), int(size[1]/stitches[1])))
         for i in range(stitches[0]):
             for j in range(stitches[1]):
-                S += self.channels[channel].pixels[128 *
-                                                   i:128*(i+1), 128*j:128*(j+1)]
+                S += self.channels[channel].pixels[128*i:128*(i+1), 128*j:128*(j+1)]
         S[S == 0] = 1
         for x in self.channels:
             F = np.zeros(size)
             for i in range(stitches[0]):
                 for j in range(stitches[1]):
-                    F[128*i:128*(i+1), 128*j:128*(j+1)] = self.channels[
-                        x].pixels[128*i:128*(i+1), 128*j:128*(j+1)]/S
-            new_channel = self[x]
+                    F[128*i:128*(i+1), 128*j:128*(j+1)] = \
+                        self.channels[x].pixels[128*i:128*(i+1), 128*j:128*(j+1)]/S
+            new_channel = copy.deepcopy(self[x])
             new_channel.pixels = F
             N.add(new_channel, x)
         return N

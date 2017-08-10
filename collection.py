@@ -78,7 +78,7 @@ class Collection:
             return None
         if isinstance(self.channels[key], SPM_image):
             return self.channels[key]
-        return self.create_image(self.channels[key], channel=key)
+        return self.create_image(self.channels[key], key=key)
         
     def __delitem__(self, key):
         del self.channels[key]
