@@ -41,7 +41,7 @@ class ITM:
                 'y': d[b'res_y']['long']},
             'real': {
                 'x': d[b'fieldofview']['float'],
-                'y': d[b'fieldofview']['float'],
+                'y': d[b'fieldofview']['float']*d[b'res_y']['long']/d[b'res_x']['long'],
                 'unit': 'm'}}
         try:
             self.size['Scans'] = \
