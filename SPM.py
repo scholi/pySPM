@@ -16,7 +16,14 @@ import skimage.filters
 import scipy.interpolate
 from skimage import transform as tf
 import copy
-from tqdm import tqdm
+try:
+    from tqdm import tqdm_notebook as tqdm
+except:
+    try:
+        from tqdm import tqdm
+    except:
+        tqdm = lambda x: x
+        
 import matplotlib as mpl
 import warnings
 
@@ -290,15 +297,6 @@ class SPM_image:
             avg = np.nanmean(img)
             vmin = avg - sig * std
             vmax = avg + sig * std
-        if not pixels:
-            xp = np.linspace(0, self.pixels.shape[1], 11)
-            xr = np.linspace(0, W, 11)
-            ax.set_xticks(xp)
-            ax.set_xticklabels([str(np.round(z, 1)) for z in xr])
-            yp = np.linspace(0, self.pixels.shape[0], 11)
-            yr = np.linspace(0, H, 11)
-            ax.set_yticks(yp)
-            ax.set_yticklabels([str(round(z, 1)) for z in yr])
         if 'level' in kargs:
             vmin = np.percentile(img, 100-kargs['level'])
             vmax = np.percentile(img, kargs['level'])
@@ -310,9 +308,9 @@ class SPM_image:
             vmax = kargs['vmax']
             del kargs['vmax']
         if not flip:
-            r = ax.imshow(np.flipud(img), cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
+            r = ax.imshow(np.flipud(img), extent=[0, W, 0, H], cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
         else:
-            r = ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
+            r = ax.imshow(img, cmap=cmap, extent=[0, W, 0, H], vmin=vmin, vmax=vmax, **kargs)
         if pixels:
             ax.set_xlim((0, self.pixels.shape[1]))
             ax.set_ylim((self.pixels.shape[0], 0))

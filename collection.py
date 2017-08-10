@@ -69,14 +69,20 @@ class Collection:
                            'the collection. Please delete it before')
             return
         self.channels[name] = Img
-
+        
+    def create_image(self, img, key=None):
+        return SPM_image(img, _type=self.name, real=self.size, channel=key)
+        
     def __getitem__(self, key):
         if key not in self.channels:
             return None
         if isinstance(self.channels[key], SPM_image):
             return self.channels[key]
-        return SPM_image(self.channels[key], _type=self.name, real=self.size, channel=key)
-
+        return self.create_image(self.channels[key], channel=key)
+        
+    def __delitem__(self, key):
+        del self.channels[key]
+        
     def __setitem__(self, key, value):
         self.add(value, key)
 
@@ -131,8 +137,8 @@ class Collection:
                 {k: self.channels[k].ravel() for k in channels})
         return data
 
-    def overlay(self, channel_names, colors=[[0, .5, .3], [1, 0, 0]], ax=None,
-                sig=None, vmin=None, vmax=None, flip=False):
+    def overlay(self, channel_names, colors=[[0, .5, .3], [1, 0, 0]],
+                sig=None, vmin=None, vmax=None):
         """
         Create an overlay (in color) of several channels.
         channel_names: a list of the channels to select for the overlay
@@ -146,13 +152,8 @@ class Collection:
             for ch in channel_names]
         layers = [np.stack([data[i]*colors[i][j] for j in range(3)], axis=2)
                   for i in range(len(channel_names))]
-        if ax is None:
-            ax = plt.gca()
         overlay = np.sum(layers, axis=0)
-        if flip:
-            overlay = np.flipud(overlay)
-        ax.imshow(overlay)
-        return layers
+        return self.create_image(overlay, key="overlay"), [self.create_image(x, key=channel_names[i]) for i,x in enumerate(layers)]
 
     def stitch_correction(self, channel, stitches):
         """
