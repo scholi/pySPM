@@ -231,8 +231,8 @@ class ITM:
                 self.MeasData[r['Key']] = []
             self.MeasData[r['Key']].append((idx,r['Value']))
         return self.MeasData[name]
-
-    def showMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, **kargs):
+    
+    def showMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, mul=1, **kargs):
         t = self.getMeasData('Measurement.AcquisitionTime')
         idx = [x[0] for x in t]
         time = [x[1] for x in t]
@@ -244,7 +244,7 @@ class ITM:
         t = np.interp(MeasIdx,idx, time)
         if ax is None:
             ax = plt.gca()
-        p = ax.plot(t, MeasData, **kargs)
+        p = ax.plot(t, np.array(MeasData)*mul, **kargs)
         ax.set_xlabel("Time [s]");
         return p
 

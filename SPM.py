@@ -308,9 +308,15 @@ class SPM_image:
             vmax = kargs['vmax']
             del kargs['vmax']
         if not flip:
-            r = ax.imshow(np.flipud(img), extent=[0, W, 0, H], cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
+            if pixels:
+                r = ax.imshow(np.flipud(img), cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
+            else:
+                r = ax.imshow(np.flipud(img), extent=[0, W, 0, H], cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
         else:
-            r = ax.imshow(img, cmap=cmap, extent=[0, W, 0, H], vmin=vmin, vmax=vmax, **kargs)
+            if pixels:
+                r = ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
+            else:
+                r = ax.imshow(img, cmap=cmap, extent=[0, W, 0, H], vmin=vmin, vmax=vmax, **kargs)
         if pixels:
             ax.set_xlim((0, self.pixels.shape[1]))
             ax.set_ylim((self.pixels.shape[0], 0))

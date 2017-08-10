@@ -93,16 +93,19 @@ class PCA:
         summary = pd.DataFrame(list(Z), index=names, columns=columns)
         return summary
 
-    def screeplot(self, ax=None):
+    def screeplot(self, ax=None, num=None):
         if self.pca is None:
             self.runPCA()
         ax = ax if ax is not None else plt.gca()
+        
         y = np.std(self.pca.transform(self.standX), axis=0)**2
+        if num is None:
+            num = len(y)
         x = np.arange(len(y)) + 1
         ax.grid(True)
-        ax.plot(x, y, "o-")
-        ax.set_xticks(x)
-        ax.set_xticklabels(["PC"+str(i) for i in x], rotation=60)
+        ax.plot(x[:num], y[:num], "o-")
+        ax.set_xticks(x[:num])
+        ax.set_xticklabels(["PC"+str(i) for i in x[:num]], rotation=60)
         ax.set_ylabel("Variance")
 
     def pc(self, id=0):
