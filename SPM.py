@@ -255,7 +255,7 @@ class SPM_image:
         return (0, W, 0, H)
 
     def show(self, ax=None, sig=None, cmap=None, title=None,
-             adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, wrap=None, **kargs):
+             adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, wrap=None, mul=1, **kargs):
         mpl.rc('axes', grid=False)
         if ax is None:
             ax = plt.gca()
@@ -282,13 +282,16 @@ class SPM_image:
             cmap = 'gray'
             if unit == 'm' and self.channel == "Topography":
                 cmap = 'hot'
-        mi, ma = np.nanmin(self.pixels), np.nanmax(self.pixels)
+        mi, ma = np.nanmin(self.pixels), np.nanmax(self.pixels)            
         if adaptive:
             img = np.asarray(256**2*(self.pixels-mi)/(ma-mi), dtype=np.uint16)
             mi, ma = 0, 1
             img = skimage.exposure.equalize_adapthist(img, clip_limit=0.03)
         else:
-            img = self.pixels
+            img = mul*self.pixels
+            mi *= mul
+            ma *= mul
+        
         if sig == None:
             vmin = mi+dmin
             vmax = ma+dmax
@@ -343,13 +346,13 @@ class SPM_image:
         warnings.warn("plotProfile() is replaced by plot_profile()", DeprecationWarning, stacklevel=2)
         return self.plot_profile(*args, **kargs)
         
-    def get_profile(self, x1, y1, x2, y2, width=1, ax=None, alpha=0, imgColor='w', pixels=False):
+    def get_profile(self, x1, y1, x2, y2, width=1, ax=None, axPixels=True, alpha=0, imgColor='w', pixels=False):
         """
         retrieve the profile of the image between pixel x1,y1 and x2,y2
         ax: defines the matplotlib axis on which the position of the profile should be drawn (in not None)
         width: the width of the profile (for averaging/statistics)
         """
-        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor)
+        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor, axPixels=axPixels)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
         if pixels:
