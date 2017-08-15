@@ -347,7 +347,7 @@ class SPM_image:
         warnings.warn("plotProfile() is replaced by plot_profile()", DeprecationWarning, stacklevel=2)
         return self.plot_profile(*args, **kargs)
         
-    def get_profile(self, x1, y1, x2, y2, width=1, ax=None, alpha=0, imgColor='w', pixels=True, axPixels=None):
+    def get_profile(self, x1, y1, x2, y2, width=0, ax=None, alpha=0, imgColor='w', pixels=True, axPixels=None):
         """
         retrieve the profile of the image between pixel x1,y1 and x2,y2
         ax: defines the matplotlib axis on which the position of the profile should be drawn (in not None)
@@ -829,7 +829,7 @@ def Align(img, tform, cut=True):
     return New, Cut
 
 
-def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w', alpha=0, N=None,\
+def getProfile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
         transx=lambda x: x, transy=lambda x: x):
     d = np.sqrt((x2-x1)**2+(y2-y1)**2)
     if N is None:
@@ -837,18 +837,20 @@ def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w', alpha=0, N=None,\
     P = []
     dx = -width/2*(y2-y1)/d
     dy = width/2*(x2-x1)/d
-    for w in np.linspace(-width/2, width/2, width):
+    for w in np.linspace(-width/2, width/2, max(1,width)):
+        print("w",w)
         dx = -w*(y2-y1)/d
         dy = w*(x2-x1)/d
         x = np.linspace(x1+dx, x2+dx, N)
         y = np.linspace(y1+dy, y2+dy, N)
+        print(x,y)
         M = scipy.ndimage.map_coordinates(I, np.vstack((y, x)))
         P.append(M)
-    x1 = transx(x1)
-    x2 = transx(x2)
-    y1 = transx(y1)
-    y2 = transx(y2)
     if not ax is None:
+        x1 = transx(x1)
+        x2 = transx(x2)
+        y1 = transx(y1)
+        y2 = transx(y2)
         dx = -width/2*(y2-y1)/d
         dy = width/2*(x2-x1)/d
         if type(color) in [tuple, list]:
