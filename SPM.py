@@ -346,27 +346,31 @@ class SPM_image:
         warnings.warn("plotProfile() is replaced by plot_profile()", DeprecationWarning, stacklevel=2)
         return self.plot_profile(*args, **kargs)
         
-    def get_profile(self, x1, y1, x2, y2, width=1, ax=None, axPixels=True, alpha=0, imgColor='w', pixels=False):
+    def get_profile(self, x1, y1, x2, y2, width=1, ax=None, alpha=0, imgColor='w', pixels=True, axPixels=None):
         """
         retrieve the profile of the image between pixel x1,y1 and x2,y2
         ax: defines the matplotlib axis on which the position of the profile should be drawn (in not None)
         width: the width of the profile (for averaging/statistics)
         """
-        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor)
+        if axPixels is None:
+            axPixels = pixels
+        if not pixels:
+            x1 = np.digitize(x1, np.linspace(0,self.size['real']['x'],self.pixels.shape[1]))
+            x2 = np.digitize(x2, np.linspace(0,self.size['real']['x'],self.pixels.shape[1]))
+            y1 = np.digitize(y1, np.linspace(0,self.size['real']['y'],self.pixels.shape[0]))
+            y2 = np.digitize(y2, np.linspace(0,self.size['real']['y'],self.pixels.shape[0]))
+        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor, transx = lambda x: x*self.size['real']['x']/self.pixels.shape[1],transy = lambda x: x*self.size['real']['y']/self.pixels.shape[0])
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
-        if pixels:
-            rd = d
-        else:
-            rd = np.sqrt(dx**2+dy**2)
+        rd = np.sqrt(dx**2+dy**2)
         xvalues = np.linspace(0, rd, len(p))
         return xvalues, p
 
-    def plot_profile(self, x1, y1, x2, y2, ax=None, width=1, pixels=False, img=None, imgColor='w', alpha=0, **kargs):
+    def plot_profile(self, x1, y1, x2, y2, ax=None, width=1, pixels=True, img=None, imgColor='w', alpha=0, axPixels=False, **kargs):
         col = kargs.get('color',kargs.get('col','C0'))
         if ax == None:
             fig, ax = plt.subplots(1, 1)
-        xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, ax=img, alpha=alpha, imgColor=imgColor)
+        xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, ax=img, alpha=alpha, imgColor=imgColor, pixels=pixels,axPixels=axPixels)
         d = np.sqrt((x2-x1)**2+(y2-y1)**2)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
@@ -826,11 +830,25 @@ def Align(img, tform, cut=True):
     return New, Cut
 
 
-def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w', alpha=0, N=None):
+def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w', alpha=0, N=None,\
+        transx=lambda x: x, transy=lambda x: x):
     d = np.sqrt((x2-x1)**2+(y2-y1)**2)
     if N is None:
         N = int(d)+1
     P = []
+    dx = -width/2*(y2-y1)/d
+    dy = width/2*(x2-x1)/d
+    for w in np.linspace(-width/2, width/2, width):
+        dx = -w*(y2-y1)/d
+        dy = w*(x2-x1)/d
+        x = np.linspace(x1+dx, x2+dx, N)
+        y = np.linspace(y1+dy, y2+dy, N)
+        M = scipy.ndimage.map_coordinates(I, np.vstack((y, x)))
+        P.append(M)
+    x1 = transx(x1)
+    x2 = transx(x2)
+    y1 = transx(y1)
+    y2 = transx(y2)
     if not ax is None:
         dx = -width/2*(y2-y1)/d
         dy = width/2*(x2-x1)/d
@@ -845,13 +863,7 @@ def getProfile(I, x1, y1, x2, y2, width=1, ax=None, color='w', alpha=0, N=None):
         if alpha>0:
             import matplotlib.patches
             ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),width, d, -np.degrees(np.arctan2(x2-x1,y2-y1)), color=color, alpha=alpha))
-    for w in np.linspace(-width/2, width/2, width):
-        dx = -w*(y2-y1)/d
-        dy = w*(x2-x1)/d
-        x = np.linspace(x1+dx, x2+dx, N)
-        y = np.linspace(y1+dy, y2+dy, N)
-        M = scipy.ndimage.map_coordinates(I, np.vstack((y, x)))
-        P.append(M)
+    
     return np.linspace(0, d, N), np.vstack(P).T
 
 
