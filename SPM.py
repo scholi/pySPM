@@ -83,6 +83,7 @@ class SPM_image:
                                  'x': BIN.shape[1], 'y': BIN.shape[0]}
         self.pixels = BIN
         self.type = _type
+        self.zscale = zscale
         if corr is not None:
             if corr.lower() == 'slope':
                 self.correct_slope()
@@ -401,10 +402,8 @@ class SPM_image:
             ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, marker=maxMarker, label=lab)
             
         ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
-        try:
-            ax.set_ylabel("Height [{0}]".format(self.zscale))
-        except:
-            pass
+        ax.set_ylabel("{1} [{0}]".format(self.zscale,self.channel))
+       
         return {'plot': Plot, 'l': xvalues, 'z': profile}
 
     def getBinThreshold(self, percent, high=True, adaptive=False, binary=True, img=False):
