@@ -352,7 +352,7 @@ class SPM_image:
         ax: defines the matplotlib axis on which the position of the profile should be drawn (in not None)
         width: the width of the profile (for averaging/statistics)
         """
-        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor, axPixels=axPixels)
+        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
         if pixels:
