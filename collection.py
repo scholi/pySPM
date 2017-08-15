@@ -199,7 +199,7 @@ def PointInTriangle(pt, v1, v2, v3):
     return (b1 == b2) * (b2 == b3)
 
 
-def overlay_triangle(channel_names, colors, ax=None, size=512):
+def overlay_triangle(channel_names, colors, radius=.8,proportion = .9,ax=None, size=512, bgcolor=[0,0,0], textcolor='white',fontsize=20):
     """
     Create the image of a triangle, where the color is a gradient between three colors
     (one for each vertex).
@@ -215,9 +215,7 @@ def overlay_triangle(channel_names, colors, ax=None, size=512):
     assert len(colors) == 3
     if ax is None:
         ax = plt.gca()
-    proportion = .9
-    radius = .8
-    RGB = [np.zeros((size, size)) for i in range(3)]
+    RGB = [bgcolor[i]*np.ones((size, size)) for i in range(3)]
     distance = 2*radius*proportion*np.sin(np.radians(120))
 
     x = np.linspace(-.7, 1.1, size)
@@ -232,11 +230,11 @@ def overlay_triangle(channel_names, colors, ax=None, size=512):
         RGB[j] = sum(
             [colors[i][j]*np.maximum((distance-dist[i])/distance, 0) for i in range(3)])
         ax.annotate(channel_names[j], (radius*np.cos(np.radians(120*j)), radius*np.sin(np.radians(120*j))),
-                    color='w',
-                    fontsize=20,
+                    color=textcolor,
+                    fontsize=fontsize,
                     va="center",
-                    ha="left")
-        RGB[j][PointInTriangle([X, Y], *centers) == 0] = 0
+                    ha="center")
+        RGB[j][PointInTriangle([X, Y], *centers) == 0] = bgcolor[j]
     image = np.stack(RGB, axis=2)
     ax.imshow(image, extent=[x[0], x[-1], y[-1], y[0]])
     ax.set_xticks([])
