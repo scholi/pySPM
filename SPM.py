@@ -301,8 +301,8 @@ class SPM_image:
             vmin = avg - sig * std
             vmax = avg + sig * std
         if 'level' in kargs:
-            vmin = np.percentile(img, 100-kargs['level'])
-            vmax = np.percentile(img, kargs['level'])
+            vmax = np.percentile(img, 100-kargs['level'])
+            vmin = np.percentile(img, kargs['level'])
             del kargs['level']
         if 'vmin' in kargs:
             vmin = kargs['vmin']
