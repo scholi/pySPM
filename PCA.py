@@ -9,7 +9,7 @@ from pySPM.SPM import SPM_image
 import matplotlib as mpl
 from matplotlib import cm
 from pySPM import collection
-
+import re
 
 class PCA:
 
@@ -55,7 +55,13 @@ class PCA:
         nxticks = matrix.shape[1]
         nyticks = matrix.shape[0]
         if xlabel is None:
-            xlabel = list(matrix.columns)
+            xlabel = []
+            for x in list(matrix.columns):
+                x = re.sub(r'\^([0-9]+)',r'^{\1}', x)
+                x = re.sub(r'_([0-9]+)',r'_{\1}', x)
+                if x[-1] in ['+','-']:
+                    x = x[:-1]+'^'+x[-1]
+                xlabel.append('$'+x+'$')
         if ylabel is None:
             ylabel = list(matrix.index)
         ax.xaxis.tick_top()
