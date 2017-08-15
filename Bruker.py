@@ -62,7 +62,7 @@ class Bruker:
         for x in [z[b'@2:Image Data'][0] for z in self.layers]:
             print("\t"+x.decode('utf8'))
 
-    def get_channel(self, channel="Height Sensor", backward=False, corr=None):
+    def get_channel(self, channel="Height Sensor", backward=False, corr=None, debug=False):
         """
         Load the SPM image contained in a channel
         """
@@ -71,11 +71,15 @@ class Bruker:
             result = re.match(
                 r'([^ ]+) \[([^\]]*)\] "([^"]*)"', layer_name).groups()
             if result[2] == channel:
+                if debug:
+                    print("channel "+channel+" Found!")
                 bck = False
                 if self.layers[i][b'Line Direction'][0] == b'Retrace':
                     bck = True
                 if bck == backward:
-                    result = re.match(r'[A-Z]+ \[([^\]]+)\] \([0-9\.]+ [^\)]+\) ([0-9\.]+) V',
+                    if debug:
+                        print("Direction found")
+                    result = re.match(r'[A-Z]+ \[([^\]]+)\] \([0-9\.]+ [^\)]+\) ([0-9\.]+) [\w]+',
                                       self.layers[i][b'@2:Z scale'][0].decode('utf8')).groups()
                     scale = float(result[1])/65536.0
                     result = self.scanners[0][
@@ -99,3 +103,4 @@ class Bruker:
                         zscale=zscale.decode('utf8'),
                         corr=corr)
                     return image
+        raise Exception("Channel {} not found".format(channel))
