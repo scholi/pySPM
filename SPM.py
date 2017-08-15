@@ -347,7 +347,7 @@ class SPM_image:
         warnings.warn("plotProfile() is replaced by plot_profile()", DeprecationWarning, stacklevel=2)
         return self.plot_profile(*args, **kargs)
         
-    def get_profile(self, x1, y1, x2, y2, width=0, ax=None, alpha=0, imgColor='w', pixels=True, axPixels=None):
+    def get_profile(self, x1, y1, x2, y2, width=0, ax=None, imgColor='w', pixels=True, axPixels=None, **kargs):
         """
         retrieve the profile of the image between pixel x1,y1 and x2,y2
         ax: defines the matplotlib axis on which the position of the profile should be drawn (in not None)
@@ -360,18 +360,18 @@ class SPM_image:
             x2 = np.digitize(x2, np.linspace(0,self.size['real']['x'],self.pixels.shape[1]))
             y1 = np.digitize(y1, np.linspace(0,self.size['real']['y'],self.pixels.shape[0]))
             y2 = np.digitize(y2, np.linspace(0,self.size['real']['y'],self.pixels.shape[0]))
-        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, width=width, ax=ax, alpha=alpha, color=imgColor, transx = lambda x: x*self.size['real']['x']/self.pixels.shape[1],transy = lambda x: x*self.size['real']['y']/self.pixels.shape[0])
+        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, color=imgColor, transx = lambda x: x*self.size['real']['x']/self.pixels.shape[1],transy = lambda x: x*self.size['real']['y']/self.pixels.shape[0], **kargs)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
         rd = np.sqrt(dx**2+dy**2)
         xvalues = np.linspace(0, rd, len(p))
         return xvalues, p
 
-    def plot_profile(self, x1, y1, x2, y2, ax=None, width=1, pixels=True, img=None, imgColor='w', alpha=0, axPixels=False, **kargs):
+    def plot_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, img=None, **kargs):
         col = kargs.get('color',kargs.get('col','C0'))
         if ax == None:
-            fig, ax = plt.subplots(1, 1)
-        xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, ax=img, alpha=alpha, imgColor=imgColor, pixels=pixels,axPixels=axPixels)
+            ax = plt.gca()
+        xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, ax=img, **kargs)
         d = np.sqrt((x2-x1)**2+(y2-y1)**2)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
@@ -381,7 +381,7 @@ class SPM_image:
             rd = np.sqrt(dx**2+dy**2)
         xvalues = np.linspace(0, rd, len(p))
         
-        if width == 1:
+        if width < 2:
             profile = p[:, 0]
         else:
             profile = np.mean(p,axis=1)
@@ -830,7 +830,7 @@ def Align(img, tform, cut=True):
 
 
 def getProfile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
-        transx=lambda x: x, transy=lambda x: x):
+        transx=lambda x: x, transy=lambda x: x, interp_order=3):
     d = np.sqrt((x2-x1)**2+(y2-y1)**2)
     if N is None:
         N = int(d)+1
@@ -838,13 +838,11 @@ def getProfile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
     dx = -width/2*(y2-y1)/d
     dy = width/2*(x2-x1)/d
     for w in np.linspace(-width/2, width/2, max(1,width)):
-        print("w",w)
         dx = -w*(y2-y1)/d
         dy = w*(x2-x1)/d
         x = np.linspace(x1+dx, x2+dx, N)
         y = np.linspace(y1+dy, y2+dy, N)
-        print(x,y)
-        M = scipy.ndimage.map_coordinates(I, np.vstack((y, x)))
+        M = scipy.ndimage.interpolation.map_coordinates(I, np.vstack((y, x)), order=interp_order)
         P.append(M)
     if not ax is None:
         x1 = transx(x1)
