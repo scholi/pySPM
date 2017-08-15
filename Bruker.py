@@ -80,18 +80,23 @@ class Bruker:
                     if debug:
                         print("Direction found")
                     var = self.layers[i][b'@2:Z scale'][0].decode('utf8')
-                    print(var)
                     if '[' in var:
-                        result = re.match(r'[A-Z]+ \[([^\]]+)\] \([0-9\.]+ .*?\) ([0-9\.]+) .*?', var).groups()
+                        result = re.match(r'[A-Z]+\s+\[([^\]]+)\]\s+\([0-9\.]+ .*?\)\s+([0-9\.]+)\s+.*?$', var).groups()
                         scale = float(result[1])/65536.0
                         result = self.scanners[0][b'@'+result[0].encode('utf8')][0].split()
-                        scale *= float(result[1])
+                        scale2 = float(result[1])
                         zscale = result[2].split(b'/')[0]
+                        var = self.layers[i][b'@2:Z offset'][0].decode('utf8')
+                        result = re.match(r'[A-Z]+\s+\[[^\]]+\]\s+\([0-9\.]+ .*?\)\s+([0-9\.]+)\s+.*?$', var).groups()
+                        offset = float(result[0])
                     else:
                         result = re.match(r'[A-Z]+ \([0-9\.]+ [^\)]+\) ([0-9\.]+) [\w]+', var).groups()
                         scale = float(result[0])/65536.0
+                        scale2 = 1
                         zscale = b'V'
-                    data = self._get_raw_layer(i)*scale
+                        result = re.match(r'[A-Z]+ \([0-9\.]+ .*?\) ([0-9\.]+) .*?', self.layers[i][b'@2:Z offset'][0].decode('utf8')).groups()
+                        offset = float(result[0])
+                    data = self._get_raw_layer(i)*scale*scale2
 
                     scan_size = self.layers[i][b'Scan Size'][0].split()
                     if scan_size[2][0] == 126:
