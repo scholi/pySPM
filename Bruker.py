@@ -79,15 +79,20 @@ class Bruker:
                 if bck == backward:
                     if debug:
                         print("Direction found")
-                    result = re.match(r'[A-Z]+ \[([^\]]+)\] \([0-9\.]+ [^\)]+\) ([0-9\.]+) [\w]+',
-                                      self.layers[i][b'@2:Z scale'][0].decode('utf8')).groups()
-                    scale = float(result[1])/65536.0
-                    result = self.scanners[0][
-                        b'@'+result[0].encode('utf8')][0].split()
-                    scale *= float(result[1])
+                    var = self.layers[i][b'@2:Z scale'][0].decode('utf8')
+                    print(var)
+                    if '[' in var:
+                        result = re.match(r'[A-Z]+ \[([^\]]+)\] \([0-9\.]+ .*?\) ([0-9\.]+) .*?', var).groups()
+                        scale = float(result[1])/65536.0
+                        result = self.scanners[0][b'@'+result[0].encode('utf8')][0].split()
+                        scale *= float(result[1])
+                        zscale = result[2].split(b'/')[0]
+                    else:
+                        result = re.match(r'[A-Z]+ \([0-9\.]+ [^\)]+\) ([0-9\.]+) [\w]+', var).groups()
+                        scale = float(result[0])/65536.0
+                        zscale = b'V'
                     data = self._get_raw_layer(i)*scale
 
-                    zscale = result[2].split(b'/')[0]
                     scan_size = self.layers[i][b'Scan Size'][0].split()
                     if scan_size[2][0] == 126:
                         scan_size[2] = b'u'+scan_size[2][1:]
