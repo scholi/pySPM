@@ -232,10 +232,14 @@ class ITM:
             self.MeasData[r['Key']].append((idx,r['Value']))
         return self.MeasData[name]
     
-    def showMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, mul=1, **kargs):
+    def showMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, mul=1, scans=2, **kargs):
         t = self.getMeasData('Measurement.AcquisitionTime')
+        S = self.getMeasData("Measurement.ScanNumber")
         idx = [x[0] for x in t]
         time = [x[1] for x in t]
+        ScanData = [x[1] for x in S]
+        ScanIdx = [x[0] for x in S]
+        s = np.interp(ScanIdx,idx,time)
         
         Meas = self.getMeasData(name,prog=prog)
         
@@ -246,6 +250,22 @@ class ITM:
             ax = plt.gca()
         p = ax.plot(t, np.array(MeasData)*mul, **kargs)
         ax.set_xlabel("Time [s]");
+        ax.set_ylabel(name)
+        if scans:
+            assert type(scans) is int
+            lim = ax.get_ylim()
+            axs = ax.twiny()
+            axs.set_xticks(.5*s[:-1:scans]+.5*s[1::scans])
+            axs.set_xticklabels([str(i+1) for i in range(0,self.Nscan,scans)])
+            colors = [i%2 for i in range(0,self.Nscan,scans)]
+            for i,tick in enumerate(axs.xaxis.get_ticklabels()):
+                tick.set_color(["black","green"][colors[i]])
+            axs.set_xlim(ax.get_xlim())
+            for i in range(1,self.Nscan-1,2):
+                ax.fill_between([s[i],s[i+1]],*lim,color='green',alpha=.1)
+            axs.set_xlabel("Scan number")
+            axs.set_xlim(ax.get_xlim())
+            axs.set_ylim(*lim)
         return p
 
     def showSpectrum(self, low=0, high=None, ax=None, log=False, showPeaks=True):

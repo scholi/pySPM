@@ -138,7 +138,7 @@ class Collection:
         return data
 
     def overlay(self, channel_names, colors=[[0, .5, .3], [1, 0, 0]],
-                sig=None, vmin=None, vmax=None):
+                sig=None, vmin=None, vmax=None, ax=None):
         """
         Create an overlay (in color) of several channels.
         channel_names: a list of the channels to select for the overlay
@@ -153,7 +153,11 @@ class Collection:
         layers = [np.stack([data[i]*colors[i][j] for j in range(3)], axis=2)
                   for i in range(len(channel_names))]
         overlay = np.sum(layers, axis=0)
-        return self.create_image(overlay, key="overlay"), [self.create_image(x, key=channel_names[i]) for i,x in enumerate(layers)]
+        o = self.create_image(overlay, key="overlay")
+        ch = [self.create_image(x, key=channel_names[i]) for i,x in enumerate(layers)]
+        if ax is not None:
+            o.show(ax=ax)
+        return o, ch
 
     def stitch_correction(self, channel, stitches):
         """
@@ -199,7 +203,7 @@ def PointInTriangle(pt, v1, v2, v3):
     return (b1 == b2) * (b2 == b3)
 
 
-def overlay_triangle(channel_names, colors, radius=.8,proportion = .9,ax=None, size=512, bgcolor=[0,0,0], textcolor='white',fontsize=20):
+def overlay_triangle(channel_names, colors, radius=.8,proportion = .8,ax=None, size=512, bgcolor=[0,0,0], textcolor='white',fontsize=20):
     """
     Create the image of a triangle, where the color is a gradient between three colors
     (one for each vertex).
