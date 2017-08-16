@@ -349,6 +349,13 @@ class SPM_image:
         warnings.warn("plotProfile() is replaced by plot_profile()", DeprecationWarning, stacklevel=2)
         return self.plot_profile(*args, **kargs)
         
+    def real2pixels(self, x, y):
+        W = self.size['real']['x']
+        fact = int(np.floor(np.log(W)/np.log(10)/3))*3
+        px = np.digitize(x, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]))
+        py = np.digitize(y, np.linspace(0,self.size['real']['y']/(10**fact),self.pixels.shape[0]))
+        return px, py
+        
     def get_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, color='w', axPixels=None, **kargs):
         """
         retrieve the profile of the image between pixel x1,y1 and x2,y2
@@ -364,10 +371,10 @@ class SPM_image:
             fact = int(np.floor(np.log(W)/np.log(10)/3))*3
             if kargs.get('debug',False):
                 print("Image range (real scale):",self.size['real']['x']/(10**fact),self.size['real']['y']/(10**fact))
-            x1 = np.digitize(x1, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]))
-            x2 = np.digitize(x2, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]))
-            y1 = np.digitize(y1, np.linspace(self.size['real']['y']/(10**fact),0,self.pixels.shape[0]))
-            y2 = np.digitize(y2, np.linspace(self.size['real']['y']/(10**fact),0,self.pixels.shape[0]))
+            x1, y1 = self.real2pixels(x1,y1)
+            x2, y2 = self.real2pixels(x2,y2)
+            y1 = self.pixels.shape[0]-y1
+            y2 = self.pixels.shape[0]-y2
             if kargs.get('debug',False):
                 print("Pixel coordinates:",x1,y1,x2,y2)
             xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color,\
@@ -424,17 +431,17 @@ class SPM_image:
             for ns in range(1,kargs.get('sig',2)+1):
                 ax.fill_between(xvalues, profile-ns*s, profile+ns*s, color=col, alpha=.2, label=[lab+' ($\\sigma,\ldots {}\\sigma$)'.format(kargs.get('sig',2)),None][ns>1])
         
-        Plot = ax.plot(xvalues, profile, color=col,linestyle=kargs.get('linestyle','-'), label=lab+[' (mean)',''][width<2])
+        Plot = ax.plot(xvalues, profile, color=col, linewidth=kargs.get('linewidth',1),linestyle=kargs.get('linestyle','-'), label=lab+[' (mean)',''][width<2])
         if kargs.get('min',False):
             minStyle = kargs.get('minStyle',kargs.get('minmaxStyle','--'))
             minColor = kargs.get('minColor',kargs.get('minmaxColor',col))
             minMarker = kargs.get('minMarker',kargs.get('minmaxMarker',''))
-            ax.plot(xvalues, np.min(p, axis=1), color=minColor, linestyle=minStyle, marker=minMarker, label=lab+' (min)')
+            ax.plot(xvalues, np.min(p, axis=1), color=minColor, linewidth=kargs.get('linewidth',1),linestyle=minStyle, marker=minMarker, label=lab+' (min)')
         if kargs.get('max',False):
             maxStyle = kargs.get('maxStyle',kargs.get('minmaxStyle','--'))
             maxColor = kargs.get('maxColor',kargs.get('minmaxColor',col))
             maxMarker = kargs.get('maxMarker',kargs.get('minmaxMarker',''))
-            ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, marker=maxMarker, label=lab+' (max)')
+            ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, linewidth=kargs.get('linewidth',1), marker=maxMarker, label=lab+' (max)')
             
         ax.set_xlabel("Distance [{1}{0}]".format(unit,u))
         ax.set_ylabel("{1} [{0}]".format(self.zscale,self.channel))
@@ -650,18 +657,31 @@ class SPM_image:
         if not inline:
             return C
 
-    def cut(self, c, inplace=False):
+    def cut(self, c, inplace=False, pixels=True, **kargs):
+        if kargs.get('debug',False):
+            print("cut) Input coordinates:", c)
+        if not pixels:
+            c = [z for s in zip(*self.real2pixels(c[0::2], c[1::2])) for z in s]
+            if kargs.get('debug',False):
+                print("cut) pixel coordinates:", c)
         if not inplace:
             new = copy.deepcopy(self)
-            new.pixels = cut(self.pixels, c)
+            new.pixels = cut(self.pixels, c, **kargs)
             new.ResizeInfos()
             return new
         else:
-            self.pixels = cut(self.pixels, c)
+            self.pixels = cut(self.pixels, c, **kargs)
             self.ResizeInfos()
+            return self
 
 
-def cut(img, c):
+def cut(img, c, **kargs):
+    if kargs.get('debug',False):
+        print("cut in x",c[0],"->",c[2], " - in y",c[1],"->",c[3])
+    if c[3] < c[1]:
+        c = [c[0],c[3],c[2],c[1]]
+    if c[2] < c[0]:
+        c = [c[2],c[1],c[0],c[3]]
     if c[2]-c[0] == img.shape[1] and c[3]-c[1] == img.shape[0]:
         raise Exception("Reshaping the same array again?")
     return img[c[1]:c[3], c[0]:c[2]]
