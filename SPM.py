@@ -302,6 +302,8 @@ class SPM_image:
             vmin = avg - sig * std
             vmax = avg + sig * std
         if 'level' in kargs:
+            if level < 0 or level>=50:
+                raise ValueError("The level shoud have a value in [0,50)")
             vmax = np.percentile(img, 100-kargs['level'])
             vmin = np.percentile(img, kargs['level'])
             del kargs['level']
