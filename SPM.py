@@ -349,31 +349,39 @@ class SPM_image:
         warnings.warn("plotProfile() is replaced by plot_profile()", DeprecationWarning, stacklevel=2)
         return self.plot_profile(*args, **kargs)
         
-    def get_profile(self, x1, y1, x2, y2, width=0, ax=None, imgColor='w', pixels=True, axPixels=None, **kargs):
+    def get_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, color='w', axPixels=None, **kargs):
         """
         retrieve the profile of the image between pixel x1,y1 and x2,y2
         ax: defines the matplotlib axis on which the position of the profile should be drawn (in not None)
         width: the width of the profile (for averaging/statistics)
         """
+        if kargs.get('debug',False):
+            print("get_profile input coordinates:",x1,x2,y1,y2)
         if axPixels is None:
             axPixels = pixels
         if not pixels:
-            x1 = np.digitize(x1, np.linspace(0,self.size['real']['x'],self.pixels.shape[1]))
-            x2 = np.digitize(x2, np.linspace(0,self.size['real']['x'],self.pixels.shape[1]))
-            y1 = np.digitize(y1, np.linspace(0,self.size['real']['y'],self.pixels.shape[0]))
-            y2 = np.digitize(y2, np.linspace(0,self.size['real']['y'],self.pixels.shape[0]))
-        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, color=imgColor, transx = lambda x: x*self.size['real']['x']/self.pixels.shape[1],transy = lambda x: x*self.size['real']['y']/self.pixels.shape[0], **kargs)
+            W = self.size['real']['x']
+            fact = int(np.floor(np.log(W)/np.log(10)/3))*3
+            if kargs.get('debug',False):
+                print("Image range (real scale):",self.size['real']['x']/(10**fact),self.size['real']['y']/(10**fact))
+            x1 = np.digitize(x1, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]))
+            x2 = np.digitize(x2, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]))
+            y1 = np.digitize(y1, np.linspace(0,self.size['real']['y']/(10**fact),self.pixels.shape[0]))
+            y2 = np.digitize(y2, np.linspace(0,self.size['real']['y']/(10**fact),self.pixels.shape[0]))
+        if kargs.get('debug',False):
+            print("Pixel coordinates:",x1,x2,y1,y2)
+        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, color=color, transx = lambda x: x*(self.size['real']['x']/(10**fact))/self.pixels.shape[1],transy = lambda x: x*(self.size['real']['y']/(10**fact))/self.pixels.shape[0], **kargs)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
         rd = np.sqrt(dx**2+dy**2)
         xvalues = np.linspace(0, rd, len(p))
         return xvalues, p
 
-    def plot_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, img=None, **kargs):
+    def plot_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, img=None, imgColor='w', **kargs):
         col = kargs.get('color',kargs.get('col','C0'))
         if ax == None:
             ax = plt.gca()
-        xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, ax=img, **kargs)
+        xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, color=imgColor, ax=img, pixels=pixels, **kargs)
         d = np.sqrt((x2-x1)**2+(y2-y1)**2)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
@@ -832,7 +840,7 @@ def Align(img, tform, cut=True):
 
 
 def getProfile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
-        transx=lambda x: x, transy=lambda x: x, interp_order=3):
+        transx=lambda x: x, transy=lambda x: x, interp_order=3, **kargs):
     d = np.sqrt((x2-x1)**2+(y2-y1)**2)
     if N is None:
         N = int(d)+1
