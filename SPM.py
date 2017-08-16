@@ -366,11 +366,16 @@ class SPM_image:
                 print("Image range (real scale):",self.size['real']['x']/(10**fact),self.size['real']['y']/(10**fact))
             x1 = np.digitize(x1, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]))
             x2 = np.digitize(x2, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]))
-            y1 = np.digitize(y1, np.linspace(0,self.size['real']['y']/(10**fact),self.pixels.shape[0]))
-            y2 = np.digitize(y2, np.linspace(0,self.size['real']['y']/(10**fact),self.pixels.shape[0]))
-        if kargs.get('debug',False):
-            print("Pixel coordinates:",x1,x2,y1,y2)
-        xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, color=color, transx = lambda x: x*(self.size['real']['x']/(10**fact))/self.pixels.shape[1],transy = lambda x: x*(self.size['real']['y']/(10**fact))/self.pixels.shape[0], **kargs)
+            y1 = np.digitize(y1, np.linspace(self.size['real']['y']/(10**fact),0,self.pixels.shape[0]))
+            y2 = np.digitize(y2, np.linspace(self.size['real']['y']/(10**fact),0,self.pixels.shape[0]))
+            if kargs.get('debug',False):
+                print("Pixel coordinates:",x1,y1,x2,y2)
+            xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color,\
+                transx = lambda x: x*(self.size['real']['x']/(10**fact))/self.pixels.shape[1],\
+                transy = lambda x: (self.pixels.shape[0]-x)*(self.size['real']['y']/(10**fact))/self.pixels.shape[0],\
+                **kargs)
+        else:
+            values, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color, **kargs)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
         rd = np.sqrt(dx**2+dy**2)
@@ -390,26 +395,26 @@ class SPM_image:
         else:
             rd = np.sqrt(dx**2+dy**2)
         xvalues = np.linspace(0, rd, len(p))
-        
+        lab = kargs.get("label",None)
         if width < 2:
             profile = p[:, 0]
         else:
             profile = np.mean(p,axis=1)
             s = np.std(p)
             for ns in range(1,kargs.get('sig',2)+1):
-                ax.fill_between(xvalues, profile-ns*s, profile+ns*s, color=col, alpha=.2)
-        lab = kargs.get("label",None)
-        Plot = ax.plot(xvalues, profile, color=col,linestyle=kargs.get('linestyle','-'), label=lab)
+                ax.fill_between(xvalues, profile-ns*s, profile+ns*s, color=col, alpha=.2, label=[lab+' ($\\sigma,\ldots {}\\sigma$)'.format(kargs.get('sig',2)),None][ns>1])
+        
+        Plot = ax.plot(xvalues, profile, color=col,linestyle=kargs.get('linestyle','-'), label=lab+[' (mean)',''][width<2])
         if kargs.get('min',False):
             minStyle = kargs.get('minStyle',kargs.get('minmaxStyle','--'))
             minColor = kargs.get('minColor',kargs.get('minmaxColor',col))
             minMarker = kargs.get('minMarker',kargs.get('minmaxMarker',''))
-            ax.plot(xvalues, np.min(p, axis=1), color=minColor, linestyle=minStyle, marker=minMarker, label=lab)
+            ax.plot(xvalues, np.min(p, axis=1), color=minColor, linestyle=minStyle, marker=minMarker, label=lab+' (min)')
         if kargs.get('max',False):
             maxStyle = kargs.get('maxStyle',kargs.get('minmaxStyle','--'))
             maxColor = kargs.get('maxColor',kargs.get('minmaxColor',col))
             maxMarker = kargs.get('maxMarker',kargs.get('minmaxMarker',''))
-            ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, marker=maxMarker, label=lab)
+            ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, marker=maxMarker, label=lab+' (max)')
             
         ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
         ax.set_ylabel("{1} [{0}]".format(self.zscale,self.channel))
@@ -854,11 +859,15 @@ def getProfile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
         y = np.linspace(y1+dy, y2+dy, N)
         M = scipy.ndimage.interpolation.map_coordinates(I, np.vstack((y, x)), order=interp_order)
         P.append(M)
+    if kargs.get('debug',False):
+        print("getProfile input coordinates:",x1,y1,x2,y2)
     if not ax is None:
         x1 = transx(x1)
         x2 = transx(x2)
-        y1 = transx(y1)
-        y2 = transx(y2)
+        y1 = transy(y1)
+        y2 = transy(y2)
+        if kargs.get('debug',False):
+            print("Drawing coordinates:",x1,y1,x2,y2)
         dx = -width/2*(y2-y1)/d
         dy = width/2*(x2-x1)/d
         if type(color) in [tuple, list]:
