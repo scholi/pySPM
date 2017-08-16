@@ -384,15 +384,35 @@ class SPM_image:
 
     def plot_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, img=None, imgColor='w', **kargs):
         col = kargs.get('color',kargs.get('col','C0'))
+        W = self.size['real']['x']
+        fact = int(np.floor(np.log(W)/np.log(10)/3))*3
         if ax == None:
             ax = plt.gca()
         xvalues, p = self.get_profile(x1, y1, x2, y2, width=width, color=imgColor, ax=img, pixels=pixels, **kargs)
         d = np.sqrt((x2-x1)**2+(y2-y1)**2)
-        dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
-        dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
+        dx = (x2-x1)
+        dy = (y2-y1)
         if pixels:
             rd = d
+            u=''
+            unit='px'
         else:
+            unit = self.size['real']['unit']
+            sunit = 'afpnum kMGTPE'
+            if len(unit) == 1:
+                isunit = 6
+            elif unit[0] in sunit:
+                isunit = sunit.find(unit[0])
+                unit = unit[1:]
+            else:
+                isunit = 6
+            isunit += fact//3
+            if isunit != 6:
+                u = sunit[isunit]
+            else:
+                u=''
+            if u == 'u':
+                u = '$\\mu$'
             rd = np.sqrt(dx**2+dy**2)
         xvalues = np.linspace(0, rd, len(p))
         lab = kargs.get("label",None)
@@ -416,7 +436,7 @@ class SPM_image:
             maxMarker = kargs.get('maxMarker',kargs.get('minmaxMarker',''))
             ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, marker=maxMarker, label=lab+' (max)')
             
-        ax.set_xlabel("Distance [{0}]".format(self.size['real']['unit']))
+        ax.set_xlabel("Distance [{1}{0}]".format(unit,u))
         ax.set_ylabel("{1} [{0}]".format(self.zscale,self.channel))
        
         return {'plot': Plot, 'l': xvalues, 'z': profile}
