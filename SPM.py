@@ -140,15 +140,24 @@ class SPM_image:
             return C
 
     def getRowProfile(self, x1, y1, x2, y2, width=1, col='C1', ax=None, alpha=0, **kargs):
+        plotargs = { key: kargs[key] for key in ['linewidth','color','linestyle'] if key in kargs }
         if y2 < y1:
             x1, y1, x2, y2 = x2, y2, x1, y1
         if ax is not None:
             d = np.sqrt((x2-x1)**2+(y2-y1)**2)
             dx = -width/2*(y2-y1)/d
             dy = width/2*(x2-x1)/d
-            ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], col)
-            ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], col)
-            ax.plot((x1, x2), (y1, y2), col, **kargs)
+            if kargs.pop('axPixels',False):
+                ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], col)
+                ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], col)
+                ax.plot((x1, x2), (y1, y2), col, **plotargs)
+            else:
+                h = self.pixels.shape[0]
+                pxs = self.size['real']['x'] / self.pixels.shape[1]
+                pys = self.size['real']['y'] / h
+                ax.plot([(x1-dx)*pxs, (x1+dx)*pxs], [(h-(y1-dy))*pys, (h-(y1+dy))*pys], col)
+                ax.plot([(x2-dx)*pxs, (x2+dx)*pxs], [(h-(y2-dy))*pys, (h-(y2+dy))*pys], col)                
+                ax.plot((x1*pxs, x2*pxs), ((h-y1)*pys, (h-y2)*pys), col, **plotargs)
             if alpha>0:
                 import matplotlib.patches
                 ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),width, d, -np.degrees(np.arctan2(x2-x1,y2-y1)), color=col, alpha=alpha))
@@ -258,6 +267,7 @@ class SPM_image:
     def show(self, ax=None, sig=None, cmap=None, title=None,
              adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, wrap=None, mul=1, **kargs):
         mpl.rc('axes', grid=False)
+        
         if ax is None:
             ax = plt.gca()
         if title == None:
