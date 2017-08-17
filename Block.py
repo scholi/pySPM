@@ -95,6 +95,9 @@ class Block:
         """
         Generate a list (self.List) containing all the children (sub-blocks) of the current Block
         """
+        length, nums, ID, L, NextBlock = struct.unpack('<III9xI8xQ', self.value[:41])
+        self.nums = L
+        self.subType = ID
         offset = self.offset
         self.List = []
         while True:
