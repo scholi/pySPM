@@ -323,6 +323,22 @@ class ITM:
                 'umass': p[b'umass']['float']})
         return result
 
+    def getRawSpectrum(self, scans, **kargs):
+        assert hasattr(scans, '__iter__')
+        Spectrum = np.array([0])
+        for s in scans:
+            Data = self.getRawData(s)[1]
+            Max_time = max([max(Data[x]) for x in Data])
+            if Spectrum.size < Max_time+1:
+                Spectrum.resize(Max_time+1)
+            for xy in Data:
+                for x in Data[xy]:
+                    Spectrum[x] += 1
+        sf = kargs.get('sf',self.root.goto('MassScale/sf').getDouble())
+        k0 = kargs.get('k0',self.root.goto('MassScale/k0').getDouble())
+        masses = self.channel2mass(np.arange(Spectrum.size),sf=sf,k0=k0)
+        return masses, Spectrum
+        
     def getRawData(self, scan=0):
         """
         Function which allows you to read and parse the raw data.
