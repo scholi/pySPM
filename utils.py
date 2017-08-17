@@ -159,6 +159,15 @@ def in_ipynb():
     except NameError:
         return False
 
+def binning(data, N=2, axis=0, ufunc=np.sum):
+    w = int(np.ceil(data.shape[axis]/N))
+    r = np.copy(data)
+    size = list(data.shape)
+    size[axis] = w
+    size = size[:axis+1]+[N]+size[axis+1:]
+    r.resize(size)
+    return ufunc(r, axis=axis+1)
+    
 class ProgressBar:
     def __init__(self, seq=None, min=0, max=100, value=0):        
         if seq is not None:

@@ -327,7 +327,7 @@ class ITM:
         assert hasattr(scans, '__iter__')
         Spectrum = np.array([0])
         for s in scans:
-            Data = self.getRawData(s)[1]
+            Data = self.getRawData(s)[2]
             Max_time = max([max(Data[x]) for x in Data])
             if Spectrum.size < Max_time+1:
                 Spectrum.resize(Max_time+1)
@@ -364,6 +364,7 @@ class ITM:
                 RAW += zlib.decompress(child.value)
         Blocks = {}
         _Block = []
+        PixelList = []
         PixelOrder = np.zeros(
             (self.size['pixels']['y'], self.size['pixels']['x']))
         i = 0
@@ -388,10 +389,11 @@ class ITM:
                 _Block = []
                 id = struct.unpack('<I', b)[0]
                 PixelOrder[y, x] = id
+                PixelList.append((x,y))
             else:
                 _Block.append(struct.unpack('<I', b)[0])
             i += 4
-        return PixelOrder, Blocks
+        return PixelList, PixelOrder, Blocks
 
     def show_masses(self, mass_list=None):
         """
