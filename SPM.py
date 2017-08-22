@@ -432,7 +432,7 @@ class SPM_image:
                 u = '$\\mu$'
             rd = np.sqrt(dx**2+dy**2)
         xvalues = np.linspace(0, rd, len(p))
-        lab = kargs.get("label",None)
+        lab = kargs.get("label","")
         if width < 2:
             profile = p[:, 0]
         else:
@@ -806,13 +806,14 @@ def NormP(x, p, trunk=True):
     return r
 
 
-def BeamProfile(target, source, mu=1e-6, tukey=0):
+def BeamProfile(target, source, mu=1e-6, tukey=0, meanCorr=True):
     """
     Calculate the PSF by deconvolution of the target
     with the source using a Tikhonov regularization of factor mu.
     """
     source = 2*source-1
-    target = target-np.mean(target)
+    if meanCorr:
+        target = target-np.mean(target)
     if tukey>0:
         target = tukeyfy(target, tukey)
     tf = np.fft.fft2(source)

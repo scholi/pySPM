@@ -198,7 +198,7 @@ class ITA(ITM.ITM):
         return self.image(np.flipud(Z), channel="Masses: "+",".join(channels))
 
     def image(self, I, channel="Unknown"):
-        return SPM_image(I, real=self.size['real'], _type="TOF", channel=channel)
+        return SPM_image(I, real=self.size['real'], _type="TOF", zscale='Counts' channel=channel)
 
     def getAddedImageByMass(self, masses, raw=False, **kargs):
         if type(masses) is int or type(masses) is float:

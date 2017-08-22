@@ -24,7 +24,7 @@ class Block:
             length: The length of the block's name
             z: Not used. My guess is that it's the block ID. So it starts at 0 and is increased for all following Blocks of the same name.
                 We usually find the ID from the children's list (see below) and this information is never used as it's redundant.
-            u: The number of children / sub-blocks. Might be = 0 even if the black has children. Check the value L (defined below) if so
+            u: The number of children / sub-blocks. Might be = 0 even if the block has children. Check the value L (defined below) if so
             x: The length of the block's value
             y: Redundant. Seems to be always = x
         Then follow length-bytes representing the name of the block
