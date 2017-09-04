@@ -17,18 +17,25 @@ class ITA(ITM.ITM):
 
     def __init__(self, filename):
         ITM.ITM.__init__(self, filename)
-        self.sx = self.root.goto(
-            'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').getLong()
-        self.sy = self.root.goto(
-            'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize').getLong()
+        try:
+            self.sx = self.root.goto(
+                'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').getLong()
+            self.sy = self.root.goto(
+                'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize').getLong()
+        except ValueError:
+            self.sx = self.size['pixels']['x']
+            self.sy = self.size['pixels']['y']
         try:
             # self.Nscan = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'\
             #    '/ImageStackScans/Image.NumberOfScans').getLong())
             self.Nimg = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'
                                            '/ImageStackScans/Image.NumberOfImages').getLong())
         except:
-            raise TypeError(
-                "Invalid file format. Maybe the file is corrupted?")
+            try:
+                self.Nimg = int(self.root.goto('propend/Measurement.ScanNumber').getKeyValue(16)['Value'])
+            except:
+                raise TypeError(
+                    "Invalid file format. Maybe the file is corrupted?")
 
         self.Width = self.root.goto('Meta/SI Image[0]/res_x').getLong()
         self.Height = self.root.goto('Meta/SI Image[0]/res_y').getLong()

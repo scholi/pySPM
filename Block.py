@@ -91,7 +91,7 @@ class Block:
             return self.createList()
         return self.List
 
-    def createList(self, limit=None):
+    def createList(self, limit=None, debug=False):
         """
         Generate a list (self.List) containing all the children (sub-blocks) of the current Block
         """
@@ -335,9 +335,13 @@ class Block:
         if digraph and level == 0:
             out.write('}')
 
-    def getIndexes(self, key):
+    def getIndexes(self, key, debug=False):
+        if type(key) is str:
+            key = key.encode('utf8')
         r = []
         for x in self.getList():
-            if x['name'] == key.decode('utf8'):
+            if debug:
+                print(x['name'],key)
+            if x['name'] == key:
                 r.append(x['id'])
         return r

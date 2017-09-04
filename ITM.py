@@ -192,7 +192,7 @@ class ITM:
             k0 = V.goto('k0').getDouble()
         return ((binning*channels-k0)/(sf))**2
 
-    def getSpectrum(self):
+    def getSpectrum(self, sf=None, k0=None):
         """
         Retieve a mass,spectrum array
         """
@@ -200,7 +200,7 @@ class ITM:
             'filterdata/TofCorrection/Spectrum/Reduced Data/IITFSpecArray/CorrectedData').value)
         D = np.array(struct.unpack("<{0}f".format(len(RAW)//4), RAW))
         ch = np.arange(len(D))
-        return self.channel2mass(ch, binning=2), D
+        return self.channel2mass(ch, binning=2, sf=sf, k0=k0), D
 
     def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False):
         """

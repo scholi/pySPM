@@ -138,7 +138,10 @@ class SPM_image:
             C.pixels = self.pixels - \
                 np.flipud(np.repeat(offset, self.pixels.shape[1], axis=1))
             return C
-
+    def pxRect2Real(self, xy, width, height):
+        ll = self.px2real(xy[0],xy[1])
+        ur = self.px2real(xy[0]+width,xy[1]+height)
+        return ll,ur[0]-ll[0],ur[1]-ll[1]
     def getRowProfile(self, x1, y1, x2, y2, width=1, col='C1', ax=None, alpha=0, **kargs):
         plotargs = { key: kargs[key] for key in ['linewidth','color','linestyle'] if key in kargs }
         if y2 < y1:
@@ -365,6 +368,13 @@ class SPM_image:
         px = np.digitize(x, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]))
         py = np.digitize(y, np.linspace(0,self.size['real']['y']/(10**fact),self.pixels.shape[0]))
         return px, py
+        
+    def px2real(self, x, y):
+        W = self.size['real']['x']
+        fact = int(np.floor(np.log(W)/np.log(10)/3))*3
+        rx = x*self.size['real']['x']/(10**fact)/self.pixels.shape[1]
+        ry = (self.pixels.shape[0]-y)*self.size['real']['y']/(10**fact)/self.pixels.shape[0]
+        return rx, ry
         
     def get_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, color='w', axPixels=None, **kargs):
         """
@@ -834,6 +844,8 @@ def BeamProfile1D(target, source, mu=1e-6):
 def ZoomCenter(img, sx, sy=None):
     if sy is None:
         sy = sx
+    assert type(sx) is int
+    assert type(sy) is int
     return img[
         img.shape[0]//2-sy//2: img.shape[0]//2 + sy//2,
         img.shape[1]//2-sx//2: img.shape[1]//2 + sx//2]
@@ -944,7 +956,7 @@ def dist_v2(img):
     X, Y = np.meshgrid(x2, y2)
     return np.sqrt(X+Y)
 
-def getTikTf(Img, mu):
+def getTikTf(Img, mu, tukey=0):
     import scipy
     def fit(x, a ,A, bg, x0):
         return bg+(A-bg)*np.exp(-abs(x-x0)/a)
@@ -956,7 +968,7 @@ def getTikTf(Img, mu):
     y0 = Img.shape[0]/2
     R = np.sqrt((X-x0)**2+(Y-y0)**2)
     
-    Z = BeamProfile(Img, Img, mu=mu)
+    Z = BeamProfile(Img, Img, mu=mu, tukey=tukey)
     zoom = ZoomCenter(Z, 800)
     P = zoom[zoom.shape[0]//2, :]
     popt, pcov = scipy.optimize.curve_fit(fit, np.arange(len(P)), P, (1,np.max(zoom), 0, len(P)/2))
