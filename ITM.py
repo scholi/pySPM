@@ -192,16 +192,29 @@ class ITM:
             k0 = V.goto('k0').getDouble()
         return ((binning*channels-k0)/(sf))**2
 
-    def getSpectrum(self, sf=None, k0=None):
+    def getSpectrum(self, sf=None, k0=None, time=False):
         """
         Retieve a mass,spectrum array
         """
         RAW = zlib.decompress(self.root.goto(
             'filterdata/TofCorrection/Spectrum/Reduced Data/IITFSpecArray/CorrectedData').value)
         D = np.array(struct.unpack("<{0}f".format(len(RAW)//4), RAW))
-        ch = np.arange(len(D))
-        return self.channel2mass(ch, binning=2, sf=sf, k0=k0), D
-
+        ch = 2*np.arange(len(D))
+        if time:
+            return ch, D
+        return self.channel2mass(ch, sf=sf, k0=k0), D
+    
+    def fitSpectrum(self, t, m):
+        """
+        fit and return the sf and k0 parameters fôr given know times t and masses m
+        """
+        M = np.sqrt(np.array(m))
+        T = np.hstack([np.array(t)[:,None],np.ones((len(t),1))])
+        x = np.linalg.lstsq(T,M)
+        sf = 1/x[0][0]
+        k0 = -sf*x[0][1]
+        return sf, k0
+    
     def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False):
         """
         Allows to recover the data saved during the measurements.
