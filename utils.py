@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import stats, optimize as opt
+import re
 
 Elts = {
     'B': [10, 11],
@@ -23,7 +24,44 @@ Elts = {
     'Au': 197
 }
 
+mElts = {'H':      1.00794,
+        'C':     12,
+        'O':     15.9994,
+        'N':     14.0067,
+        'S':     32.065,
+        '^29Si': 28.977,
+        'Si':    27.9775 }
+       
 
+def fitSpectrum(t, m, error=False, dev=False):
+    """
+    fit and return the sf and k0 parameters fôr given know times t and masses m
+    """
+    M = np.sqrt(np.array(m))
+    T = np.hstack([np.array(t)[:,None],np.ones((len(t),1))])
+    x = np.linalg.lstsq(T,M)
+    sf = 1/x[0][0]
+    k0 = -sf*x[0][1]
+    res = [sf, k0]
+    if error:
+        res.append(x[1][0])
+    if dev:
+        res.append(np.matmul(T,x[0])-M)
+    return res
+        
+def mass2time(m, sf, k0):
+    return k0+sf*np.sqrt(m)
+
+def getMass(elt):
+    m = 0
+    for x,n in re.findall('((?:\\^[0-9]+)?[A-Z][a-z]?)([0-9]*)',elt):
+        if n == '':
+            n = 1
+        else:
+            n = int(n)
+        m += n*mElts[x]
+    return m
+    
 def show_table(t):
     from IPython.core.display import display, HTML
     display(HTML(html_table(t)))
