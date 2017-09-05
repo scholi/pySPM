@@ -385,9 +385,9 @@ class ITM:
                 y = struct.unpack('<I', b)[0]
                 i += 4
                 b = RAW[i:i+4]
-                if b[3:4] != b'\x40':
-                    raise TypeError("Expecting a 40 block at {}".format(i+3))
-                b = b[:3] + b'\x00'
+                if b[3] < 64:
+                    raise TypeError("Expecting a 40 or higher block at {}, got {:02x}".format(i+3,b[3]))
+                b = b[:3] + bytes([b[3]&16])
                 _Block = []
                 id = struct.unpack('<I', b)[0]
                 PixelOrder[y, x] = id
