@@ -91,7 +91,10 @@ class ITA(ITM.ITM):
         Z = np.zeros((self.sy, self.sx))
         channels = self.getChannelsByName(names, strict)
         if prog:
-            from tqdm import tqdm
+            try:
+                from tqdm import tqdm_notebook as tqdm
+            except:
+                from tqdm import tqdm
             scans = tqdm(scans)
         for s in scans:
             for ch in channels:
@@ -179,7 +182,10 @@ class ITA(ITM.ITM):
         dx = D[::2]
         dy = D[1::2]
         return list(zip(dx, dy))
-
+        
+    def getShiftCorrectedImageByMass(self, masses, **kargs):
+        return self.getSumImageByMass(masses, Shifts=[(-x,-y) for x,y in self.getSavedShift()],mode='const',const=0,**kargs)
+        
     def getSumImageByMass(self, masses, scans=None, prog=False, raw=False, **kargs):
         if scans is None:
             scans = range(self.Nscan)
@@ -189,7 +195,10 @@ class ITA(ITM.ITM):
             masses = [masses]
         Z = np.zeros((self.sy, self.sx))
         if prog:
-            from tqdm import tqdm
+            try:
+                from tqdm import tqdm_notebook as tqdm
+            except:
+                from tqdm import tqdm
             scans = tqdm(scans)
         channels = []
         for i,s in enumerate(scans):

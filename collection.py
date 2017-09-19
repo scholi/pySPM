@@ -52,7 +52,7 @@ class Collection:
         self.channels = {}
         self.size = {'x': sx, 'y': sy, 'unit': unit}
 
-    def add(self, Img, name):
+    def add(self, Img, name, force=False):
         """
         Add a new Img to the collection
         """
@@ -65,9 +65,12 @@ class Collection:
                 self.size['x'] = len(Img[0])
                 self.size['y'] = len(Img)
         if name in self.channels:
-            raise KeyError('The channel {} is already present in '
+            if force:
+                del self.channels[name]
+            else:
+                raise KeyError('The channel {} is already present in '
                            'the collection. Please delete it before')
-            return
+                return
         self.channels[name] = Img
         
     def create_image(self, img, key=None):
