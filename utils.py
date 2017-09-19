@@ -52,6 +52,11 @@ def fitSpectrum(t, m, error=False, dev=False):
     if dev:
         res.append(np.matmul(T,x[0])-M)
     return res
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
         
 def mass2time(m, sf, k0):
     return k0+sf*np.sqrt(m)

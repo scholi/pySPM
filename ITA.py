@@ -12,9 +12,9 @@ from pySPM.SPM import SPM_image
 from pySPM import Block, utils, ITM
 import warnings
 import copy
+import multiprocessing as mp
 
 class ITA(ITM.ITM):
-
     def __init__(self, filename):
         ITM.ITM.__init__(self, filename)
         try:
@@ -71,24 +71,37 @@ class ITA(ITM.ITM):
                   .format(desc=z[b'desc']['utf16'], name=z[b'assign']['utf16'],
                           lower=z[b'lmass']['float'], upper=z[b'umass']['float']))
 
-    def getChannelByMass(self, mass):
+    def getChannelByMass(self, mass, full=False):
         if mass == 0:
             return 0
         for P in self.peaks:
             p = self.peaks[P]
             if p[b'id']['long'] > 1 and p[b'lmass']['float'] <= mass and mass <= p[b'umass']['float']:
+                if full:
+                    return p
                 return p[b'id']['long']
         raise ValueError('Mass {:.2f} Not Found'.format(mass))
 
     def getShiftCorrectedImageByName(self, names, **kargs):
-        return self.getSumImageByName(names, Shifts=[(-x,-y) for x,y in self.getSavedShift()],mode='const',const=0,**kargs)
+        return self.getSumImageByName(names, Shifts=[(-x,-y) for x,y in self.getSavedShift()],**kargs)
         
+    def __getSumImage(self, scans, channels, **kargs):
+        Z = np.zeros((self.sy, self.sx))
+        if 'Shifts' in kargs:
+            Shifts = kargs['Shifts']
+        else:
+            Shifts = [(-x,-y) for x,y in self.getSavedShift()]            
+        for ch in channels:
+            ID = ch[b'id']['long']
+            Z += self.fastGetImage(ID, scans, Shifts)
+        return Z
+       
     def getSumImageByName(self, names, scans=None, strict=False, prog=False, raw=False, **kargs):
         if scans is None:
             scans = range(self.Nscan)
         if type(scans) == int:
             scans = [scans]
-        Z = np.zeros((self.sy, self.sx))
+        
         channels = self.getChannelsByName(names, strict)
         if prog:
             try:
@@ -96,10 +109,7 @@ class ITA(ITM.ITM):
             except:
                 from tqdm import tqdm
             scans = tqdm(scans)
-        for s in scans:
-            for ch in channels:
-                ID = ch[b'id']['long']
-                Z += self.getImage(ID, s, **kargs)
+        Z = self.__getSumImage(scans, channels)
         if raw:
             return Z, channels
         channel_title = ",".join([z[b'assign']['utf16'] for z in channels])
@@ -184,7 +194,7 @@ class ITA(ITM.ITM):
         return list(zip(dx, dy))
         
     def getShiftCorrectedImageByMass(self, masses, **kargs):
-        return self.getSumImageByMass(masses, Shifts=[(-x,-y) for x,y in self.getSavedShift()],mode='const',const=0,**kargs)
+        return self.getSumImageByMass(masses, Shifts=[(-x,-y) for x,y in self.getSavedShift()], **kargs)
         
     def getSumImageByMass(self, masses, scans=None, prog=False, raw=False, **kargs):
         if scans is None:
@@ -193,28 +203,18 @@ class ITA(ITM.ITM):
             scans = [scans]
         if type(masses) is int or type(masses) is float:
             masses = [masses]
-        Z = np.zeros((self.sy, self.sx))
         if prog:
             try:
                 from tqdm import tqdm_notebook as tqdm
             except:
                 from tqdm import tqdm
             scans = tqdm(scans)
-        channels = []
-        for i,s in enumerate(scans):
-            assert s >= 0 and s < self.Nscan
-            for m in masses:
-                ch = self.getChannelByMass(m)
-                m = self.get_masses()[ch]
-                if i == 0:
-                    if m['assign'] != '':
-                        channels.append(m['assign'])
-                    else:
-                        channels.append("{cmass:.2f}u".format(**m))
-                Z += self.getImage(ch, s, **kargs)
+        channels = [self.getChannelByMass(m, full=True) for m in masses]
+        Z = self.__getSumImage(scans, channels)
         if raw:
             return Z, channels
-        return self.image(np.flipud(Z), channel="Masses: "+",".join(channels))
+        channels_name = [["{:.2f}u".format(m[b'cmass']['float']),m[b'assign']['utf16']][m[b'assign']['utf16']!=''] for m in channels]
+        return self.image(np.flipud(Z), channel="Masses: "+",".join(channels_name))
 
     def image(self, I, channel="Unknown"):
         return SPM_image(I, real=self.size['real'], _type="TOF", zscale='Counts', channel=channel)
@@ -246,6 +246,34 @@ class ITA(ITM.ITM):
                      dtype=np.float).reshape((self.sy, self.sx))
         return V
     
+    def fastGetImage(self, channel, scans, Shifts=False, prog=False):
+        Z = np.zeros((self.sy, self.sx))
+        if prog:
+            try:
+                from tqdm import tqdm_notebook as tqdm
+            except:
+                warning.warn("tqdm_notebook not available")
+                try:
+                    from tqdm import tqdm
+                except:
+                    warning.warn("cannot load tqdm library")
+            scans = tqdm(scans)
+        im_root =  self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image['+str(channel)+']')
+        for scan in scans:
+            c = im_root.goto('ImageArray.Long['+str(scan)+']')
+            D = zlib.decompress(c.value)
+            V = np.array(struct.unpack('<'+str(self.sx*self.sy)+'I', D),
+                            dtype=np.float).reshape((self.sy, self.sx))
+            if Shifts:
+                r = [int(z) for z in Shifts[scan]]
+                V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)
+                rx = [max(0,-r[0]), self.sx-max(1,r[0])]
+                ry = [max(0,-r[1]), self.sy-max(1,r[1])]
+                Z[ry[0]:ry[1],rx[0]:rx[1]] += V[ry[0]:ry[1],rx[0]:rx[1]]
+            else:
+                Z += V
+        return Z
+        
     def getImage(self, channel, scan, Shifts=None, ShiftMode='roll', **kargs):
         """
         getImage retrieve the image of a specific channel (ID) and a specific scan.
