@@ -81,6 +81,8 @@ class SPM_image:
         else:
             self.size['real'] = {'unit': 'pixels',
                                  'x': BIN.shape[1], 'y': BIN.shape[0]}
+        if not 'unit' in self.size['real']:
+            self.size['real']['unit'] = 'px'
         self.pixels = BIN
         self.type = _type
         self.zscale = zscale
