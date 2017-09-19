@@ -30,7 +30,11 @@ mElts = {'H':      1.00794,
         'N':     14.0067,
         'S':     32.065,
         '^29Si': 28.977,
-        'Si':    27.9775 }
+        'Si':    27.9775,
+        '^13C':  13.003355,
+        'Al':    26.98153863,
+        'Na':    22.9897692809,
+        }
        
 
 def fitSpectrum(t, m, error=False, dev=False):
@@ -52,6 +56,9 @@ def fitSpectrum(t, m, error=False, dev=False):
 def mass2time(m, sf, k0):
     return k0+sf*np.sqrt(m)
 
+def time2mass(t, sf, k0):
+    return ((t-k0)/sf)**2
+    
 def getMass(elt):
     m = 0
     for x,n in re.findall('((?:\\^[0-9]+)?[A-Z][a-z]?)([0-9]*)',elt):

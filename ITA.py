@@ -80,6 +80,9 @@ class ITA(ITM.ITM):
                 return p[b'id']['long']
         raise ValueError('Mass {:.2f} Not Found'.format(mass))
 
+    def getShiftCorrectedImageByName(self, names, **kargs):
+        return self.getSumImageByName(names, Shifts=[(-x,-y) for x,y in self.getSavedShift()],mode='const',const=0,**kargs)
+        
     def getSumImageByName(self, names, scans=None, strict=False, prog=False, raw=False, **kargs):
         if scans is None:
             scans = range(self.Nscan)
@@ -233,7 +236,7 @@ class ITA(ITM.ITM):
         V = np.array(struct.unpack('<'+str(self.sx*self.sy)+'I', D),
                      dtype=np.float).reshape((self.sy, self.sx))
         return V
-
+    
     def getImage(self, channel, scan, Shifts=None, ShiftMode='roll', **kargs):
         """
         getImage retrieve the image of a specific channel (ID) and a specific scan.
