@@ -301,7 +301,7 @@ class ITM:
         ax.plot(M, S)
         self.get_masses()
         if showPeaks:
-            for P in self.peaks:
+            for P in [x for x in self.peaks if self.peaks[x][b'desc']['utf16'] not in ['total','sum of rest']]:
                 p = self.peaks[P]
                 c = p[b'cmass']['float']
                 mask = (m >= p[b'lmass']['float'])*(m <= p[b'umass']['float'])
