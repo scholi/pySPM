@@ -87,7 +87,7 @@ class Collection:
         del self.channels[key]
         
     def __setitem__(self, key, value):
-        self.add(value, key)
+        self.add(value, key, force=True)
 
     def show(self, ax=None, channels=None, cmap='hot', ncols=3, width=20, **kargs):
         """
