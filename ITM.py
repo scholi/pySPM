@@ -187,9 +187,19 @@ class ITM:
             V = self.root.goto(
                 'filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
         if sf is None:
-            sf = V.goto('sf').getDouble()
+            for id in [x['id'] for x in V.getList() if x['name']==b'sf']:
+                try:
+                    sf = V.gotoItem('sf',id).getDouble()
+                    break
+                except:
+                    pass
         if k0 is None:
-            k0 = V.goto('k0').getDouble()
+            for id in [x['id'] for x in V.getList() if x['name']==b'k0']:
+                try:
+                    k0 = V.gotoItem('k0',id).getDouble()
+                    break
+                except:
+                    pass
         return ((binning*channels-k0)/(sf))**2
 
     def getSpectrum(self, sf=None, k0=None, time=False):
