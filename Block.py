@@ -20,6 +20,8 @@ class Block:
         fp: file pointer (the one created by open(...) of an ITA,ITM,ITS, etc... file pointing at the beginning of a block
         
         Each block start with one byte of type followed by 4 bytes that should always be \x19\x00\x00\x00 (all those 5 bytes are saved in self.Type)
+        Note: the value \x19\x00\x00\x00 is the unit32 for 25 which is the pre-header length of the block.
+        
         Then follows 5 uint32: length, z, u ,x ,y
             length: The length of the block's name
             z: Not used. My guess is that it's the block ID. So it starts at 0 and is increased for all following Blocks of the same name.
@@ -32,17 +34,17 @@ class Block:
         
         Blocks of types \x01\x19\x00\x00\x00 and \x03\x19\x00\x00\x00 are blocks that contains sub-blocks. There is no big difference between the two. I guess that types \x01 is the first one and type \x03 are the continuation blocks
             Those block have a value which starts with 41-bytes.
-                3 uint32 -> (length, nums, ID).
+                2 uint32 -> (length, nums).
                     length: We actually don't need it. It's a redundant information. That is the length of the sub-headers. (It stop just before the sub-blocks names)
-                    nums: redundant info. Not used
-                    ID: Block ID
-                9 unknown padding bytes
-                1 uint32 -> L
-                    The variable u (see above) contains the number of children. If u == 0, then L will tell the correct number of children
-                8 unknown padding bytes
+                    nums: The variable u (see above) contains the number of children. If u ==0, then nums will tell the correct number of children
+                5 bytes: type (usually 00 00 00 00 00 or 03 19 00 00 00)
+                5 uint32 -> a,b,L,d,e
+                    a,b,d,e are unknown
+                    L seems to give information on the number of children
                 1 uint64 -> NextBlock
                     Big blocks can be chunked in several ones. NextBlock tells the position in the file of the next chunk. If = 0, then it's the last chunk
             Then 33 bytes for each sub-block follows:
+                1 byte: spacing (usually = 0 or 1)
                 3 uint32 -> index, slen, id
                     index: The position of the sub-block name in the header
                     slen: The length of the sub-block name (which is store later). So basically the sub-block name is: Block.value[index:index+slen]
@@ -90,14 +92,23 @@ class Block:
         if self.List is None:
             return self.createList()
         return self.List
-
+        
+    def gotoNextBlock(self):
+        offset = self.offset
+        self.f.seek(offset)
+        head = dict(zip(['length', 'z', 'u', 'x', 'y'], struct.unpack('<5x5I', self.f.read(25))))
+        name = self.f.read(head['length'])
+        length, nums, ID, L, NextBlock = struct.unpack('<III9xI8xQ', self.f.read(41))
+        self.f.seek(NextBlock)
+        return Block(self.f)
+            
     def createList(self, limit=None, debug=False):
         """
         Generate a list (self.List) containing all the children (sub-blocks) of the current Block
         """
-        length, nums, ID, L, NextBlock = struct.unpack('<III9xI8xQ', self.value[:41])
-        self.nums = L
-        self.subType = ID
+        length, nums, type, a,b, L,d,e, NextBlock = struct.unpack('<II5sIIIIIQ', self.value[:41])
+        self.nums = nums
+        self.subType = type
         offset = self.offset
         self.List = []
         while True:
@@ -106,7 +117,8 @@ class Block:
                 struct.unpack('<5x5I', self.f.read(25))))
             name = self.f.read(head['length'])
             data = self.f.tell()
-            length, nums, ID, L, NextBlock = struct.unpack('<III9xI8xQ', self.f.read(41))
+            length, nums, type, a, b, L, d, e, NextBlock = \
+                struct.unpack('<II5sIIIIIQ', self.f.read(41))
             N = head['u']
             if N == 0:
                 N = nums

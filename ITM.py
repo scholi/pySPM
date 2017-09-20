@@ -270,14 +270,14 @@ class ITM:
             axs.set_ylim(*lim)
         return p
 
-    def showSpectrum(self, low=0, high=None, ax=None, log=False, showPeaks=True):
+    def showSpectrum(self, low=0, high=None, sf=None, k0=None, ax=None, log=False, showPeaks=True):
         """
         Plot the (summed) spectrum
         low and high: mass boundary of the plotted data
         ax: matplotlib axis
         log: plot the log of the intensity if True
         """
-        m, s = self.getSpectrum()
+        m, s = self.getSpectrum(sf=sf,k0=k0)
         if ax is None:
             import matplotlib.pyplot as plt
             ax = plt.gca()
