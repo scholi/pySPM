@@ -9,7 +9,7 @@ from .ITM import ITM
 from .collection import Collection
 
 __all__ = ["ITA","ITM","PCA","Block","SPM","Bruker","nanoscan"]
-__version__ = '0.1.1'
+__version__ = '0.1.4'
 __author__ = 'Olivier Scholder'
 __copyright__ = "Copyright 2017, EMPA, Dübendorf, Switzerland"
 __email__ = "olivier.scholder@empa.ch"
