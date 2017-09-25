@@ -24,7 +24,7 @@ class Block:
         
         Then follows 5 uint32: length, z, u ,x ,y
             length: The length of the block's name
-            z: Not used. My guess is that it's the block ID. So it starts at 0 and is increased for all following Blocks of the same name.
+            z: Block ID. Start at 0 and is increased monotonically for each blocks of the same name with the same parent.
                 We usually find the ID from the children's list (see below) and this information is never used as it's redundant.
             u: The number of children / sub-blocks. Might be = 0 even if the block has children. Check the value L (defined below) if so
             x: The length of the block's value
@@ -256,6 +256,8 @@ class Block:
         if the block B has several children having the same name,
         A/B/X[n] will return the n-th child (note that 0 is the first child)
         """
+        if path == '':
+            return self
         s = self
         for p in path.split('/'):
             idx = 0

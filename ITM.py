@@ -69,7 +69,23 @@ class ITM:
                     pass
         except:
             pass
-    
+    def getPeakList(self, name):
+        """
+        Retrieve extra MassIntervalList (MIL) by it's name. Those are saved and visible in iontof software in the spectrum window.
+        """
+        PeakList = []
+        for x in self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/ExtraMILs'):
+            if x.goto('Name').getString() == name:
+                for y in [z for z in x.getList() if z['name'].decode() == 'mi']:
+                    d = x.goto('mi[{}]'.format(y['id'])).dictList()
+                    PeakList.append({key.decode('utf8'):d[key] for key in d})
+                return PeakList
+        return None
+        
+    def showPeakList(self, name):
+        for m in self.getPeakList(name):
+            print("{id[long]}: ({desc[utf16]}) [{assign[utf16]}] {lmass[float]:.2f}u - {umass[float]:.2f}u (center: {cmass[float]:.2f}u)".format(**m))
+        
     def get_summary(self):
         """
         Retrieve a summary of the important data concerning the measurement
