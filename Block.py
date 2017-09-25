@@ -24,8 +24,7 @@ class Block:
         
         Then follows 5 uint32: length, z, u ,x ,y
             length: The length of the block's name
-            z: Block ID. Start at 0 and is increased monotonically for each blocks of the same name with the same parent.
-                We usually find the ID from the children's list (see below) and this information is never used as it's redundant.
+            z: Block ID. Start at 0 and is increased monotonically for each blocks of the same name with the same parent. We usually find the ID from the children's list (see below) and this information is never used as it's redundant.
             u: The number of children / sub-blocks. Might be = 0 even if the block has children. Check the value L (defined below) if so
             x: The length of the block's value
             y: Redundant. Seems to be always = x

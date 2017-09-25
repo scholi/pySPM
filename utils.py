@@ -38,6 +38,7 @@ mElts = {'H':     1.00782503224,
         'Na':    22.9897692809,
         'Cl':    34.96885268,
         '^37Cl': 36.96590259,
+        'F':     18.99840322
         }
        
 
@@ -64,13 +65,13 @@ def chunks(l, n):
         
 def mass2time(m, sf, k0):
     return k0+sf*np.sqrt(m)
-
+    
 def time2mass(t, sf, k0):
     return ((t-k0)/sf)**2
     
 def getMass(elt):
     m = 0
-    for x,n in re.findall('((?:\\^[0-9]+)?[A-Z][a-z]?)([0-9]*)',elt):
+    for x,n in re.findall('((?:\\^[0-9]+)?[A-Z][a-z]?)_?([0-9]*)',elt):
         if n == '':
             n = 1
         else:

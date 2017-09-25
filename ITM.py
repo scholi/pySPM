@@ -166,6 +166,38 @@ class ITM:
                             
         return Vals
 
+    def autoMassCal(self, pos=True, debug=False):
+        """
+        perform an auto callibration for positive spectrum. (in test, might be unreliable)
+        """
+        TimeWidth = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').getKeyValue(16)['Value']
+        t, D = self.getSpectrum(time=True)
+        N = np.prod(list(self.size['pixels'].values())) * self.Nscan
+        mask = D > N*0.01/TimeWidth
+        times_start = t[1:][np.nonzero(mask[1:]*(~mask[:-1]))]
+        times_end = t[np.nonzero(mask[:-1]*(~mask[1:]))]
+        times = (times_start + times_end)/2
+        tH = times[0]
+        mask = (t>=tH-TimeWidth)*(t<=tH+TimeWidth)
+        tH = t[mask][np.argmax(D[mask])]
+        sf = 1e5
+        for i in range(3):
+            k0 = tH-sf*np.sqrt(utils.getMass('H'))
+            m = utils.time2mass(t, sf=sf, k0=k0)
+            mP = utils.time2mass(times, sf=sf, k0=k0)
+            t0 = times[np.argmin(np.abs(mP-12))]
+            t1 = times[np.argmin(np.abs(mP-12))+1]
+            sf = np.sqrt((t1-k0)**2 - (t0-k0)**2)
+            k0 = tH-sf*np.sqrt(utils.getMass('H'))
+        ts = []
+        for x in [utils.mass2time(utils.getMass(x+'+'), sf=sf, k0=k0) for x in ['C','CH','CH2','CH3']]:
+            mask = (t>=(x-3*TimeWidth))*(t<=(x+3*TimeWidth))
+            ts.append(t[mask][np.argmax(D[mask])])
+        ms = [utils.getMass(x+'+') for x in ['C','CH','CH2','CH3']]
+        if debug:
+            return utils.fitSpectrum(ts, ms), ts, ms
+        return utils.fitSpectrum(ts, ms)
+    
     def showValues(self, pb=False, gui=False, **kargs):
         html = True
         if 'html' in kargs:
