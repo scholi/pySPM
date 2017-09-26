@@ -166,7 +166,7 @@ class ITM:
                             
         return Vals
 
-    def autoMassCal(self, pos=True, debug=False):
+    def autoMassCal(self, pos=True, debug=False, Range=5000, FittingPeaks = ['C','CH','CH2','CH3','Na']):
         """
         perform an auto callibration for positive spectrum. (in test, might be unreliable)
         """
@@ -190,10 +190,10 @@ class ITM:
             sf = np.sqrt((t1-k0)**2 - (t0-k0)**2)
             k0 = tH-sf*np.sqrt(utils.getMass('H'))
         ts = []
-        for x in [utils.mass2time(utils.getMass(x+'+'), sf=sf, k0=k0) for x in ['C','CH','CH2','CH3']]:
-            mask = (t>=(x-3*TimeWidth))*(t<=(x+3*TimeWidth))
+        for x in [utils.mass2time(utils.getMass(x+'+'), sf=sf, k0=k0) for x in FittingPeaks]:
+            mask = (t>=(x-Range))*(t<=(x+Range))
             ts.append(t[mask][np.argmax(D[mask])])
-        ms = [utils.getMass(x+'+') for x in ['C','CH','CH2','CH3']]
+        ms = [utils.getMass(x+'+') for x in FittingPeaks]
         if debug:
             return utils.fitSpectrum(ts, ms), ts, ms
         return utils.fitSpectrum(ts, ms)
