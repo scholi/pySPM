@@ -34,7 +34,10 @@ def time2mass(t, sf, k0):
     return ((t-k0)/sf)**2
     
 def getMass(elt):
-    conn = sqlite3.connect('elements.db')
+    import os
+    this_dir, this_filename = os.path.split(__file__)
+    DB_PATH = os.path.join(this_dir, "elements.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     m = 0
     for A,x,n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)',elt):
