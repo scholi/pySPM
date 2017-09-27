@@ -1,48 +1,10 @@
 import numpy as np
 from scipy import stats, optimize as opt
 import re
+import sqlite3
 
-Elts = {
-    'B': [10, 11],
-    'C': 12,
-    'N': 14,
-    'O': 16,
-    'OH': 17,
-    'F': 19,
-    'Na': 23,
-    'Mg': 24,
-    'CN': 26,
-    'Al': 27,
-    'Si': 28,
-    'P': 31,
-    'S': 32,
-    'SH': 33,
-    'Cl': [35, 37],
-    'TiO': [64, 65],
-    'TiO2': [80, 81],
-    'Cs': 133,
-    'Au': 197
-}
-
-me = 0.00054858
-
-mElts = {'H':     1.00782503224,
-        'C':     12,
-        'O':     15.99491461956,
-        'N':     14.0030740048,
-        'S':     32.065,
-        '^29Si': 28.9764947,
-        'Si':    27.9769265325,
-        '^13C':  13.003355,
-        'Al':    26.98153863,
-        'Na':    22.9897692809,
-        'Cl':    34.96885268,
-        '^37Cl': 36.96590259,
-        'F':     18.99840322,
-        'K':     38.96370668,
-        'Ca':    39.96259098,
-        }
-       
+# electron mass
+me = 0.00054858 # u
 
 def fitSpectrum(t, m, error=False, dev=False):
     """
@@ -72,13 +34,22 @@ def time2mass(t, sf, k0):
     return ((t-k0)/sf)**2
     
 def getMass(elt):
+    conn = sqlite3.connect('elements.db')
+    c = conn.cursor()
     m = 0
-    for x,n in re.findall('((?:\\^[0-9]+)?[A-Z][a-z]?)_?([0-9]*)',elt):
+    for A,x,n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)',elt):
         if n == '':
             n = 1
         else:
             n = int(n)
-        m += n*mElts[x]
+        if A == '':
+            c.execute("SELECT mass from elements where symbol='{sym}' and abund=(SELECT max(abund) from elements where symbol='{sym}')".format(sym=x))
+        else:
+            c.execute("SELECT mass from elements where symbol='{sym}' and A={A}".format(sym=x,A=A))
+        res = c.fetchone()
+        if res is None:
+            raise Exception("Cannot fetch mass of {}".format(x))
+        m += n*res[0]
     m -= me*elt.count('+')
     return m
     

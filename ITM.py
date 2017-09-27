@@ -6,7 +6,6 @@ import os.path
 import zlib
 import re
 
-
 class ITM:
     def __init__(self, filename):
         """
@@ -170,6 +169,7 @@ class ITM:
         """
         perform an auto callibration for positive spectrum. (in test, might be unreliable)
         """
+        from scipy.optimize import curve_fit
         TimeWidth = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').getKeyValue(16)['Value']
         t, D = self.getSpectrum(time=True)
         N = np.prod(list(self.size['pixels'].values())) * self.Nscan
@@ -183,18 +183,18 @@ class ITM:
         if sf is None or k0 is None:
             sf=1e5
             for i in range(3):
-                k0 = tH-sf*np.sqrt(utils.getMass('H'))
+                k0 = tH-sf*np.sqrt(utils.getMass('H+'))
                 m = utils.time2mass(t, sf=sf, k0=k0)
                 mP = utils.time2mass(times, sf=sf, k0=k0)
                 t0 = times[np.argmin(np.abs(mP-12))]
                 t1 = times[np.argmin(np.abs(mP-12))+1]
                 sf = np.sqrt((t1-k0)**2 - (t0-k0)**2)
-                k0 = tH-sf*np.sqrt(utils.getMass('H'))
+                k0 = tH-sf*np.sqrt(utils.getMass('H+'))
         ts = []
         for x in [utils.mass2time(utils.getMass(x+'+'), sf=sf, k0=k0) for x in FittingPeaks]:
             mask = (t>=(x-Range))*(t<=(x+Range))
-            # TODO: do a Gauss fitting
-            ts.append(t[mask][np.argmax(D[mask])])
+            t_peak = t[mask][np.argmax(D[mask])]
+            ts.append(t_peak)
         ms = [utils.getMass(x+'+') for x in FittingPeaks]
         if debug:
             return utils.fitSpectrum(ts, ms), ts, ms
