@@ -17,3 +17,7 @@ If you find bugs and issues, please report them to the developpe: https://github
 ## Documentation
 The documentation is still in its early stage
 [read the documentation](../master/doc/pySPM%20Documentation.ipynb)
+
+## Citing
+If you use this library for your work, please think about citing it.
+[![DOI](https://zenodo.org/badge/64209401.svg)](https://zenodo.org/badge/latestdoi/64209401)
