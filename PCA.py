@@ -1,3 +1,7 @@
+"""
+This module performs the PCS with the help of the scikit library and gives the user various function for quick plotting.
+"""
+
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import scale

@@ -12,7 +12,9 @@ class Block:
     """
     Class to handle a iontof-Block
     One iontof file ITA,ITM,ITS contains a lot of Blocks forming a hierarchical structure.
-    Each Block can have children (sub-Blocks) and values (data)
+    Each Block can have children (sub-Blocks) and values (data).
+    
+    Note: This class was created by reverse engineering on the fileformat of iontof and is most probably not 100% accurate. Nevertheless is works perfercly with our data upto now.
     """
     def __init__(self, fp):
         """

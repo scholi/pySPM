@@ -1,3 +1,7 @@
+"""
+Deprecated module. Will be removed in finaly version
+"""
+
 import math
 
 mag = "afpnum1kMGTPE"

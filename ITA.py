@@ -1,3 +1,8 @@
+"""
+This module gives the ability to ready and parse the ITA files.
+You can mainly retrieve the images for each channel and scan.
+"""
+
 import numpy as np
 import struct
 import os.path

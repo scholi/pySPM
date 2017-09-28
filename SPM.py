@@ -3,6 +3,7 @@
 
 """
 Library to handle SPM data.
+This is the core module of all images retrieved by SPM and ToF-SIMS.
 """
 
 import numpy as np

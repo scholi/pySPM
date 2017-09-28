@@ -1,3 +1,7 @@
+"""
+This is an old module which is deprecated now. It is kept in the project as it can be used to read BIF6 and BIF3D images.
+"""
+
 import numpy as np
 import struct
 import os

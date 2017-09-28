@@ -1,3 +1,7 @@
+"""
+This is a standalone script which allows the user to perfome cross-section on ToF-SIMS images on different channels
+"""
+
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QFileDialog, QWidget, QAction, QProgressBar, QStatusBar
 from PyQt5.QtGui import QPixmap

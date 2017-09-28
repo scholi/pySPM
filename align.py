@@ -4,6 +4,12 @@ import numpy as np
 from skimage import transform as tf
 from scipy.ndimage.filters import gaussian_filter
 
+"""
+This module is used in order to align two different images. Usually one from an SPM and the other fron the ToF-SIMS.
+
+This module also gives the ability to perform shift correction on images which is used in order to align the differents scans from ToF-SIMS images.
+"""
+
 class Aligner:
     def __init__(self, fixed, other, prog=True, FFT=True):
         self.fixed = np.copy(fixed)
