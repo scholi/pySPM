@@ -179,14 +179,15 @@ class Collection:
         S = np.zeros((size[0]/stitches[0], size[1]/stitches[1]))
         for i in range(stitches[0]):
             for j in range(stitches[1]):
-                S += self.channels[channel][128*i:128*(i+1), 128*j:128*(j+1)]
+                S += self.channels[channel][sy*i:sy*(i+1), sx*j:sx*(j+1)]
         S[S == 0] = 1
+        sy, sx = S.shape
         for x in self.channels:
             F = np.zeros(size)
             for i in range(stitches[0]):
                 for j in range(stitches[1]):
-                    F[128*i:128*(i+1), 128*j:128*(j+1)] \
-                        = self.channels[x][128*i:128*(i+1), 128*j:128*(j+1)]/S
+                    F[sy*i:sy*(i+1), sx*j:sx*(j+1)] \
+                        = self.channels[x][sy*i:sy*(i+1), sx*j:sx*(j+1)]/S
             result.add(F, x)
         return result
 

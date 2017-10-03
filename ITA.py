@@ -403,16 +403,17 @@ class ITA_collection(Collection):
         N = ITA_collection(self.filename, [], name=self.name)
         size = list(self.channels.values())[0].pixels.shape
         S = np.zeros((int(size[0]/stitches[0]), int(size[1]/stitches[1])))
+        sy, sx = S.shape
         for i in range(stitches[0]):
             for j in range(stitches[1]):
-                S += self.channels[channel].pixels[128*i:128*(i+1), 128*j:128*(j+1)]
+                S += self.channels[channel].pixels[sy*i:sy*(i+1), sx*j:sx*(j+1)]
         S[S == 0] = 1
         for x in self.channels:
             F = np.zeros(size)
             for i in range(stitches[0]):
                 for j in range(stitches[1]):
-                    F[128*i:128*(i+1), 128*j:128*(j+1)] = \
-                        self.channels[x].pixels[128*i:128*(i+1), 128*j:128*(j+1)]/S
+                    F[sy*i:sy*(i+1), sx*j:sx*(j+1)] = \
+                        self.channels[x].pixels[sy*i:sy*(i+1), sx*j:sx*(j+1)]/S
             new_channel = copy.deepcopy(self[x])
             new_channel.pixels = F
             N.add(new_channel, x)
