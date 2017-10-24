@@ -78,14 +78,14 @@ class PCA:
         ax.autoscale_view()
         ax.invert_yaxis()
 
-    def standardized(self):
+    def standardized(self, meanCentering=True):
         self.standX = pd.DataFrame(
-            scale(self.data), index=self.data.index, columns=self.data.columns)
+            scale(self.data, with_mean=meanCentering), index=self.data.index, columns=self.data.columns)
         return self.standX
 
-    def runPCA(self):
+    def runPCA(self, meanCentering=True):
         if self.standX is None:
-            self.standardized()
+            self.standardized(meanCentering=meanCentering)
         self.pca = PCA1().fit(self.standX)
 
     def pca_summary(self):
