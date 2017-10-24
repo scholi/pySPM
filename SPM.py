@@ -17,6 +17,7 @@ import skimage.filters
 import scipy.interpolate
 from skimage import transform as tf
 import copy
+from .utils import CDF
 try:
     from tqdm import tqdm_notebook as tqdm
 except:
@@ -390,12 +391,13 @@ class SPM_image:
         ry = (self.pixels.shape[0]-y)*self.size['real']['y']/(10**fact)/self.pixels.shape[0]
         return rx, ry
     
-    def circular_profile(self,x0,y0,Ra=1,Rn=0,width=1,cmap='jet',axImg=None, axPolar=None, axProfile=None, N=20,xtransf=lambda x: x*1e9,ytransf=lambda x:x*1e9,ToFcorr=False,plotProfileEvery=1,**kargs):
-        from .utils import CDF
+    def circular_profile(self,x0,y0,Ra=1,Rn=0,width=1,cmap='jet',axImg=None, axPolar=None, axProfile=None, N=20,xtransf=lambda x: x*1e9,ytransf=lambda x:x*1e9,ToFcorr=False,plotProfileEvery=1,fit=lambda x,*p:p[3]+p[2]*CDF(x,*p[:2]),A=0,B=360, **kargs):
+        """
+        Create radial profiles from point x0,y0 with length Ra (outer radius) and Rn (negative Radius).
+        Start from angle A° to angle B° with N profiles.
+        """
         from matplotlib import colors, cm
-        def f(x, x0, s, A, bg):
-            return bg+A*CDF(x, x0, s)
-
+        
         # Create a colormap for each profile
         CM =  plt.get_cmap(cmap) 
         cNorm  = colors.Normalize(vmin=0, vmax=N)
@@ -403,7 +405,8 @@ class SPM_image:
         sig = []
         angles = []
         
-        for i, angle in enumerate(np.arange(0, 360, 360/N)):
+        assert A<B
+        for i, angle in enumerate(np.linspace(A, B, N)):
             a = np.radians(angle)
             angles.append(a)
             l, p = self.get_profile(
@@ -416,21 +419,22 @@ class SPM_image:
             if ToFcorr:
                 profile = -np.log(1.001-profile/ToFcorr)
             p0 = [l[len(l)//2], 100e-9, np.max(profile)-np.min(profile),np.min(profile) ]
-            popt, pcov = scipy.optimize.curve_fit(f, l , profile, p0)
+            popt, pcov = scipy.optimize.curve_fit(fit, l , profile, p0)
             sig.append(popt[1])
             if axProfile and i%plotProfileEvery == 0:
                 axProfile.plot(xtransf(l-popt[0]), profile, color=scalarMap.to_rgba(i), linestyle=':')
-                axProfile.plot(ytransf(l-popt[0]), f(l,*popt), color=scalarMap.to_rgba(i))
+                axProfile.plot(ytransf(l-popt[0]), fit(l,*popt), color=scalarMap.to_rgba(i))
         # close loop
-        sig.append(sig[0])
-        angles.append(angles[0])    
+        if A%360 == B%360:
+            sig.append(sig[0])
+            angles.append(angles[0])    
         
         # Plot polar
         if axPolar:
             axPolar.plot(angles, xtransf(np.array(sig)), label="sigma");
             axPolar.plot(angles, ytransf(np.array(sig))*2*np.sqrt(2*np.log(2)), label="FWHM");
             axPolar.legend();
-        return angles, sig
+        return np.array(angles), np.array(sig)
         
     def get_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, color='w', axPixels=None, **kargs):
         """
