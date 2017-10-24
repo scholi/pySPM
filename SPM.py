@@ -208,19 +208,27 @@ class SPM_image:
                                              i).reshape(len(i), 1), len(i))
             return New
 
-    def correct_plane(self, inline=True):
+    def correct_plane(self, inline=True, mask=None):
         x = np.arange(self.pixels.shape[1])
         y = np.arange(self.pixels.shape[0])
-        X, Y = np.meshgrid(x, y)
-        Z = self.pixels
+        X0, Y0 = np.meshgrid(x, y)
+        Z0 = self.pixels
+        if mask is not None:
+            X = X0[mask]
+            Y = Y0[mask]
+            Z = Z0[mask]
+        else:
+            X = X0
+            Y = Y0
+            Z = Z0
         A = np.column_stack((np.ones(Z.ravel().size), X.ravel(), Y.ravel()))
         c, resid, rank, sigma = np.linalg.lstsq(A, Z.ravel())
         if inline:
             self.pixels -= c[0] * \
-                np.ones(self.pixels.shape) + c[1] * X + c[2] * Y
+                np.ones(self.pixels.shape) + c[1] * X0 + c[2] * Y0
         else:
             New = copy.deepcopy(self)
-            New.pixels -= c[0]*np.ones(self.pixels.shape) + c[1] * X + c[2] * Y
+            New.pixels -= c[0]*np.ones(self.pixels.shape) + c[1] * X0 + c[2] * Y0
             return New
 
     def correct_lines(self, inline=True):
@@ -364,6 +372,9 @@ class SPM_image:
     def plotProfile(self, *args, **kargs):
         warnings.warn("plotProfile() is replaced by plot_profile()", DeprecationWarning, stacklevel=2)
         return self.plot_profile(*args, **kargs)
+
+    def real2px(self, x, y):
+        return self.real2pixels(x,y)
         
     def real2pixels(self, x, y):
         W = self.size['real']['x']
@@ -378,6 +389,48 @@ class SPM_image:
         rx = x*self.size['real']['x']/(10**fact)/self.pixels.shape[1]
         ry = (self.pixels.shape[0]-y)*self.size['real']['y']/(10**fact)/self.pixels.shape[0]
         return rx, ry
+    
+    def circular_profile(self,x0,y0,Ra=1,Rn=0,width=1,cmap='jet',axImg=None, axPolar=None, axProfile=None, N=20,xtransf=lambda x: x*1e9,ytransf=lambda x:x*1e9,ToFcorr=False,plotProfileEvery=1,**kargs):
+        from .utils import CDF
+        from matplotlib import colors, cm
+        def f(x, x0, s, A, bg):
+            return bg+A*CDF(x, x0, s)
+
+        # Create a colormap for each profile
+        CM =  plt.get_cmap(cmap) 
+        cNorm  = colors.Normalize(vmin=0, vmax=N)
+        scalarMap = cm.ScalarMappable(norm=cNorm, cmap=CM)
+        sig = []
+        angles = []
+        
+        for i, angle in enumerate(np.arange(0, 360, 360/N)):
+            a = np.radians(angle)
+            angles.append(a)
+            l, p = self.get_profile(
+                x0-Rn*np.cos(a),
+                y0+Rn*np.sin(a),
+                x0+Ra*np.cos(a),
+                y0-Ra*np.sin(a),
+                ax=axImg, width=width, color=scalarMap.to_rgba(i), **kargs)
+            profile = np.mean(p, axis=1)
+            if ToFcorr:
+                profile = -np.log(1.001-profile/ToFcorr)
+            p0 = [l[len(l)//2], 100e-9, np.max(profile)-np.min(profile),np.min(profile) ]
+            popt, pcov = scipy.optimize.curve_fit(f, l , profile, p0)
+            sig.append(popt[1])
+            if axProfile and i%plotProfileEvery == 0:
+                axProfile.plot(xtransf(l-popt[0]), profile, color=scalarMap.to_rgba(i), linestyle=':')
+                axProfile.plot(ytransf(l-popt[0]), f(l,*popt), color=scalarMap.to_rgba(i))
+        # close loop
+        sig.append(sig[0])
+        angles.append(angles[0])    
+        
+        # Plot polar
+        if axPolar:
+            axPolar.plot(angles, xtransf(np.array(sig)), label="sigma");
+            axPolar.plot(angles, ytransf(np.array(sig))*2*np.sqrt(2*np.log(2)), label="FWHM");
+            axPolar.legend();
+        return angles, sig
         
     def get_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, color='w', axPixels=None, **kargs):
         """
@@ -392,14 +445,14 @@ class SPM_image:
         if not pixels:
             W = self.size['real']['x']
             fact = int(np.floor(np.log(W)/np.log(10)/3))*3
-            if kargs.get('debug',False):
-                print("Image range (real scale):",self.size['real']['x']/(10**fact),self.size['real']['y']/(10**fact))
-            x1, y1 = self.real2pixels(x1,y1)
-            x2, y2 = self.real2pixels(x2,y2)
+            if kargs.get('debug', False):
+                print("Image range (real scale):", self.size['real']['x']/(10**fact), self.size['real']['y']/(10**fact))
+            x1, y1 = self.real2pixels(x1, y1)
+            x2, y2 = self.real2pixels(x2, y2)
             y1 = self.pixels.shape[0]-y1
             y2 = self.pixels.shape[0]-y2
-            if kargs.get('debug',False):
-                print("Pixel coordinates:",x1,y1,x2,y2)
+            if kargs.get('debug', False):
+                print("Pixel coordinates:", x1, y1, x2, y2)
             xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color,\
                 transx = lambda x: x*(self.size['real']['x']/(10**fact))/self.pixels.shape[1],\
                 transy = lambda x: (self.pixels.shape[0]-x)*(self.size['real']['y']/(10**fact))/self.pixels.shape[0],\
@@ -875,21 +928,29 @@ def stat(x):
         mean=np.mean(x), std=np.std(x)))
 
 
-def fit2d(Z, dx=2, dy=1):
-    x = np.arange(Z.shape[1], dtype=np.float)
-    y = np.arange(Z.shape[0], dtype=np.float)
-    X, Y = np.meshgrid(x, y)
+def fit2d(Z0, dx=2, dy=1, mask=None):
+    x = np.arange(Z0.shape[1], dtype=np.float)
+    y = np.arange(Z0.shape[0], dtype=np.float)
+    X0, Y0 = np.meshgrid(x, y)
+    if mask is not None:
+        X = X0[mask]
+        Y = Y0[mask]
+        Z = Z0[mask]
+    else:
+        X = X0
+        Y = Y0
+        Z = Z0
     x2 = X.ravel()
     y2 = Y.ravel()
     A = np.vstack([x2**i for i in range(dx+1)])
     A = np.vstack([A]+[y2**i for i in range(1, dy+1)])
     res = scipy.optimize.lsq_linear(A.T, Z.ravel())
     r = res['x']
-    Z2 = r[0]*np.ones(Z.shape)
+    Z2 = r[0]*np.ones(Z0.shape)
     for i in range(1, dx+1):
-        Z2 += r[i]*(X**i)
+        Z2 += r[i]*(X0**i)
     for i in range(1, dy+1):
-        Z2 += r[dx+i]*(Y**i)
+        Z2 += r[dx+i]*(Y0**i)
     return r, Z2
 
 
