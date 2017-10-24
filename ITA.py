@@ -191,8 +191,11 @@ class ITA(ITM.ITM):
         """
         getSavedShift returns the shifts saved with the file. Usually this is the shift correction you perform with the IonToF software.
         """
-        X = zlib.decompress(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'
+        try:
+            X = zlib.decompress(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'
                                            '/ImageStackScans/ShiftCoordinates/ImageStack.ShiftCoordinates').value)
+        except:
+            return [(0,0) for x in range(self.Nscan)]
         D = struct.unpack('<'+str(len(X)//4)+'i', X)
         dx = D[::2]
         dy = D[1::2]
@@ -399,7 +402,8 @@ class ITA_collection(Collection):
             return self.PCA.loadings()
         return self.PCA.loadings()[:num]
 
-    def StitchCorrection(self, channel, stitches):
+    def StitchCorrection(self, channel, stitches, gauss=0, debug=False):
+        from scipy.ndimage.filters import gaussian_filter
         N = ITA_collection(self.filename, [], name=self.name)
         size = list(self.channels.values())[0].pixels.shape
         S = np.zeros((int(size[0]/stitches[0]), int(size[1]/stitches[1])))
@@ -408,6 +412,8 @@ class ITA_collection(Collection):
             for j in range(stitches[1]):
                 S += self.channels[channel].pixels[sy*i:sy*(i+1), sx*j:sx*(j+1)]
         S[S == 0] = 1
+        if gauss>0:
+            S = gaussian_filter(S, gauss)
         for x in self.channels:
             F = np.zeros(size)
             for i in range(stitches[0]):
@@ -417,4 +423,6 @@ class ITA_collection(Collection):
             new_channel = copy.deepcopy(self[x])
             new_channel.pixels = F
             N.add(new_channel, x)
+        if debug:
+            return N, S
         return N
