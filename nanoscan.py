@@ -67,16 +67,19 @@ class Nanoscan():
                 'unit': x['unit'],
                 'x': x['value'],
                 'y': y['value']}
-            self.feedback = {'channel': self.__grab(
-                '{0}/spm:z_feedback_channel/spm:v'.format(self.fbPath))}
-            self.feedback['P'] = {
-                'value': float(self.__grab('{0}/spm:proportional_z_gain/spm:v'.format(self.fbPath))),
-                'unit': self.__grab('{0}/spm:proportional_z_gain_unit/spm:v'.format(self.fbPath))}
-            self.feedback['I'] = {
-                'value': float(self.__grab('{0}/spm:integral_z_time/spm:v'.format(self.fbPath))),
-                'unit': self.__grab('{0}/spm:integral_z_time_unit/spm:v'.format(self.fbPath))}
-            if self.feedback['channel'] == 'df':
-                self.feedback['channel'] = u'Δf'
+            try:
+                self.feedback = {'channel': self.__grab(
+                    '{0}/spm:z_feedback_channel/spm:v'.format(self.fbPath))}
+                self.feedback['P'] = {
+                    'value': float(self.__grab('{0}/spm:proportional_z_gain/spm:v'.format(self.fbPath))),
+                    'unit': self.__grab('{0}/spm:proportional_z_gain_unit/spm:v'.format(self.fbPath))}
+                self.feedback['I'] = {
+                    'value': float(self.__grab('{0}/spm:integral_z_time/spm:v'.format(self.fbPath))),
+                    'unit': self.__grab('{0}/spm:integral_z_time_unit/spm:v'.format(self.fbPath))}
+                if self.feedback['channel'] == 'df':
+                    self.feedback['channel'] = u'Δf'
+            except:
+                self.feedback = {}
             self.scan_speed = {
                 z: {
                     'value': float(self.__grab("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{dir}']/../spm:point_interval/spm:v".format(dir=z))) * self.pixel_size[0],
