@@ -391,10 +391,15 @@ class SPM_image:
         ry = (self.pixels.shape[0]-y)*self.size['real']['y']/(10**fact)/self.pixels.shape[0]
         return rx, ry
     
-    def circular_profile(self,x0,y0,Ra=1,Rn=0,width=1,cmap='jet',axImg=None, axPolar=None, axProfile=None, N=20,xtransf=lambda x: x*1e9,ytransf=lambda x:x*1e9,ToFcorr=False,plotProfileEvery=1,fit=lambda x,*p:p[3]+p[2]*CDF(x,*p[:2]),A=0,B=360, **kargs):
+    def circular_profile(self, x0, y0, Ra=1, Rn=0, width=1, N=20, A=0, B=360,\
+        cmap='jet', axImg=None, axPolar=None, axProfile=None, plotProfileEvery=1,\
+        xtransf=lambda x: x*1e9, ytransf=lambda x:x*1e9,\
+        ToFcorr=False, fit=lambda x, *p: p[3]+p[2]*CDF(x, *p[:2]), errors=False, **kargs):
         """
         Create radial profiles from point x0,y0 with length Ra (outer radius) and Rn (negative Radius).
         Start from angle A° to angle B° with N profiles.
+        If you want to apply the ToF-correction, please set ToFcorr to the number of scans used to record the ToF-SIMS image.
+        Return the fitting uncertainty on sigma if errors is set tu True
         """
         from matplotlib import colors, cm
         
@@ -404,7 +409,7 @@ class SPM_image:
         scalarMap = cm.ScalarMappable(norm=cNorm, cmap=CM)
         sig = []
         angles = []
-        
+        delta = []
         assert A<B
         for i, angle in enumerate(np.linspace(A, B, N)):
             a = np.radians(angle)
@@ -421,20 +426,30 @@ class SPM_image:
             p0 = [l[len(l)//2], 100e-9, np.max(profile)-np.min(profile),np.min(profile) ]
             popt, pcov = scipy.optimize.curve_fit(fit, l , profile, p0)
             sig.append(popt[1])
+            delta.append(np.sqrt(pcov[1,1]))
             if axProfile and i%plotProfileEvery == 0:
                 axProfile.plot(xtransf(l-popt[0]), profile, color=scalarMap.to_rgba(i), linestyle=':')
-                axProfile.plot(ytransf(l-popt[0]), fit(l,*popt), color=scalarMap.to_rgba(i))
+                axProfile.plot(xtransf(l-popt[0]), fit(l,*popt), color=scalarMap.to_rgba(i))
         # close loop
         if A%360 == B%360:
             sig.append(sig[0])
             angles.append(angles[0])    
         
         # Plot polar
+        sig = np.array(sig)
+        delta = np.array(delta)
+        angles = np.array(angles)
         if axPolar:
-            axPolar.plot(angles, xtransf(np.array(sig)), label="sigma");
-            axPolar.plot(angles, ytransf(np.array(sig))*2*np.sqrt(2*np.log(2)), label="FWHM");
+            axPolar.plot(angles, ytransf(sig), label="sigma", color=kargs.get('sigcolor','C0'));
+            axPolar.plot(angles, ytransf(sig)*2*np.sqrt(2*np.log(2)), label="FWHM", color=kargs.get('FWHMcolor','C1'));
+            if errors:
+                axPolar.fill_between(angles, ytransf(sig-delta), ytransf(sig+delta), color=kargs.get( 'sigcolor','C0'), alpha=kargs.get('fillalpha',0.5))
+                axPolar.fill_between(angles, ytransf(sig-delta)*2*np.sqrt(2*np.log(2)), ytransf(sig+delta)*2*np.sqrt(2*np.log(2)), color=kargs.get('FWHMcolor','C1'), alpha=kargs.get('fillalpha',0.5))
             axPolar.legend();
-        return np.array(angles), np.array(sig)
+        if errors:
+            return angles, sig, delta
+        else:
+            return angles, sig
         
     def get_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, color='w', axPixels=None, **kargs):
         """
@@ -1002,16 +1017,16 @@ def getProfile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
         dx = -width/2*(y2-y1)/d
         dy = width/2*(x2-x1)/d
         if type(color) in [tuple, list]:
-            ax.plot([x1, x2], [y1, y2], color=color)
-            ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color=color)
-            ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color=color)
+            ax.plot([x1, x2], [y1, y2], color=color, alpha=kargs.get('linealpha',1))
+            ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color=color, alpha=kargs.get('linealpha',1))
+            ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color=color, alpha=kargs.get('linealpha',1))
         else:
-            ax.plot([x1, x2], [y1, y2], color)
-            ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color)
-            ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color)
+            ax.plot([x1, x2], [y1, y2], color, alpha=kargs.get('linealpha',1))
+            ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color, alpha=kargs.get('linealpha',1))
+            ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color, alpha=kargs.get('linealpha',1))
         if alpha>0:
             import matplotlib.patches
-            ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),width, d, -np.degrees(np.arctan2(x2-x1,y2-y1)), color=color, alpha=alpha))
+            ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),np.sqrt(dx**2+dy**2), np.sqrt((x2-x1)**2+(y2-y1)**2), -np.degrees(np.arctan2(x2-x1,y2-y1)), color=color, alpha=alpha))
     
     return np.linspace(0, d, N), np.vstack(P).T
 
