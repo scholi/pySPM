@@ -394,12 +394,13 @@ class SPM_image:
     def circular_profile(self, x0, y0, Ra=1, Rn=0, width=1, N=20, A=0, B=360,\
         cmap='jet', axImg=None, axPolar=None, axProfile=None, plotProfileEvery=1,\
         xtransf=lambda x: x*1e9, ytransf=lambda x:x*1e9,\
-        ToFcorr=False, fit=lambda x, *p: p[3]+p[2]*CDF(x, *p[:2]), errors=False, **kargs):
+        ToFcorr=False, fit=lambda x, *p: p[3]+p[2]*CDF(x, *p[:2]), p0=None,errors=False,bounds=(-np.inf,np.inf), **kargs):
         """
         Create radial profiles from point x0,y0 with length Ra (outer radius) and Rn (negative Radius).
         Start from angle A° to angle B° with N profiles.
         If you want to apply the ToF-correction, please set ToFcorr to the number of scans used to record the ToF-SIMS image.
-        Return the fitting uncertainty on sigma if errors is set tu True
+        Return the fitting uncertainty on sigma if errors is set to True
+        The fitting function can be adjusted by fit and the default parameters by p0 which is an array of function where the first parameter passed will be the x-values and the second the y-values.
         """
         from matplotlib import colors, cm
         
@@ -407,10 +408,10 @@ class SPM_image:
         CM =  plt.get_cmap(cmap) 
         cNorm  = colors.Normalize(vmin=0, vmax=N)
         scalarMap = cm.ScalarMappable(norm=cNorm, cmap=CM)
-        sig = []
+        res = []
+        cov = []
         angles = []
-        delta = []
-        assert A<B
+        assert A<B        
         for i, angle in enumerate(np.linspace(A, B, N)):
             a = np.radians(angle)
             angles.append(a)
@@ -423,33 +424,39 @@ class SPM_image:
             profile = np.mean(p, axis=1)
             if ToFcorr:
                 profile = -np.log(1.001-profile/ToFcorr)
-            p0 = [l[len(l)//2], 100e-9, np.max(profile)-np.min(profile),np.min(profile) ]
+            if p0 is None:
+                p0 = [l[len(l)//2], 100e-9, np.max(profile)-np.min(profile),np.min(profile) ]
+            else:
+                for j,p in enumerate(p0):
+                    if callable(p):
+                        p0[j] = p(l,profile)
+            if kargs.get('debug',False):
+                print("calculate fit parameters are", p0)
             popt, pcov = scipy.optimize.curve_fit(fit, l , profile, p0)
-            sig.append(popt[1])
-            delta.append(np.sqrt(pcov[1,1]))
+            res.append(popt)
+            cov.append([np.sqrt(abs(pcov[i,i])) for i in range(len(popt))])
             if axProfile and i%plotProfileEvery == 0:
                 axProfile.plot(xtransf(l-popt[0]), profile, color=scalarMap.to_rgba(i), linestyle=':')
                 axProfile.plot(xtransf(l-popt[0]), fit(l,*popt), color=scalarMap.to_rgba(i))
         # close loop
         if A%360 == B%360:
-            sig.append(sig[0])
-            angles.append(angles[0])    
+            angles.append(angles[0])
+            res.append(res[0])
+            cov.append(cov[0])
         
         # Plot polar
-        sig = np.array(sig)
-        delta = np.array(delta)
         angles = np.array(angles)
+        res = np.array(res)
+        cov = np.array(cov)
+        fact = 2*np.sqrt(2*np.log(2))
         if axPolar:
-            axPolar.plot(angles, ytransf(sig), label="sigma", color=kargs.get('sigcolor','C0'));
-            axPolar.plot(angles, ytransf(sig)*2*np.sqrt(2*np.log(2)), label="FWHM", color=kargs.get('FWHMcolor','C1'));
+            axPolar.plot(angles, ytransf(res[:,1]), color=kargs.get('sig_color','C0'))
+            axPolar.plot(angles, ytransf(fact*res[:,1]), color=kargs.get('fwhm_color','C1'))
             if errors:
-                axPolar.fill_between(angles, ytransf(sig-delta), ytransf(sig+delta), color=kargs.get( 'sigcolor','C0'), alpha=kargs.get('fillalpha',0.5))
-                axPolar.fill_between(angles, ytransf(sig-delta)*2*np.sqrt(2*np.log(2)), ytransf(sig+delta)*2*np.sqrt(2*np.log(2)), color=kargs.get('FWHMcolor','C1'), alpha=kargs.get('fillalpha',0.5))
-            axPolar.legend();
-        if errors:
-            return angles, sig, delta
-        else:
-            return angles, sig
+                axPolar.fill_between(angles, ytransf(res[:,1]-cov[:,1]),ytransf(res[:,1]+cov[:,1]), color=kargs.get('sig_color','C0'), alpha=kargs.get('fillalpha',.5))
+                axPolar.fill_between(angles, fact*ytransf(res[:,1]-cov[:,1]),ytransf(res[:,1]+cov[:,1]), color=kargs.get('fwhm_color','C1'), alpha=kargs.get('fillalpha',.5))
+            
+        return angles, res, cov
         
     def get_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, color='w', axPixels=None, **kargs):
         """
@@ -523,8 +530,9 @@ class SPM_image:
         else:
             profile = np.mean(p,axis=1)
             s = np.std(p)
-            for ns in range(1,kargs.get('sig',2)+1):
-                ax.fill_between(xvalues, profile-ns*s, profile+ns*s, color=col, alpha=.2, label=[lab+' ($\\sigma,\ldots {}\\sigma$)'.format(kargs.get('sig',2)),None][ns>1])
+            if kargs.get('stdplot',True):
+                for ns in range(1,kargs.get('sig',2)+1):
+                    ax.fill_between(xvalues, profile-ns*s, profile+ns*s, color=col, alpha=.2, label=[lab+' ($\\sigma,\ldots {}\\sigma$)'.format(kargs.get('sig',2)),None][ns>1])
         
         Plot = ax.plot(xvalues, profile, color=col, linewidth=kargs.get('linewidth',1),linestyle=kargs.get('linestyle','-'), label=lab+[' (mean)',''][width<2])
         if kargs.get('min',False):
@@ -1039,7 +1047,7 @@ def dist_v2(img):
     X, Y = np.meshgrid(x2, y2)
     return np.sqrt(X+Y)
 
-def getTikTf(Img, mu, tukey=0):
+def getTikTf(Img, mu, tukey=0, debug=False, d=200):
     import scipy
     def fit(x, a ,A, bg, x0):
         return bg+(A-bg)*np.exp(-abs(x-x0)/a)
@@ -1052,10 +1060,13 @@ def getTikTf(Img, mu, tukey=0):
     R = np.sqrt((X-x0)**2+(Y-y0)**2)
     
     Z = BeamProfile(Img, Img, mu=mu, tukey=tukey)
-    zoom = ZoomCenter(Z, 800)
+    zoom = ZoomCenter(Z, d)
     P = zoom[zoom.shape[0]//2, :]
-    popt, pcov = scipy.optimize.curve_fit(fit, np.arange(len(P)), P, (1,np.max(zoom), 0, len(P)/2))
+    p0 = (1,np.max(zoom), 0, len(P)/2)
+    popt, pcov = scipy.optimize.curve_fit(fit, np.arange(len(P)), P, p0, bounds=((0,0,-np.inf,0),np.inf))
     bg = popt[2]
     a = popt[0]
+    if debug:
+        return bg+np.exp(-np.abs(R)/a), Z, p0, popt
     return bg+np.exp(-np.abs(R)/a)
   
