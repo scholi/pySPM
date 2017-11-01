@@ -177,7 +177,7 @@ def LG(x, x0, sig=None, Amp=1, lg=.5, FWHM=None):
         FWHM = 2*np.sqrt(2*np.log(2))*sig
     if sig is None:
         sig = FWHM/(2*np.sqrt(2*np.log(2)))
-    return Amp*((1-lg)*Gauss(x,x0,sig)+lg*Lorentz(x,x0,FWHM))
+    return Amp*((1-lg)*Gauss(x,x0,sig,A=1)+lg*Lorentz(x,x0,FWHM,A=1))
 
 def logistic(x, lower=0, upper=1, growth=1, x0=0, nu=1, C=1):
     return lower+(upper-lower)/(C+np.exp(-growth*(x-x0)))**(1/nu)    
