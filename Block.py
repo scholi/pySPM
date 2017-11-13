@@ -305,7 +305,7 @@ class Block:
         """
         return struct.unpack('<i', self.value)[0]
 
-    def getKeyValue(self, offset=0):
+    def getKeyValue(self, offset=16):
         """
         Return a dictionnary of key/values pairs of the data
         Note that the function has no idea if the data are stored as so.
