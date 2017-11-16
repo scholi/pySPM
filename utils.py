@@ -171,13 +171,18 @@ def CDF(x,mu,sig, lg=0):
     g = sig*np.sqrt(2*np.log(2))
     return lg*(.5+np.arctan2(x-mu,g)/np.pi)+(1-lg)*.5*(1+erf((x-mu)/(sig*np.sqrt(2))))
     
-def LG(x, x0, sig=None, Amp=1, lg=.5, FWHM=None):
+def LG(x, x0, sig=None, Amp=1, lg=.5, FWHM=None, assym=1):
     assert sig is not None or FWHM is not None
+      
     if FWHM is None:
         FWHM = 2*np.sqrt(2*np.log(2))*sig
     if sig is None:
         sig = FWHM/(2*np.sqrt(2*np.log(2)))
-    return Amp*((1-lg)*Gauss(x,x0,sig,A=1)+lg*Lorentz(x,x0,FWHM,A=1))
+    Y = Amp*((1-lg)*Gauss(x,x0,sig,A=1)+lg*Lorentz(x,x0,FWHM,A=1))
+    if assym!=1:
+        Yr = Amp*((1-lg)*Gauss(x,x0,sig*assym,A=1)+lg*Lorentz(x,x0,FWHM*assym,A=1))
+        Y[x>x0] = Yr[x>x0]
+    return Y
 
 def logistic(x, lower=0, upper=1, growth=1, x0=0, nu=1, C=1):
     return lower+(upper-lower)/(C+np.exp(-growth*(x-x0)))**(1/nu)    

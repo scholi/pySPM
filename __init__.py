@@ -4,9 +4,11 @@ from .SPM import *
 from . import align
 from .nanoscan import Nanoscan
 from .Bruker import Bruker
-from .ITA import ITA, ITA_collection
-from .ITM import ITM
 from .collection import Collection
+from .ITM import ITM
+from .ITA import ITA, ITA_collection
+
+
 
 __all__ = ["ITA","ITM","PCA","Block","SPM","Bruker","nanoscan"]
 __version__ = '0.2a'

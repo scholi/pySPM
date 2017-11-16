@@ -1,6 +1,5 @@
 from pySPM import Block, utils
 import numpy as np
-import matplotlib.pyplot as plt
 import struct
 import os.path
 import zlib
@@ -309,6 +308,7 @@ class ITM:
         MeasIdx = [x[0] for x in Meas]
         t = np.interp(MeasIdx,idx, time)
         if ax is None:
+            import matplotlib.pyplot as plt
             ax = plt.gca()
         p = ax.plot(t, np.array(MeasData)*mul, **kargs)
         ax.set_xlabel("Time [s]");

@@ -899,7 +899,7 @@ def NormP(x, p, trunk=True):
     return r
 
 
-def BeamProfile(target, source, mu=1e-6, tukey=0, meanCorr=True):
+def BeamProfile(target, source, mu=1e-6, tukey=0, meanCorr=True, real=np.real):
     """
     Calculate the PSF by deconvolution of the target
     with the source using a Tikhonov regularization of factor mu.
@@ -912,7 +912,7 @@ def BeamProfile(target, source, mu=1e-6, tukey=0, meanCorr=True):
     tf = np.fft.fft2(source)
     tf /= np.size(tf)
     recon_tf = np.conj(tf) / (np.abs(tf)**2 + mu)
-    return np.fft.fftshift(np.real(np.fft.ifft2(np.fft.fft2(target) * recon_tf)))
+    return np.fft.fftshift(real(np.fft.ifft2(np.fft.fft2(target) * recon_tf)))
 
 
 def BeamProfile1D(target, source, mu=1e-6):
@@ -1047,7 +1047,7 @@ def dist_v2(img):
     X, Y = np.meshgrid(x2, y2)
     return np.sqrt(X+Y)
 
-def getTikTf(Img, mu, tukey=0, debug=False, d=200):
+def getTikTf(Img, mu, tukey=0, debug=False, d=200, real=np.real):
     import scipy
     def fit(x, a ,A, bg, x0):
         return bg+(A-bg)*np.exp(-abs(x-x0)/a)
@@ -1059,7 +1059,7 @@ def getTikTf(Img, mu, tukey=0, debug=False, d=200):
     y0 = Img.shape[0]/2
     R = np.sqrt((X-x0)**2+(Y-y0)**2)
     
-    Z = BeamProfile(Img, Img, mu=mu, tukey=tukey)
+    Z = BeamProfile(Img, Img, mu=mu, tukey=tukey, real=real)
     zoom = ZoomCenter(Z, d)
     P = zoom[zoom.shape[0]//2, :]
     p0 = (1,np.max(zoom), 0, len(P)/2)

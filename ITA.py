@@ -8,20 +8,13 @@ import struct
 import os.path
 import zlib
 import re
-import scipy
-import scipy.ndimage
-import matplotlib.pyplot as plt
-import pickle
-from pySPM.collection import Collection
-from pySPM.SPM import SPM_image
-from pySPM import Block, utils, ITM
-import warnings
-import copy
-import multiprocessing as mp
 
-class ITA(ITM.ITM):
+from .ITM import ITM
+from .collection import Collection
+
+class ITA(ITM):
     def __init__(self, filename):
-        ITM.ITM.__init__(self, filename)
+        ITM.__init__(self, filename)
         try:
             self.sx = self.root.goto(
                 'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').getLong()
@@ -51,6 +44,7 @@ class ITA(ITM.ITM):
             data = struct.unpack("<{0}I".format(self.Width*self.Height), RAW)
             self.img = np.array(data).reshape((self.Height, self.Width))
         except:
+            import warnings
             warnings.warn("No SI image found. Skipping it.")
             self.img = None
 
@@ -125,6 +119,7 @@ class ITA(ITM.ITM):
         Shows the total SI image with the indication of the field of view.
         ax (=None): if you provide an ax argument, the image can be plottet in the axis of your choice
         """
+        import matplotlib.pyplot as plt
         if ax is None:
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
         ax.imshow(self.img, extent=(0, self.fov*1e6, 0, self.fov*1e6))
@@ -170,9 +165,10 @@ class ITA(ITM.ITM):
         if prog:
             from tqdm import tqdm
             Y = tqdm(Y)
+        from scipy.ndimage import map_coordinates
         for s in Y:
             Z = self.getSumImageByMass(masses, s, **kargs)
-            P = scipy.ndimage.map_coordinates(Z.pixels, np.vstack((y, x)))
+            P = map_coordinates(Z.pixels, np.vstack((y, x)))
             out[s, :] = P
         return out
 
@@ -403,6 +399,7 @@ class ITA_collection(Collection):
         return self.PCA.loadings()[:num]
 
     def StitchCorrection(self, channel, stitches, gauss=0, debug=False):
+        import copy
         from scipy.ndimage.filters import gaussian_filter
         N = ITA_collection(self.filename, [], name=self.name)
         size = list(self.channels.values())[0].pixels.shape
