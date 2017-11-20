@@ -6,7 +6,7 @@ import sys
 import binascii
 import struct
 import numpy as np
-
+import os
 
 class Block:
     """
@@ -360,3 +360,76 @@ class Block:
             if x['name'] == key:
                 r.append(x['id'])
         return r
+        
+    def modify_block_and_export(self, path, new_data, output, debug=False, prog=False):
+        assert not os.path.exists(output) # Avoid to erase an existing file. Erase it outside the library if needed.
+        out = open(output,'wb')
+        out.write(b'ITStrF01')
+        block = self.goto(path)
+        block_offset = block.offset
+        length_diff = len(new_data)-len(block.value)
+        self.f.seek(8)
+        FILE_SIZE =  os.fstat(self.f.fileno()).st_size
+        if prog:
+            try:
+                from tqdm import tqdm_notebook as tqdm
+            except:
+                from tqdm import tqdm as tqdm
+            T = tqdm(total=FILE_SIZE)
+        debug_msg = ["FileSize: "+str(FILE_SIZE)]
+        if debug:
+            print("File Size",FILE_SIZE)
+        curr = 8
+        T.update(8)
+        while self.f.tell() < FILE_SIZE:
+            debug_msg = debug_msg[-30:]
+            if prog:
+                ncurr = self.f.tell()
+                T.update(ncurr-curr)
+                curr = ncurr
+            debug_msg.append("Current position: @"+str(self.f.tell()))
+            try:
+                current = Block(self.f)
+            except Exception as ex:
+                print("Error found! Debug info")
+                for x in debug_msg:
+                    print("\t"+x)
+                raise ex
+            self.f.seek(current.offset)
+            curr_block_length = current.head['x'] + current.head['length'] + 25
+            debug_msg.append('Block Name: "{}" / length: {}'.format(current.name.decode('utf8'), curr_block_length))
+            if current.offset == block_offset: # Found the block to change
+                debug_msg.append("Block to change FOUND!")
+                out.write(self.f.read(5)) # Write block type
+                out.write(struct.pack("<5I",block.head['length'],block.head['z'],block.head['u'], length_diff+block.head['x'], length_diff+block.head['y']))
+                self.f.read(20) # Skip header
+                out.write(self.f.read(block.head['length'])) # copy block name
+                self.f.read(block.head['x']) # skip data in source
+                out.write(new_data) # write new_data
+            elif current.Type[0] in [1,3]: # found a container, check for references to block after the modified block
+                debug_msg.append("Block container found. Checking children...")
+                out.write(self.f.read(25)) # copy header
+                out.write(self.f.read(current.head['length'])) # copy block name
+                SubHeader = list(struct.unpack('<2I5s5IQ', self.f.read(41) )) # read sub-block header
+                if SubHeader[8] > block_offset: # Is the nextbloxk after the modified block? Yes => Adjust the offset position
+                    SubHeader[8] += length_diff
+                out.write(struct.pack('<2I5s5IQ', *SubHeader )) # write sub-block header
+                N = current.head['u']
+                if N == 0:
+                    N = SubHeader[1]
+                for i in range(N):
+                    X, index, slen, id,Y, blen, bidx = struct.unpack('<B4I2Q', self.f.read(33))
+                    if bidx == block_offset: # If the children block is the modified block, adjust length
+                        blen = len(new_data)
+                    elif bidx > block_offset: # If the children is after the modifien block, adjust its offset
+                        bidx += length_diff
+                    out.write(struct.pack('<B4I2Q',X, index, slen, id, Y,blen, bidx)) # write child info
+                # Write the extra bytes used by iontof which seems to be useless as well as the childrens' name
+                delta = curr_block_length - (self.f.tell() - current.offset) # number of bytes remaining till the end of the block
+                out.write(self.f.read(delta))
+            else:
+                debug_msg.append("Data Block found. Copy data without check...")
+                out.write(self.f.read(curr_block_length))
+        T.update(FILE_SIZE-curr)
+        T.close()
+        out.close()

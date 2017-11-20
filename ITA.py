@@ -317,7 +317,6 @@ class ITA(ITM):
 
 
 class ITA_collection(Collection):
-
     def __init__(self, filename, channels1=None, channels2=None, name=None, mass=False, strict=False):
         self.ita = ITA(filename)
         self.filename = filename
