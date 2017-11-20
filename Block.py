@@ -223,16 +223,16 @@ class Block:
         self.pointer += 1
         return self.gotoItem(it['name'], it['id'])
 
-    def gotoItem(self, name, idx=0):
+    def gotoItem(self, name, idx=0, lazy=False):
         """
         Return a new Block instance of a child of the current Block
         name: name of the children's block
         """
-        Idx = self.getIndex(name, idx)
+        Idx = self.getIndex(name, idx, lazy=lazy)
         self.f.seek(Idx)
         return Block(self.f)
 
-    def getIndex(self, name, idx=0):
+    def getIndex(self, name, idx=0, lazy=False):
         """
         Get the index of the children having a name=name.
         This function is more intended for internal usage.
@@ -240,22 +240,29 @@ class Block:
         
         If more than one children have the same name,
         the second one can by retrieved by idx=1, the third with idx=2, etc.
+        
+        Sometimes the id does not start with 0, but with random high values. Instead of looking at the correct id, you can sue lazy=True with idx=0 in order to fetch the first one saved.
         """
         if type(name) is str:
             name = name.encode()
+        i=0
         for l in self.getList():
-            if l['name'] == name and l['id'] == idx:
-                return l['bidx']
+            if l['name'] == name:
+                if (lazy and i==idx) or (not lazy and l['id'] == idx):
+                    return l['bidx']
+                i+=1
         raise ValueError('Item "{name}" (index={index}) not found!'.format(name=name, index=idx))
 
-    def goto(self, path):
+    def goto(self, path, lazy=False):
         """
         Return a sub Block having a specific path
         path: path is similar to filepath.
         The block X conatained in B which is itself contained in A,
         can be retrieved with the path: A/B/X
         if the block B has several children having the same name,
-        A/B/X[n] will return the n-th child (note that 0 is the first child)
+        A/B/X[n] will return the n-th child (note that 0 is the first child)$
+        
+        As the id sometimes start at weird values and we just want the first ones saved whatever its id is, we can use the lazy=True argument.
         """
         if path == '':
             return self
@@ -266,7 +273,7 @@ class Block:
                 i = p.index('[')
                 idx = int(p[i+1:-1])
                 p = p[:i]
-            s = s.gotoItem(p, idx)
+            s = s.gotoItem(p, idx, lazy=lazy)
         return s
 
     def getLongLong(self):
@@ -361,11 +368,11 @@ class Block:
                 r.append(x['id'])
         return r
         
-    def modify_block_and_export(self, path, new_data, output, debug=False, prog=False):
+    def modify_block_and_export(self, path, new_data, output, debug=False, prog=False, lazy=False):
         assert not os.path.exists(output) # Avoid to erase an existing file. Erase it outside the library if needed.
         out = open(output,'wb')
         out.write(b'ITStrF01')
-        block = self.goto(path)
+        block = self.goto(path, lazy=lazy)
         block_offset = block.offset
         length_diff = len(new_data)-len(block.value)
         self.f.seek(8)
@@ -380,7 +387,8 @@ class Block:
         if debug:
             print("File Size",FILE_SIZE)
         curr = 8
-        T.update(8)
+        if prog:
+            T.update(8)
         while self.f.tell() < FILE_SIZE:
             debug_msg = debug_msg[-30:]
             if prog:
@@ -430,6 +438,7 @@ class Block:
             else:
                 debug_msg.append("Data Block found. Copy data without check...")
                 out.write(self.f.read(curr_block_length))
-        T.update(FILE_SIZE-curr)
-        T.close()
+        if prog:
+            T.update(FILE_SIZE-curr)
+            T.close()
         out.close()
