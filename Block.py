@@ -311,7 +311,11 @@ class Block:
         Decode the value as an 32-Integer (Long)
         """
         return struct.unpack('<i', self.value)[0]
-
+    
+    def unpickle(self):
+        import pickle
+        return pickle.loads(self.value)
+        
     def getKeyValue(self, offset=16):
         """
         Return a dictionnary of key/values pairs of the data
