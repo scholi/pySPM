@@ -385,17 +385,26 @@ class ITM:
                 'umass': p[b'umass']['float']})
         return result
 
-    def getRawSpectrum(self, scans, **kargs):
+    def getRawSpectrum(self, scans, ROI=None, **kargs):
         assert hasattr(scans, '__iter__')
         Spectrum = np.array([0])
-        for s in scans:
+        if kargs.get('prog',False):
+            try:
+                from tqdm import tqdm_notebook as tqdm
+            except:
+                from tqdm import tqdm as tqdm
+            T = tqdm(scans)
+        else:
+            T = scans
+        for s in T:
             Data = self.getRawData(s)[2]
             Max_time = max([max(Data[x]) for x in Data])
             if Spectrum.size < Max_time+1:
                 Spectrum.resize(Max_time+1)
             for xy in Data:
-                for x in Data[xy]:
-                    Spectrum[x] += 1
+                if ROI is None or ROI[xy[1],xy[0]]:
+                    for x in Data[xy]:
+                        Spectrum[x] += 1
         sf = kargs.get('sf',self.root.goto('MassScale/sf').getDouble())
         k0 = kargs.get('k0',self.root.goto('MassScale/k0').getDouble())
         masses = self.channel2mass(np.arange(Spectrum.size),sf=sf,k0=k0)
