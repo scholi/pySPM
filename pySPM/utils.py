@@ -40,7 +40,7 @@ def time2mass(t, sf, k0):
 def getMass(elt):
     import os
     this_dir, this_filename = os.path.split(__file__)
-    DB_PATH = os.path.join(this_dir, "elements.db")
+    DB_PATH = os.path.join(this_dir,"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     m = 0

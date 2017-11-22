@@ -11,6 +11,7 @@ import re
 
 from .ITM import ITM
 from .collection import Collection
+from .SPM import SPM_image
 
 class ITA(ITM):
     def __init__(self, filename):
