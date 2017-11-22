@@ -7,7 +7,7 @@ from .Bruker import Bruker
 from .collection import Collection
 from .ITM import ITM
 from .ITA import ITA, ITA_collection
-
+from .SXM import SXM
 
 
 __all__ = ["ITA","ITM","PCA","Block","SPM","Bruker","nanoscan"]
