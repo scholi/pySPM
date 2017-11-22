@@ -67,6 +67,7 @@ class ITM:
                     pass
         except:
             pass
+    
     def getPeakList(self, name):
         """
         Retrieve extra MassIntervalList (MIL) by it's name. Those are saved and visible in iontof software in the spectrum window.
@@ -263,7 +264,7 @@ class ITM:
             return ch, D
         return self.channel2mass(ch, sf=sf, k0=k0), D
     
-    def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False):
+    def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, debug=False):
         """
         Allows to recover the data saved during the measurements.
         This function is like getValues, but instead of giving the values at the beginning and at the end, 
@@ -278,20 +279,27 @@ class ITM:
             i += 1
         max_index = L[-i]['id']
         if prog:
-            pb = utils.ProgressBar(max=len(L))
-        for i,elt in enumerate(L):
-            if prog:
-                pb.set_value(i)
+            try:
+                from tqdm import tqdm_notebook as tqdm
+            except:
+                from tqdm import tqdm as tqdm
+            T = tqdm(L)
+        else:
+            T=L
+        for i,elt in enumerate(T):
             if elt['name'] != b'  20':
                 continue
             idx = elt['bidx']
             self.f.seek(idx)
             child = Block.Block(self.f)
-            r = child.getKeyValue()
+            r = child.getKeyValue(0)
             if not r['Key'] in self.MeasData:
                 self.MeasData[r['Key']] = []
             self.MeasData[r['Key']].append((idx,r['Value']))
-        return self.MeasData[name]
+        if name in self.MeasData:
+            return self.MeasData[name]
+        else:
+            raise KeyError(name)
     
     def showMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, mul=1, scans=2, **kargs):
         t = self.getMeasData('Measurement.AcquisitionTime')
@@ -385,9 +393,48 @@ class ITM:
                 'umass': p[b'umass']['float']})
         return result
 
-    def getRawSpectrum(self, scans, ROI=None, **kargs):
+    def getRawSpectrum(self, scans=None, ROI=None, corr=True, **kargs):
+        """
+        Reconstruct the spectrum from RAW data.
+        scans: List of scans to use. if None all scans are used (default)
+        ROI: Region Of Interest. It's an image of the same size as the measurement having a value of True for pixels to be taken into accoun.
+        corr: Correction for the primary time of flight variation
+        
+        Δt = (√2/2)∙x∙√(mp/(2∙E)) where x is the x-corrdinate (in m), mp, the primary ion mass (in kg) and E the primary energy
+        as E=½∙mp∙v² ⇒ v = √(2E/mp)
+        
+        Note: if E is given in eV, it should be multiplied by the electron charge.
+ 
+        """
+
+        gun = self.root.goto('propend/Instrument.PrimaryGun.Species').getKeyValue()['SVal'] # Primary Gun Species (Bi1,Bi3,Bi3++)
+        nrj = self.root.goto('propend/Instrument.PrimaryGun.Energy').getKeyValue()['Value'] # Primary ion energy (in eV)
+        dx = self.size['real']['x']/self.size['pixels']['x'] # distance per pixel
+        
+        # Calculate the mass of the primary ion
+        if '+' in gun:
+            mp = utils.getMass(gun)
+        else:
+            mp = utils.getMass(gun+'+')
+            
+        # Perform the time of flight correction?
+        if corr:
+            DT = dx*(1/5e-11)*.5*np.sqrt(2)*np.sqrt((1e-3*mp/utils.NA)/(2*nrj*utils.qe)) # delta time in channel per pixel. The 1e10 is the channelwidth (100ps)
+            # sqrt(2)/2 is from the sin(45°), nrj=E=.5*mp*v^2
+        else:
+            DT = 0
+            
+        if scans is None:
+            scans = range(self.Nscan)
+            
         assert hasattr(scans, '__iter__')
-        Spectrum = np.array([0])
+        
+        # Allocate vector for the spectrum
+        number_channels = int(round(self.root.goto('propend/Measurement.CycleTime').getKeyValue()['Value']\
+            / self.root.goto('propend/Registration.TimeResolution').getKeyValue()['Value']))
+        Spectrum = np.zeros(number_channels, dtype=np.float32)
+        
+        # Display a progress bar?
         if kargs.get('prog',False):
             try:
                 from tqdm import tqdm_notebook as tqdm
@@ -396,15 +443,17 @@ class ITM:
             T = tqdm(scans)
         else:
             T = scans
+                
         for s in T:
             Data = self.getRawData(s)[2]
-            Max_time = max([max(Data[x]) for x in Data])
-            if Spectrum.size < Max_time+1:
-                Spectrum.resize(Max_time+1)
             for xy in Data:
+                dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
+                ip = int(dt)
+                fp = dt%1
                 if ROI is None or ROI[xy[1],xy[0]]:
                     for x in Data[xy]:
-                        Spectrum[x] += 1
+                        Spectrum[x-ip] += (1-fp)
+                        Spectrum[x-ip-1] += fp
         sf = kargs.get('sf',self.root.goto('MassScale/sf').getDouble())
         k0 = kargs.get('k0',self.root.goto('MassScale/k0').getDouble())
         masses = self.channel2mass(np.arange(Spectrum.size),sf=sf,k0=k0)
