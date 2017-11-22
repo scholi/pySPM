@@ -1,4 +1,4 @@
-def showPeak(m,D,m0, delta=0.15, ax=None, dm0=None, dofit=False, showElts=True, debug=False, sig0=0.002, Aredux=1,sf=None,k0=None):
+def showPeak(m,D,m0, delta=0.15, ax=None, dm0=None, dofit=False, showElts=True, debug=False, sig0=0.002, Aredux=1,sf=None,k0=None, label=None):
     """
     gives masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
@@ -53,7 +53,10 @@ def showPeak(m,D,m0, delta=0.15, ax=None, dm0=None, dofit=False, showElts=True, 
         
     if ax is None:
         ax = plt.gca()
-    ax.plot(m[mask],D[mask])
+    if label is None:
+        ax.plot(m[mask],D[mask])
+    else:
+        ax.plot(m[mask],D[mask], label=label)
     for i in range((len(p0)-3)//2):
         ax.axvline(m0s[i], color='r', alpha=.1, linestyle=':');
     if dofit:

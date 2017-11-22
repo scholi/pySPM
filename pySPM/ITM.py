@@ -440,8 +440,12 @@ class ITM:
         # Allocate vector for the spectrum
         number_channels = int(round(self.root.goto('propend/Measurement.CycleTime').getKeyValue()['Value']\
             / self.root.goto('propend/Registration.TimeResolution').getKeyValue()['Value']))
-        Spectrum = np.zeros(number_channels, dtype=np.float32)
-        
+        multi_roi = False
+        if ROI is None or not(type(ROI)==list or type(ROI)==tuple):
+            Spectrum = np.zeros(number_channels, dtype=np.float32)
+        else:
+            multi_roi = True
+            Spectrum = np.zeros((number_channels,len(ROI)), dtype=np.float32)
         # Display a progress bar?
         if kargs.get('prog',False):
             try:
@@ -458,17 +462,32 @@ class ITM:
                 dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
                 ip = int(dt)
                 fp = dt%1
-                if ROI is None or ROI[xy[1],xy[0]]:
+                if multi_roi:
+                    li = []
+                    for k,R in enumerate(ROI):
+                        if R[xy[1],xy[0]]:
+                            li.append(k)
                     for x in Data[xy]:
-                        Spectrum[x-ip] += (1-fp)
-                        Spectrum[x-ip-1] += fp
+                        for k in li:
+                            Spectrum[x-ip,k] += (1-fp)
+                            Spectrum[x-ip-1,k] += fp
+                else:
+                    if ROI is None or ROI[xy[1],xy[0]]:
+                        for x in Data[xy]:
+                            Spectrum[x-ip] += (1-fp)
+                            Spectrum[x-ip-1] += fp
         sf = kargs.get('sf',self.root.goto('MassScale/sf').getDouble())
         k0 = kargs.get('k0',self.root.goto('MassScale/k0').getDouble())
-        masses = self.channel2mass(np.arange(Spectrum.size),sf=sf,k0=k0)
+        masses = self.channel2mass(np.arange(number_channels),sf=sf,k0=k0)
         if deadTimeCorr:
             dt = 2000 # 100ns*(1ch/50ps) = 2000 channels
             N = self.Nscan*self.size['pixels']['x']*self.size['pixels']['y'] # total of count events
-            Np = N-np.convolve(Spectrum, np.ones(dt-1,dtype=int), 'full')[:-dt+2]
+            Np = np.zeros(Spectrum.shape)
+            if multi_roi:
+                for i in range(len(ROI)):
+                    Np[:,i] = N-np.convolve(Spectrum[:,i], np.ones(dt-1,dtype=int), 'full')[:-dt+2]
+            else:
+                Np = N-np.convolve(Spectrum, np.ones(dt-1,dtype=int), 'full', axis=0)[:-dt+2]
             Np[Np==0] = 1
             Spectrum = -N*np.log(1-Spectrum/Np)
         return masses, Spectrum
