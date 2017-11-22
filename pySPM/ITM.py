@@ -393,17 +393,25 @@ class ITM:
                 'umass': p[b'umass']['float']})
         return result
 
-    def getRawSpectrum(self, scans=None, ROI=None, corr=True, **kargs):
+    def getRawSpectrum(self, scans=None, ROI=None, FOVcorr=True, deadTimeCorr=True, **kargs):
         """
         Reconstruct the spectrum from RAW data.
         scans: List of scans to use. if None all scans are used (default)
         ROI: Region Of Interest. It's an image of the same size as the measurement having a value of True for pixels to be taken into accoun.
-        corr: Correction for the primary time of flight variation
+        FOVcorr: Correction for the primary time of flight variation
         
         Δt = (√2/2)∙x∙√(mp/(2∙E)) where x is the x-corrdinate (in m), mp, the primary ion mass (in kg) and E the primary energy
         as E=½∙mp∙v² ⇒ v = √(2E/mp)
         
         Note: if E is given in eV, it should be multiplied by the electron charge.
+        
+        deadTimeCorr: Dead time correction (Poisson statistics)
+        
+        Icorr(c) = -N*log(1-I(c)/N'(c))
+        where N = Nscan*size['x']*size['y']
+        N'(c) = N - sum_{c'=c-ct}^{c-1}I(c')
+        
+        see Ref. T. Stephan, J. Zehnpfenning and A. Benninghoven, J. vac. Sci. A 12 (2), 1994
  
         """
 
@@ -418,7 +426,7 @@ class ITM:
             mp = utils.getMass(gun+'+')
             
         # Perform the time of flight correction?
-        if corr:
+        if FOVcorr:
             DT = dx*(1/5e-11)*.5*np.sqrt(2)*np.sqrt((1e-3*mp/utils.NA)/(2*nrj*utils.qe)) # delta time in channel per pixel. The 1e10 is the channelwidth (100ps)
             # sqrt(2)/2 is from the sin(45°), nrj=E=.5*mp*v^2
         else:
@@ -457,6 +465,12 @@ class ITM:
         sf = kargs.get('sf',self.root.goto('MassScale/sf').getDouble())
         k0 = kargs.get('k0',self.root.goto('MassScale/k0').getDouble())
         masses = self.channel2mass(np.arange(Spectrum.size),sf=sf,k0=k0)
+        if deadTimeCorr:
+            dt = 2000 # 100ns*(1ch/50ps) = 2000 channels
+            N = self.Nscan*self.size['pixels']['x']*self.size['pixels']['y'] # total of count events
+            Np = N-np.convolve(Spectrum, np.ones(dt-1,dtype=int), 'full')[:-dt+2]
+            Np[Np==0] = 1
+            Spectrum = -N*np.log(1-Spectrum/Np)
         return masses, Spectrum
         
     def getRawData(self, scan=0):

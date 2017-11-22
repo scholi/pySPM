@@ -16,7 +16,25 @@ This library is offered as it is and is still in development. Please note that r
 If you find bugs and issues, please report them to the developpe: https://github.com/scholi/pySPM/issues
 
 ## News
-The structure of the library was reformated to be installed correctly. So now each time you download the library you should [reinstall it](#for-developpers-and-hackers)
+### Structure reformatting
+A setup.py is prestent in order to install the package easily. => in order to use the library do ```pip install -e . ```
+
+### Data correction for getRawSpectrum
+it now supports Field of View correction as well as the dead-time correction. So now both ITA spectra and the reconstructed ones fit perfectly:
+
+```python
+import matplotlib.pyplot as plt
+import pySPM
+import numpy as np
+
+A = pySPM.ITA(filename_ita)
+I = pySPM.ITM(filename_itm)
+m, S = A.getSpectrum()
+m_raw, S_raw = I.getRawSpectrum()
+plt.plot(m, S)
+plt.plot(pySPM.utils.binning(m_raw,ufunc=np.mean), pySPM.utils.binning(S_raw))
+plt.show()
+```
 
 ## Dependencies
 This library requires the following packages
