@@ -9,9 +9,8 @@ from .ITM import ITM
 from .ITA import ITA, ITA_collection
 from .SXM import SXM
 
-
-__all__ = ["ITA","ITM","PCA","Block","SPM","Bruker","nanoscan"]
+__all__ = ["ITA", "ITM", "PCA", "Block", "SPM", "Bruker", "nanoscan", "utils", "SXM"]
 __version__ = '0.2.1'
 __author__ = 'Olivier Scholder'
-__copyright__ = "Copyright 2017, EMPA, Dübendorf, Switzerland"
-__email__ = "olivier.scholder@empa.ch"
+__copyright__ = "Copyright 2017, O. Scholder, Zürich, Switzerland"
+__email__ = "o.scholder@gmail.com"

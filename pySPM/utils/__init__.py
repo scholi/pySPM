@@ -4,13 +4,7 @@ import re
 import sqlite3
 from .math import *
 from .elts import *
-
-# electron mass
-me = 0.00054858 # u
-# Electron charge
-qe = 1.60217733e-19 # A*s 
-# Avogradro Number
-NA = 6.0221367e23 # 1/mol
+from .constants import *
 
 def fitSpectrum(t, m, error=False, dev=False):
     """
