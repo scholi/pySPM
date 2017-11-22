@@ -10,7 +10,10 @@ def showPeak(m,D,m0, delta=0.15, ax=None, dm0=None, dofit=False, showElts=True, 
     import matplotlib.pyplot as plt
     
     mask = (m>=m0-delta)*(m<=m0+delta)
-    E = elts[m0]
+    if int(round(m0)) in elts:
+        E = elts[int(round(m0))]
+    else:
+        E=[]
     if type(E) is not list:
         E=[E]
     mp = m[mask][np.argmax(D[mask])] # mass of max peak
