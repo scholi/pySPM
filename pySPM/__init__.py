@@ -11,7 +11,7 @@ from .SXM import SXM
 
 
 __all__ = ["ITA","ITM","PCA","Block","SPM","Bruker","nanoscan"]
-__version__ = '0.2'
+__version__ = '0.2.1'
 __author__ = 'Olivier Scholder'
 __copyright__ = "Copyright 2017, EMPA, Dübendorf, Switzerland"
 __email__ = "olivier.scholder@empa.ch"

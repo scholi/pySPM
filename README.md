@@ -29,6 +29,17 @@ This library requires the following packages
 * displaying progressbar (while passing the prog=True parameter to functions)
     * tqdm
     
+## Installation
+### for regular users
+```bash
+python setup.py install
+```
+
+### For developpers and hackers
+If you wish to adjust the library to your need, the best is to install it in editable mode as follow from the root pySPM directory:
+```bash
+pip install -e .
+```
 
 ## Documentation
 The documentation is still in its early stage
