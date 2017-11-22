@@ -5,6 +5,7 @@ import sqlite3
 from .math import *
 from .elts import *
 from .constants import *
+from .spectra import *
 
 def fitSpectrum(t, m, error=False, dev=False):
     """
