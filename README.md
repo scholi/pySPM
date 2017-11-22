@@ -15,6 +15,21 @@ This library is offered as it is and is still in development. Please note that r
 
 If you find bugs and issues, please report them to the developpe: https://github.com/scholi/pySPM/issues
 
+## Dependencies
+This library requires the following packages
+* mendatory
+    * numpy
+    * scipy
+    * matplotlib
+* for PCA
+    * scikit-learn
+    * pandas
+* for GUI
+    * pyQT5
+* displaying progressbar (while passing the prog=True parameter to functions)
+    * tqdm
+    
+
 ## Documentation
 The documentation is still in its early stage
 [read the documentation](../master/doc/pySPM%20Documentation.ipynb)

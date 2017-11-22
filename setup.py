@@ -11,7 +11,7 @@ setup(
     license="Apache 2.0",
     keywords='tof sims iontof spm sfm sxm afm kpfm pca imaging ita itm bruker nanonis',
     packages=find_packages(exclude=['contrib','docs','tests']),
-    package_data={'pySPM':['data/elements.db']},
+    package_data={'pySPM':['data/elements.db','data/test.sxm']},
     include_package_data=True,
     install_requires=['numpy','scipy','pandas','scikit-image','scikit-learn','matplotlib'],
     classifiers=[
