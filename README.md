@@ -15,6 +15,9 @@ This library is offered as it is and is still in development. Please note that r
 
 If you find bugs and issues, please report them to the developpe: https://github.com/scholi/pySPM/issues
 
+## News
+The structure of the library was reformated to be installed correctly. So now each time you download the library you should [reinstall it](#for-developpers-and-hackers)
+
 ## Dependencies
 This library requires the following packages
 * mendatory
