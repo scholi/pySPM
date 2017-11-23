@@ -1,4 +1,4 @@
-def showPeak(m,D,m0, delta=0.15, ax=None, dm0=None, dofit=False, showElts=True, debug=False, sig0=0.002, Aredux=1,sf=None,k0=None, label=None):
+def showPeak(m,D,m0, delta=0.15, ax=None, dm0=None, dofit=False, showElts=True, debug=False, sig0=0.002, Aredux=1,sf=None,k0=None, label=None, include=[], exclude=[]):
     """
     gives masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
@@ -9,6 +9,10 @@ def showPeak(m,D,m0, delta=0.15, ax=None, dm0=None, dofit=False, showElts=True, 
     import copy
     import matplotlib.pyplot as plt
     
+    if type(include) is str:
+        include=[include]
+    if type(exclude) is str:
+       exclude = [exclude]
     mask = (m>=m0-delta)*(m<=m0+delta)
     if int(round(m0)) in elts:
         E = elts[int(round(m0))]
@@ -16,12 +20,13 @@ def showPeak(m,D,m0, delta=0.15, ax=None, dm0=None, dofit=False, showElts=True, 
         E=[]
     if type(E) is not list:
         E=[E]
+    E = [x for x in E if x not in exclude] + include
     mp = m[mask][np.argmax(D[mask])] # mass of max peak
-    i = np.argmin(abs(np.array([getMass(x+'+') for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the clothest to max_peak
-    if dm0 is None:
-        dm = mp-getMass(E[i]+'+')
-    else:
-        dm = dm0
+    dm = dm0
+    if len(E)>0:
+        i = np.argmin(abs(np.array([getMass(x+'+') for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the clothest to max_peak
+        if dm0 is None:
+            dm = mp-getMass(E[i]+'+')
     p0 = [1,dm,.5,.5]+[0,0]*len(E) # delta m is estimnated from the deviation of the highest peak
     m0s = [getMass(x+'+') for x in E]
     Et = copy.deepcopy(E) # copy element list
@@ -77,7 +82,7 @@ def showPeak(m,D,m0, delta=0.15, ax=None, dm0=None, dofit=False, showElts=True, 
             except Exception as e:
                 if debug:
                     raise e
-                popt=p0
+                popt = p0
                 for x in ['right','left','top','bottom']:
                     ax.spines[x].set_color('red')
     else:
