@@ -320,7 +320,7 @@ class ITA(ITM):
     def showPeak(self, m0, sf=None, k0=None, **kargs):
         from . import utils
         m, D = self.getSpectrum(sf=sf,k0=k0)
-        utils.showPeak(m,D,m0,**kargs)
+        return utils.showPeak(m,D,m0,**kargs)
         
         
 
