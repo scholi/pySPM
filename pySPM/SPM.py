@@ -18,6 +18,8 @@ import scipy.interpolate
 from skimage import transform as tf
 import copy
 from .utils import CDF
+from . import SPM
+
 try:
     from tqdm import tqdm_notebook as tqdm
 except:
@@ -66,13 +68,12 @@ def funit(value, unit=None, iMag=True):
     if unit_prefix == '1':
         unit_prefix = ''
     return {'value': value, 'unit': u'{mag}{unit}'.format(mag=unit_prefix, unit=unit)}
-
-
+   
 class SPM_image:
     """
     Main class to handle SPM images
     """
-
+    
     def __init__(self, BIN, channel='Topography',
                  corr=None, real=None, zscale='?', _type='Unknown'):
         self.channel = channel
@@ -95,14 +96,14 @@ class SPM_image:
                 self.correct_lines()
             elif corr.lower() == 'plane':
                 self.correct_plane()
-                
+            
     def __add__(self, b):
         New = copy.deepcopy(self)
         New.pixels += b.pixels
         New.channel += " + "+b.channel
         return New
         
-    def addScale(self, length, ax=None, height=20, color='w', loc=4, text=True, fontsize=20):
+    def add_scale(self, length, ax=None, height=20, color='w', loc=4, text=True, fontsize=20):
         import matplotlib.patches
         L = length*self.size['pixels']['x']/self.size['real']['x']
         ref = [height, height]
@@ -126,7 +127,7 @@ class SPM_image:
         offset = np.zeros(self.pixels.shape[0])
         counts = np.zeros(self.pixels.shape[0])
         for p in profiles:
-            y, D = self.getRowProfile(*p, width=width, ax=ax, **kargs)
+            y, D = self.get_row_profile(*p, width=width, ax=ax, **kargs)
             counts[y] += 1
             offset[y[1:]] += np.diff(D)
         counts[counts == 0] = 1
@@ -142,11 +143,13 @@ class SPM_image:
             C.pixels = self.pixels - \
                 np.flipud(np.repeat(offset, self.pixels.shape[1], axis=1))
             return C
+            
     def pxRect2Real(self, xy, width, height):
         ll = self.px2real(xy[0],xy[1])
         ur = self.px2real(xy[0]+width,xy[1]+height)
         return ll,ur[0]-ll[0],ur[1]-ll[1]
-    def getRowProfile(self, x1, y1, x2, y2, width=1, col='C1', ax=None, alpha=0, **kargs):
+    
+    def get_row_profile(self, x1, y1, x2, y2, width=1, col='C1', ax=None, alpha=0, **kargs):
         plotargs = { key: kargs[key] for key in ['linewidth','color','linestyle'] if key in kargs }
         if y2 < y1:
             x1, y1, x2, y2 = x2, y2, x1, y1
@@ -274,7 +277,7 @@ class SPM_image:
         tf *= recon_tf
         return np.real(np.fft.ifft2(np.fft.fft2(work_image)*recon_tf))
 
-    def getExtent(self):
+    def get_extent(self):
         W = self.size['recorded']['real']['x']
         H = self.size['recorded']['real']['y']
         return (0, W, 0, H)
@@ -366,14 +369,6 @@ class SPM_image:
             ax.set_title(title)
         return r
         
-    def getProfile(self, *args, **kargs):
-        warnings.warn("getProfile() is replaced by get_profile()", DeprecationWarning, stacklevel=2)
-        return self.get_profile(*args, **kargs)
-        
-    def plotProfile(self, *args, **kargs):
-        warnings.warn("plotProfile() is replaced by plot_profile()", DeprecationWarning, stacklevel=2)
-        return self.plot_profile(*args, **kargs)
-
     def real2px(self, x, y):
         return self.real2pixels(x,y)
         
@@ -479,12 +474,12 @@ class SPM_image:
             y2 = self.pixels.shape[0]-y2
             if kargs.get('debug', False):
                 print("Pixel coordinates:", x1, y1, x2, y2)
-            xvalues, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color,\
+            xvalues, p = get_profile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color,\
                 transx = lambda x: x*(self.size['real']['x']/(10**fact))/self.pixels.shape[1],\
                 transy = lambda x: (self.pixels.shape[0]-x)*(self.size['real']['y']/(10**fact))/self.pixels.shape[0],\
                 **kargs)
         else:
-            values, p = getProfile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color, **kargs)
+            values, p = get_profile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color, **kargs)
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
         rd = np.sqrt(dx**2+dy**2)
@@ -551,7 +546,7 @@ class SPM_image:
        
         return {'plot': Plot, 'l': xvalues, 'z': profile}
 
-    def getBinThreshold(self, percent, high=True, adaptive=False, binary=True, img=False):
+    def get_bin_threshold(self, percent, high=True, adaptive=False, binary=True, img=False):
         if adaptive:
             if binary:
                 return self.pixels > threshold_local(self.pixels, percent)
@@ -615,7 +610,7 @@ class SPM_image:
                 raise ValueError(
                     "The output parameter should be either 'img' or 'spline'")
 
-    def getShadowMask(self, angle, BIN=None, pb=False):
+    def get_shadow_mask(self, angle, BIN=None, pb=False):
         if BIN is not None:
             BIN = BIN*1.0
         slope = np.tan(np.radians(angle))
@@ -709,22 +704,15 @@ class SPM_image:
         New.cut(cut, inplace=True)
         return New, cut
 
-    def getFFT(self):
+    def get_fft(self):
         return np.fft.fftshift(np.fft.fft2(self.pixels))
 
-    def getRmask(self):
-        x = np.linspace(-1, 1, self.pixels.shape[1])
-        y = np.linspace(-1, 1, self.pixels.shape[0])
-        X, Y = np.meshgrid(x, y)
-        R = np.sqrt(X**2+Y**2)
-        return R
-
-    def corrFit2d(self, nx=2, ny=1):
+    def corr_fit2d(self, nx=2, ny=1):
         r, z = fit2d(self.pixels, nx, ny)
         self.pixels -= z
 
-    def filterLowPass(self, p, inline=True):
-        F = self.getFFT()
+    def filter_lowpass(self, p, inline=True):
+        F = self.get_fft()
         mask = self.getRmask() < p
         if inline:
             self.pixels = np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
@@ -733,7 +721,7 @@ class SPM_image:
             C.pixels = np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
             return C
 
-    def ResizeInfos(self):
+    def _resize_infos(self):
         self.size['real']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
         self.size['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
         self.size['pixels']['x'] = int(self.pixels.shape[1])
@@ -770,13 +758,12 @@ class SPM_image:
         if not inplace:
             new = copy.deepcopy(self)
             new.pixels = cut(self.pixels, c, **kargs)
-            new.ResizeInfos()
+            new._resize_infos()
             return new
         else:
             self.pixels = cut(self.pixels, c, **kargs)
-            self.ResizeInfos()
+            self._resize_infos()
             return self
-
 
 def cut(img, c, **kargs):
     if kargs.get('debug',False):
@@ -790,7 +777,7 @@ def cut(img, c, **kargs):
     return img[c[1]:c[3], c[0]:c[2]]
 
 
-def Normalize(data, sig=None, vmin=None, vmax=None):
+def normalize(data, sig=None, vmin=None, vmax=None):
     if sig is None:
         mi = np.min(data)
         ma = np.max(data)
@@ -884,7 +871,7 @@ def overlay(ax, mask, color, **kargs):
     ax.imshow(I, **kargs)
 
 
-def NormP(x, p, trunk=True):
+def normP(x, p, trunk=True):
     thresh_high = np.percentile(x, 100-p)
     thresh_low = np.percentile(x, p)
     if thresh_low == thresh_high:
@@ -899,7 +886,7 @@ def NormP(x, p, trunk=True):
     return r
 
 
-def BeamProfile(target, source, mu=1e-6, tukey=0, meanCorr=True, real=np.real):
+def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=True, real=np.real):
     """
     Calculate the PSF by deconvolution of the target
     with the source using a Tikhonov regularization of factor mu.
@@ -915,8 +902,8 @@ def BeamProfile(target, source, mu=1e-6, tukey=0, meanCorr=True, real=np.real):
     return np.fft.fftshift(real(np.fft.ifft2(np.fft.fft2(target) * recon_tf)))
 
 
-def BeamProfile1D(target, source, mu=1e-6):
-    source = 2*source-1
+def beam_profile1d(target, source, mu=1e-6):
+    source = source
     tf = np.fft.fft(source)
     tf /= np.size(tf)
     recon_tf = np.conj(tf) / (np.abs(tf)**2 + mu)
@@ -924,7 +911,7 @@ def BeamProfile1D(target, source, mu=1e-6):
     return np.fft.fftshift(np.real(np.fft.ifft(F))), F
 
 
-def ZoomCenter(img, sx, sy=None):
+def zoom_center(img, sx, sy=None):
     if sy is None:
         sy = sx
     assert type(sx) is int
@@ -981,7 +968,7 @@ def fit2d(Z0, dx=2, dy=1, mask=None):
     return r, Z2
 
 
-def Align(img, tform, cut=True):
+def align(img, tform, cut=True):
     New = tf.warp(img, tform, preserve_range=True)
     Cut = [0, 0] + list(img.shape)
     if tform.translation[0] >= 0:
@@ -998,7 +985,7 @@ def Align(img, tform, cut=True):
     return New, Cut
 
 
-def getProfile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
+def get_profile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
         transx=lambda x: x, transy=lambda x: x, interp_order=3, **kargs):
     d = np.sqrt((x2-x1)**2+(y2-y1)**2)
     if N is None:
@@ -1014,7 +1001,7 @@ def getProfile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
         M = scipy.ndimage.interpolation.map_coordinates(I, np.vstack((y, x)), order=interp_order)
         P.append(M)
     if kargs.get('debug',False):
-        print("getProfile input coordinates:",x1,y1,x2,y2)
+        print("get_profile input coordinates:",x1,y1,x2,y2)
     if not ax is None:
         x1 = transx(x1)
         x2 = transx(x2)
@@ -1060,7 +1047,7 @@ def getTikTf(Img, mu, tukey=0, debug=False, d=200, real=np.real):
     R = np.sqrt((X-x0)**2+(Y-y0)**2)
     
     Z = BeamProfile(Img, Img, mu=mu, tukey=tukey, real=real)
-    zoom = ZoomCenter(Z, d)
+    zoom = zoom_center(Z, d)
     P = zoom[zoom.shape[0]//2, :]
     p0 = (1,np.max(zoom), 0, len(P)/2)
     popt, pcov = scipy.optimize.curve_fit(fit, np.arange(len(P)), P, p0, bounds=((0,0,-np.inf,0),np.inf))
@@ -1070,3 +1057,45 @@ def getTikTf(Img, mu, tukey=0, debug=False, d=200, real=np.real):
         return bg+np.exp(-np.abs(R)/a), Z, p0, popt
     return bg+np.exp(-np.abs(R)/a)
   
+  
+DEPRECATED_METHODS = {'getRowProfile':'get_row_profile',
+    'plotProfile':'plot_profile',
+    'getProfile':'get_profile',
+    'getShadowMask':'get_shadow_mask',
+    'addScale':'add_scale',
+    'getExtent':'get_extent',
+    'getBinThreshold':'get_bin_threshold',
+    'corrFit2d':'corrr_fit2d',
+    'getFFT':'get_fft',
+    'filterLowPass':'filter_lowpass',
+    'ResizeInfos':'_resize_infos'
+    }
+    
+def method_alias(old_name, new_name):
+    def _alias_meth(self, *args, **kargs):
+        from warnings import warn
+        warn("Function {name} is deprecated. Please use \"{new_name}\" instead".format(name=old_name, new_name=new_name))
+        return getattr(SPM_image, new_name)(self, *args, **kargs)
+    return _alias_meth
+        
+def fun_alias(old_name, new_name):
+    def _alias_fun(*args, **kargs):
+        from warnings import warn
+        warn("Function {name} is deprecated. Please use \"{new_name}\" instead".format(name=old_name, new_name=new_name))
+        return getattr(SPM, new_name)(*args, **kargs)
+    return _alias_fun
+        
+DEPRECATED_FUNCTIONS = {
+        'getProfile':'get_profile',
+        'BeamProfile':'beam_profile',
+        'BeamProfile1D':'beam_profile1d',
+        'Normalize':'normalize',
+        'Align':'align',
+        'ZoomCenter':'zoom_center',
+    }
+    
+for x in DEPRECATED_METHODS:
+    setattr(SPM_image, x, method_alias(x, DEPRECATED_METHODS[x]))
+
+for x in DEPRECATED_FUNCTIONS:
+    setattr(SPM, x, fun_alias(x, DEPRECATED_FUNCTIONS[x]))    
