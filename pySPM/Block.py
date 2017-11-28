@@ -323,10 +323,10 @@ class Block:
         """
         L = struct.unpack("<I", self.value[offset:offset+4])[0]
         Key = self.value[offset+4:offset+4+L].decode('utf16', 'ignore')
-        Value = struct.unpack("<10xd", self.value[offset+4+L:offset+22+L])[0]
+        int_value, float_value = struct.unpack("<2xqd", self.value[offset+4+L:offset+22+L])
         L2 = struct.unpack("<I", self.value[offset+22+L:offset+26+L])[0]
         SVal = self.value[offset+26+L:offset+26+L+L2].decode('utf16', 'ignore')
-        return {'Key':Key, 'Value':Value, 'SVal':SVal}
+        return {'key':Key, 'float':float_value, 'int':int_value,'string':SVal}
 
     def show(self, maxlevel=3, level=0, All=False, out=sys.stdout, digraph=False, parent=None, ex=None):
         """
