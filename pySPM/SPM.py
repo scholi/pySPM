@@ -103,7 +103,7 @@ class SPM_image:
         New.channel += " + "+b.channel
         return New
         
-    def add_scale(self, length, ax=None, height=20, color='w', loc=4, text=True, fontsize=20):
+    def add_scale(self, length, ax=None, height=20, color='w', loc=4, text=True, pixels=True, fontsize=20):
         import matplotlib.patches
         L = length*self.size['pixels']['x']/self.size['real']['x']
         ref = [height, height]
@@ -113,6 +113,11 @@ class SPM_image:
             ref[1] = self.size['pixels']['y'] - ref[1] - height
         if ax is None:
             ax = plt.gca()
+        if not pixels:
+            x,y = self.px2real(ref[0]+L,ref[1]+height)
+            ref = self.px2real(*ref)
+            L = x-ref[0]
+            height = y-ref[1]
         ax.add_patch(matplotlib.patches.Rectangle(
             ref, width=L, height=height, color=color))
         if text:

@@ -487,7 +487,7 @@ class ITM:
                 for i in range(len(ROI)):
                     Np[:,i] = N-np.convolve(Spectrum[:,i], np.ones(dt-1,dtype=int), 'full')[:-dt+2]
             else:
-                Np = N-np.convolve(Spectrum, np.ones(dt-1,dtype=int), 'full', axis=0)[:-dt+2]
+                Np = N-np.convolve(Spectrum, np.ones(dt-1,dtype=int), 'full')[:-dt+2]
             Np[Np==0] = 1
             Spectrum = -N*np.log(1-Spectrum/Np)
         return masses, Spectrum

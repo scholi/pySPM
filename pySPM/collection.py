@@ -7,8 +7,8 @@ import copy
 import re
 import numpy as np
 import matplotlib.pyplot as plt
-from pySPM.SPM import SPM_image
-import pySPM
+from .SPM import SPM_image
+from . import SPM
 
 
 def atoi(text):
@@ -141,7 +141,7 @@ class Collection:
         return data
 
     def overlay(self, channel_names, colors=[[0, .5, .3], [1, 0, 0]],
-                sig=None, vmin=None, vmax=None, ax=None):
+                sig=None, vmin=None, vmax=None, **kargs):
         """
         Create an overlay (in color) of several channels.
         channel_names: a list of the channels to select for the overlay
@@ -150,7 +150,7 @@ class Collection:
         """
         assert len(channel_names) >= 2
         assert len(colors) == len(channel_names)
-        data = [pySPM.SPM.Normalize(
+        data = [SPM.normalize(
             self[ch].pixels, sig=sig, vmin=vmin, vmax=vmax)
             for ch in channel_names]
         layers = [np.stack([data[i]*colors[i][j] for j in range(3)], axis=2)
@@ -158,8 +158,8 @@ class Collection:
         overlay = np.sum(layers, axis=0)
         o = self.create_image(overlay, key="overlay")
         ch = [self.create_image(x, key=channel_names[i]) for i,x in enumerate(layers)]
-        if ax is not None:
-            o.show(ax=ax)
+        if 'ax' in kargs:
+            o.show(**kargs)
         return o, ch
 
     def stitch_correction(self, channel, stitches):
