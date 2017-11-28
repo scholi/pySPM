@@ -50,7 +50,7 @@ class ITM:
         self.peaks = {}
         self.MeasData = {}
         try:
-            self.Nscan = int(self.root.goto('propend/Measurement.ScanNumber').getKeyValue(16)['SVal'])
+            self.Nscan = self.root.goto('propend/Measurement.ScanNumber').getKeyValue()['int']
         except:
             self.Nscan = None
             
@@ -142,26 +142,26 @@ class ITM:
             for l in List:
                 Node = self.root.goto(['propend', 'propstart'][
                                       start]).gotoItem(l['name'], l['id'])
-                r = Node.getKeyValue(16)
+                r = Node.getKeyValue()
                 del Node
                 S = Vals
-                if r['Key'] in names or ( names==[] and r['Key'].startswith(startsWith) ):
+                if r['key'] in names or ( names==[] and r['key'].startswith(startsWith) ):
                     if hidePrefix:
-                        key_name = r['Key'][len(startsWith):]
+                        key_name = r['key'][len(startsWith):]
                     else:
-                        key_name = r['Key']
+                        key_name = r['key']
                     if nest:
                         K = key_name.split('.')
                         for k in K:
                             if k not in S:
                                 S[k] = {}
                             S = S[k]
-                        S['value @'+['end', 'start'][start]] = r['SVal']
+                        S['value @'+['end', 'start'][start]] = r['string']
                     else:
                         if key_name in Vals:
-                            Vals[key_name].append(r['SVal'])
+                            Vals[key_name].append(r['string'])
                         else:
-                            Vals[key_name] = [r['SVal']]
+                            Vals[key_name] = [r['string']]
                             
         return Vals
 
@@ -170,7 +170,7 @@ class ITM:
         perform an auto callibration for positive spectrum. (in test, might be unreliable)
         """
         from scipy.optimize import curve_fit
-        TimeWidth = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').getKeyValue(16)['Value']
+        TimeWidth = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').getKeyValue()['float']
         t, D = self.getSpectrum(time=True)
         N = np.prod(list(self.size['pixels'].values())) * self.Nscan
         mask = D > N*0.01/TimeWidth
@@ -293,9 +293,9 @@ class ITM:
             self.f.seek(idx)
             child = Block.Block(self.f)
             r = child.getKeyValue(0)
-            if not r['Key'] in self.MeasData:
-                self.MeasData[r['Key']] = []
-            self.MeasData[r['Key']].append((idx,r['Value']))
+            if not r['key'] in self.MeasData:
+                self.MeasData[r['key']] = []
+            self.MeasData[r['key']].append((idx,r['float']))
         if name in self.MeasData:
             return self.MeasData[name]
         else:
@@ -415,8 +415,8 @@ class ITM:
  
         """
 
-        gun = self.root.goto('propend/Instrument.PrimaryGun.Species').getKeyValue()['SVal'] # Primary Gun Species (Bi1,Bi3,Bi3++)
-        nrj = self.root.goto('propend/Instrument.PrimaryGun.Energy').getKeyValue()['Value'] # Primary ion energy (in eV)
+        gun = self.root.goto('propend/Instrument.PrimaryGun.Species').getKeyValue()['string'] # Primary Gun Species (Bi1,Bi3,Bi3++)
+        nrj = self.root.goto('propend/Instrument.PrimaryGun.Energy').getKeyValue()['float'] # Primary ion energy (in eV)
         dx = self.size['real']['x']/self.size['pixels']['x'] # distance per pixel
         
         # Calculate the mass of the primary ion
@@ -438,8 +438,8 @@ class ITM:
         assert hasattr(scans, '__iter__')
         
         # Allocate vector for the spectrum
-        number_channels = int(round(self.root.goto('propend/Measurement.CycleTime').getKeyValue()['Value']\
-            / self.root.goto('propend/Registration.TimeResolution').getKeyValue()['Value']))
+        number_channels = int(round(self.root.goto('propend/Measurement.CycleTime').getKeyValue()['float']\
+            / self.root.goto('propend/Registration.TimeResolution').getKeyValue()['float']))
         multi_roi = False
         if ROI is None or not(type(ROI)==list or type(ROI)==tuple):
             Spectrum = np.zeros(number_channels, dtype=np.float32)

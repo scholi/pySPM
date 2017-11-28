@@ -32,7 +32,7 @@ class ITA(ITM):
                                            '/ImageStackScans/Image.NumberOfImages').getLong())
         except:
             try:
-                self.Nimg = int(self.root.goto('propend/Measurement.ScanNumber').getKeyValue(16)['Value'])
+                self.Nimg = self.root.goto('propend/Measurement.ScanNumber').getKeyValue()['int']
             except:
                 raise TypeError(
                     "Invalid file format. Maybe the file is corrupted?")
