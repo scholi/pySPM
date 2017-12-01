@@ -62,25 +62,28 @@ class ITA(ITM):
             for P in self.peaks:
                 p = self.peaks[P]
                 ma = re.compile(n, re.U)
-                if ma.match(p[b'assign']['utf16']) or ma.match(p[b'desc']['utf16']):
+                if ma.match(p['assign']['utf16']) or ma.match(p['desc']['utf16']):
                     res.append(p)
         return res
 
     def showChannels(self, ch):
         for z in ch:
             print("\t{name} ({desc}), mass: {lower:.2f} - {upper:.2f}"
-                  .format(desc=z[b'desc']['utf16'], name=z[b'assign']['utf16'],
-                          lower=z[b'lmass']['float'], upper=z[b'umass']['float']))
+                  .format(desc=z['desc']['utf16'], name=z['assign']['utf16'],
+                          lower=z['lmass']['float'], upper=z['umass']['float']))
 
-    def getChannelByMass(self, mass, full=False):
+    def getChannelByMass(self, mass, full=False, debug=False):
         if mass == 0:
             return 0
+        if debug:
+            print(self.peaks)
         for P in self.peaks:
             p = self.peaks[P]
-            if p[b'id']['long'] > 1 and p[b'lmass']['float'] <= mass and mass <= p[b'umass']['float']:
+            
+            if p['id']['long'] > 1 and p['lmass']['float'] <= mass and mass <= p['umass']['float']:
                 if full:
                     return p
-                return p[b'id']['long']
+                return p['id']['long']
         raise ValueError('Mass {:.2f} Not Found'.format(mass))
 
     def getShiftCorrectedImageByName(self, names, **kargs):
@@ -93,7 +96,7 @@ class ITA(ITM):
         else:
             Shifts = [(-x,-y) for x,y in self.getSavedShift()]            
         for ch in channels:
-            ID = ch[b'id']['long']
+            ID = ch['id']['long']
             Z += self.fastGetImage(ID, scans, Shifts)
         return Z
        
@@ -113,7 +116,7 @@ class ITA(ITM):
         Z = self.__getSumImage(scans, channels)
         if raw:
             return Z, channels
-        channel_title = ",".join([z[b'assign']['utf16'] for z in channels])
+        channel_title = ",".join([z['assign']['utf16'] for z in channels])
         return self.image(np.flipud(Z), channel=channel_title), channels
 
     def show(self, ax=None):
@@ -178,7 +181,7 @@ class ITA(ITM):
         Z = np.zeros((self.sy, self.sx))
         channels = self.getChannelsByName(names, strict)
         for ch in channels:
-            ID = ch[b'id']['long']
+            ID = ch['id']['long']
             Z += self.getAddedImage(ID, **kargs)
         ch = self.get_masses(channels)
         if raw:
@@ -219,7 +222,7 @@ class ITA(ITM):
         Z = self.__getSumImage(scans, channels)
         if raw:
             return Z, channels
-        channels_name = [["{:.2f}u".format(m[b'cmass']['float']),m[b'assign']['utf16']][m[b'assign']['utf16']!=''] for m in channels]
+        channels_name = [["{:.2f}u".format(m['cmass']['float']),m['assign']['utf16']][m['assign']['utf16']!=''] for m in channels]
         return self.image(np.flipud(Z), channel="Masses: "+",".join(channels_name))
 
     def image(self, I, channel="Unknown"):

@@ -8,6 +8,14 @@ import struct
 import numpy as np
 import os
 
+class MissingBlock(Exception):
+    def __init__(self, parent, name, index):
+        self.block_name = parent.parent+'/'+name
+        self.index = index
+        
+    def __str__(self):
+        return "Missing block \"{name}\" with index {index}".format(name=self.block_name,index=self.index)
+        
 class Block:
     """
     Class to handle a iontof-Block
@@ -16,7 +24,7 @@ class Block:
     
     Note: This class was created by reverse engineering on the fileformat of iontof and is most probably not 100% accurate. Nevertheless is works perfercly with our data upto now.
     """
-    def __init__(self, fp):
+    def __init__(self, fp, parent=''):
         """
         Init the class
         fp: file pointer (the one created by open(...) of an ITA,ITM,ITS, etc... file pointing at the beginning of a block
@@ -64,6 +72,7 @@ class Block:
             Once decompressed it usually store an array in binary.
         """
         self.f = fp
+        self.parent = parent
         self.offset = self.f.tell()
         self.Type = self.f.read(5)
         if self.Type[1:] != b'\x19\x00\x00\x00':
@@ -73,7 +82,7 @@ class Block:
             raise ValueError('EOF reached. Block cannot be read')
         self.head = dict(zip(['length', 'z', 'u', 'x', 'y'], \
             struct.unpack('<5I', self.f.read(20))))
-        self.name = self.f.read(self.head['length'])
+        self.name = self.f.read(self.head['length']).decode('ascii')
         self.value = self.f.read(self.head['x'])
         self.List = None
         self.iterP = 0
@@ -101,7 +110,7 @@ class Block:
         name = self.f.read(head['length'])
         length, nums, ID, L, NextBlock = struct.unpack('<III9xI8xQ', self.f.read(41))
         self.f.seek(NextBlock)
-        return Block(self.f)
+        return Block(self.f, parent=self.parent)
             
     def createList(self, limit=None, debug=False):
         """
@@ -129,7 +138,7 @@ class Block:
                     zip(['index', 'slen', 'id', 'blen', 'bidx'],\
                     struct.unpack('<III4xQQ', self.f.read(32))))
                 self.f.seek(data+S['index'])
-                S['name'] = self.f.read(S['slen'])
+                S['name'] = self.f.read(S['slen']).decode('ascii')
                 self.List.append(S)
             if NextBlock == 0:
                 break
@@ -150,7 +159,7 @@ class Block:
         d = {}
         for i, l in enumerate(self.getList()):
             self.f.seek(l['bidx'])
-            child = Block(self.f)
+            child = Block(self.f, parent=[self.parent+'/'+self.name,'/'][self.parent==''])
             if child.Type[0:1] == b'\x00':
                 value = binascii.hexlify(child.value)
                 d[child.name] = {'raw':value}
@@ -174,7 +183,7 @@ class Block:
             self.f.seek(l['bidx'])
             other = ''
             try:
-                child = Block(self.f)
+                child = Block(self.f, parent=[self.parent+'/'+self.name,'/'][self.parent==''])
                 if child.Type[0:1] == b'\x00':
                     if len(child.value) == 4:
                         vL = child.getLong()
@@ -230,7 +239,7 @@ class Block:
         """
         Idx = self.getIndex(name, idx, lazy=lazy)
         self.f.seek(Idx)
-        return Block(self.f)
+        return Block(self.f, parent=[self.parent+'/'+self.name,'/'][self.parent==''])
 
     def getIndex(self, name, idx=0, lazy=False):
         """
@@ -243,15 +252,15 @@ class Block:
         
         Sometimes the id does not start with 0, but with random high values. Instead of looking at the correct id, you can sue lazy=True with idx=0 in order to fetch the first one saved.
         """
-        if type(name) is str:
-            name = name.encode()
+        if type(name) is bytes:
+            name = name.decode('ascii')
         i=0
         for l in self.getList():
             if l['name'] == name:
                 if (lazy and i==idx) or (not lazy and l['id'] == idx):
                     return l['bidx']
                 i+=1
-        raise ValueError('Item "{name}" (index={index}) not found!'.format(name=name, index=idx))
+        raise MissingBlock(self,name,idx)
 
     def goto(self, path, lazy=False):
         """
@@ -401,7 +410,7 @@ class Block:
                 curr = ncurr
             debug_msg.append("Current position: @"+str(self.f.tell()))
             try:
-                current = Block(self.f)
+                current = Block(self.f) # Here we don't care about the parent argument. It is used only for debug purpose anyway.
             except Exception as ex:
                 print("Error found! Debug info")
                 for x in debug_msg:

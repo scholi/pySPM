@@ -5,8 +5,16 @@ import os.path
 import zlib
 import re
 
+class InvalidRAWdataformat(Exception):
+    def __init__(self, block, msg):
+        self.block = block
+        self.msg = msg
+        
+    def __str__(self):
+        return "Invalid RAW dataformat seen in block "+self.block.parent+'/'+self.block.name+' : '+self.msg
+    
 class ITM:
-    def __init__(self, filename):
+    def __init__(self, filename, debug=False):
         """
         Create the ITM object out of the filename.
         Note that this works for all .ITA,.ITM, .ITS files as they have the same structure
@@ -35,11 +43,11 @@ class ITM:
         d = self.root.goto('Meta/SI Image').dictList()
         self.size = {
             'pixels': {
-                'x': d[b'res_x']['long'],
-                'y': d[b'res_y']['long']},
+                'x': d['res_x']['long'],
+                'y': d['res_y']['long']},
             'real': {
-                'x': d[b'fieldofview']['float'],
-                'y': d[b'fieldofview']['float']*d[b'res_y']['long']/d[b'res_x']['long'],
+                'x': d['fieldofview']['float'],
+                'y': d['fieldofview']['float']*d['res_y']['long']/d['res_x']['long'],
                 'unit': 'm'}}
         try:
             self.size['Scans'] = \
@@ -56,17 +64,18 @@ class ITM:
             
         try:
             R = [z for z in self.root.goto('MassIntervalList').getList() if z[
-                'name'].decode() == 'mi']
+                'name'] == 'mi']
             N = len(R)
             for x in R:
                 try:
                     X = self.root.goto('MassIntervalList/mi['+str(x['id'])+']')
                     d = X.dictList()
-                    self.peaks[d[b'id']['long']] = d
+                    self.peaks[d['id']['long']] = d
                 except ValueError:
                     pass
-        except:
-            pass
+        except Exception as e:
+            if debug:
+                raise e
     
     def getPeakList(self, name):
         """
@@ -239,14 +248,14 @@ class ITM:
             V = self.root.goto(
                 'filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
         if sf is None:
-            for id in [x['id'] for x in V.getList() if x['name']==b'sf']:
+            for id in [x['id'] for x in V.getList() if x['name']=='sf']:
                 try:
                     sf = V.gotoItem('sf',id).getDouble()
                     break
                 except:
                     pass
         if k0 is None:
-            for id in [x['id'] for x in V.getList() if x['name']==b'k0']:
+            for id in [x['id'] for x in V.getList() if x['name']=='k0']:
                 try:
                     k0 = V.gotoItem('k0',id).getDouble()
                     break
@@ -257,6 +266,8 @@ class ITM:
     def getSpectrum(self, sf=None, k0=None, time=False):
         """
         Retieve a mass,spectrum array
+        This only works for .ita and .its files.
+        For this reason it is implemented in the itm class.
         """
         RAW = zlib.decompress(self.root.goto(
             'filterdata/TofCorrection/Spectrum/Reduced Data/IITFSpecArray/CorrectedData').value)
@@ -277,7 +288,7 @@ class ITM:
         rawdata = self.root.goto('rawdata')
         L = rawdata.getList()
         i = 1
-        while L[-i]['name'] !=  b'  20':
+        while L[-i]['name'] !=  '  20':
             i += 1
         max_index = L[-i]['id']
         if prog:
@@ -289,7 +300,7 @@ class ITM:
         else:
             T=L
         for i,elt in enumerate(T):
-            if elt['name'] != b'  20':
+            if elt['name'] != '  20':
                 continue
             idx = elt['bidx']
             self.f.seek(idx)
@@ -361,15 +372,15 @@ class ITM:
         ax.plot(M, S)
         self.get_masses()
         if showPeaks:
-            for P in [x for x in self.peaks if self.peaks[x][b'desc']['utf16'] not in ['total','sum of rest']]:
+            for P in [x for x in self.peaks if self.peaks[x]['desc']['utf16'] not in ['total','sum of rest']]:
                 p = self.peaks[P]
-                c = p[b'cmass']['float']
-                mask = (m >= p[b'lmass']['float'])*(m <= p[b'umass']['float'])
+                c = p['cmass']['float']
+                mask = (m >= p['lmass']['float'])*(m <= p['umass']['float'])
                 if c >= low and c <= high:
                     i = np.argmin(abs(m-c))
                     ax.axvline(m[i], color='red')
                     ax.fill_between(m[mask], *ax.get_ylim(), color='red', alpha=.2)
-                    ax.annotate(p[b'assign']['utf16'], (m[i], ax.get_ylim()[
+                    ax.annotate(p['assign']['utf16'], (m[i], ax.get_ylim()[
                                 1]), (2, -10), va='top', textcoords='offset points')
 
     def get_masses(self, mass_list=None):
@@ -387,12 +398,12 @@ class ITM:
             else:
                 p = P
             result.append({
-                'id': p[b'id']['long'],
-                'desc': p[b'desc']['utf16'],
-                'assign': p[b'assign']['utf16'],
-                'lmass': p[b'lmass']['float'],
-                'cmass': p[b'cmass']['float'],
-                'umass': p[b'umass']['float']})
+                'id': p['id']['long'],
+                'desc': p['desc']['utf16'],
+                'assign': p['assign']['utf16'],
+                'lmass': p['lmass']['float'],
+                'cmass': p['cmass']['float'],
+                'umass': p['umass']['float']})
         return result
 
     def getRawSpectrum(self, scans=None, ROI=None, FOVcorr=True, deadTimeCorr=True, **kargs):
@@ -508,12 +519,12 @@ class ITM:
         list_ = self.root.goto('rawdata').getList()
         startFound = False
         for x in list_:
-            if x['name'] == b'   6':
+            if x['name'] == '   6':
                 if not startFound:
                     startFound = x['id'] == scan
                 else:
                     break
-            elif startFound and x['name'] == b'  14':
+            elif startFound and x['name'] == '  14':
                 self.root.f.seek(x['bidx'])
                 child = Block.Block(self.root.f)
                 RAW += zlib.decompress(child.value)
@@ -587,7 +598,7 @@ class ITM:
                 return (913+sx*xy[0], 1145+sy*xy[1])
 
             for x in self.root.goto('SampleHolderInfo/positionlist'):
-                if x.name == b'shpos':
+                if x.name == 'shpos':
                     y = pickle.loads(x.goto('pickle').value)
                     pos = toXY((y['stage_x'], y['stage_y']), W, H)
                     if pos[0] >= 0 and pos[0] < W and pos[1] >= 0 and pos[1] < H:
