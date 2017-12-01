@@ -443,7 +443,7 @@ class ITM:
             
         # Perform the time of flight correction?
         if FOVcorr:
-            DT = dx*(1/5e-11)*.5*np.sqrt(2)*np.sqrt((1e-3*mp/utils.NA)/(2*nrj*utils.qe)) # delta time in channel per pixel. The 1e10 is the channelwidth (100ps)
+            DT = dx*(1/5e-11)*.5*np.sqrt(2)*np.sqrt((1e-3*mp/utils.NA)/(2*nrj*utils.qe)) # delta time in channel per pixel. The 5e-11 is the channelwidth (50ps)
             # sqrt(2)/2 is from the sin(45°), nrj=E=.5*mp*v^2
         else:
             DT = 0
