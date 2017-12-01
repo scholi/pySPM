@@ -80,10 +80,10 @@ class Block:
                 .format(pos=self.offset, Type=binascii.hexlify(self.Type[1:])))
         if len(self.Type) < 5:
             raise ValueError('EOF reached. Block cannot be read')
-        self.head = dict(zip(['length', 'z', 'u', 'x', 'y'], \
+        self.head = dict(zip(['name_length', 'ID', 'N', 'length1', 'length2'], \
             struct.unpack('<5I', self.f.read(20))))
-        self.name = self.f.read(self.head['length']).decode('ascii')
-        self.value = self.f.read(self.head['x'])
+        self.name = self.f.read(self.head['name_length']).decode('ascii')
+        self.value = self.f.read(self.head['length1'])
         self.List = None
         self.iterP = 0
 
@@ -106,9 +106,9 @@ class Block:
     def gotoNextBlock(self):
         offset = self.offset
         self.f.seek(offset)
-        head = dict(zip(['length', 'z', 'u', 'x', 'y'], struct.unpack('<5x5I', self.f.read(25))))
-        name = self.f.read(head['length'])
-        length, nums, ID, L, NextBlock = struct.unpack('<III9xI8xQ', self.f.read(41))
+        head = dict(zip(['name_length', 'ID', 'N', 'length1', 'length2'], struct.unpack('<5x5I', self.f.read(25))))
+        name = self.f.read(head['name_length'])
+        length, nums, NextBlock = struct.unpack('<II25xQ', self.f.read(41))
         self.f.seek(NextBlock)
         return Block(self.f, parent=self.parent)
             
@@ -116,22 +116,22 @@ class Block:
         """
         Generate a list (self.List) containing all the children (sub-blocks) of the current Block
         """
-        length, nums, type, a,b, L,d,e, NextBlock = struct.unpack('<II5sIIIIIQ', self.value[:41])
+        length, nums, NextBlock = struct.unpack('<II25xQ', self.value[:41])
         self.nums = nums
-        self.subType = type
         offset = self.offset
         self.List = []
         while True:
             self.f.seek(offset)
-            head = dict(zip(['length', 'z', 'u', 'x', 'y'], \
+            head = dict(zip(['name_length', 'ID', 'N', 'length1', 'length2'], \
                 struct.unpack('<5x5I', self.f.read(25))))
-            name = self.f.read(head['length'])
+            name = self.f.read(head['name_length'])
             data = self.f.tell()
-            length, nums, type, a, b, L, d, e, NextBlock = \
-                struct.unpack('<II5sIIIIIQ', self.f.read(41))
-            N = head['u']
-            if N == 0:
-                N = nums
+            length, nums, NextBlock = \
+                struct.unpack('<II25xQ', self.f.read(41))
+            N = head['N']
+            ## The following is commented as believed to be eronous
+            #if N == 0:
+            #    N = nums
             for i in range(N):                
                 self.f.seek(data+42+33*i)
                 S = dict(\
@@ -349,7 +349,7 @@ class Block:
         if not ex is None:
             ex(self)
         if parent == None:
-            parent = self.name.decode('utf8')
+            parent = self.name
         if digraph and level == 0:
             out.write('digraph {{\n graph [nodesep=.1 rankdir=LR size="10,120"]\n'.format(root=parent))
         for l in self.getList():
@@ -417,27 +417,27 @@ class Block:
                     print("\t"+x)
                 raise ex
             self.f.seek(current.offset)
-            curr_block_length = current.head['x'] + current.head['length'] + 25
+            curr_block_length = current.head['length1'] + current.head['name_length'] + 25
             debug_msg.append('Block Name: "{}" / length: {}'.format(current.name.decode('utf8'), curr_block_length))
             if current.offset == block_offset: # Found the block to change
                 debug_msg.append("Block to change FOUND!")
                 out.write(self.f.read(5)) # Write block type
-                out.write(struct.pack("<5I",block.head['length'],block.head['z'],block.head['u'], length_diff+block.head['x'], length_diff+block.head['y']))
+                out.write(struct.pack("<5I",block.head['name_length'],block.head['ID'],block.head['N'], length_diff+block.head['length1'], length_diff+block.head['length2']))
                 self.f.read(20) # Skip header
-                out.write(self.f.read(block.head['length'])) # copy block name
-                self.f.read(block.head['x']) # skip data in source
+                out.write(self.f.read(block.head['name_length'])) # copy block name
+                self.f.read(block.head['length1']) # skip data in source
                 out.write(new_data) # write new_data
             elif current.Type[0] in [1,3]: # found a container, check for references to block after the modified block
                 debug_msg.append("Block container found. Checking children...")
                 out.write(self.f.read(25)) # copy header
-                out.write(self.f.read(current.head['length'])) # copy block name
+                out.write(self.f.read(current.head['name_length'])) # copy block name
                 SubHeader = list(struct.unpack('<2I5s5IQ', self.f.read(41) )) # read sub-block header
                 if SubHeader[8] > block_offset: # Is the nextbloxk after the modified block? Yes => Adjust the offset position
                     SubHeader[8] += length_diff
                 out.write(struct.pack('<2I5s5IQ', *SubHeader )) # write sub-block header
-                N = current.head['u']
-                if N == 0:
-                    N = SubHeader[1]
+                N = current.head['N']
+                #if N == 0:
+                #    N = SubHeader[1]
                 for i in range(N):
                     X, index, slen, id,Y, blen, bidx = struct.unpack('<B4I2Q', self.f.read(33))
                     if bidx == block_offset: # If the children block is the modified block, adjust length

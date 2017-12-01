@@ -321,10 +321,10 @@ class ITA(ITM):
                     V[:, -r[0]:] = kargs['const']
         return V
         
-    def showPeak(self, m0, sf=None, k0=None, **kargs):
+    def showSpectrumAround(self, m0,delta=0.15, sf=None, k0=None, **kargs):
         from . import utils
         m, D = self.getSpectrum(sf=sf,k0=k0)
-        return utils.showPeak(m,D,m0,**kargs)
+        return utils.showPeak(m,D,m0,delta,**kargs)
         
         
 
