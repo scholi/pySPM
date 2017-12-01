@@ -13,6 +13,7 @@ import copy
 from .ITM import ITM
 from .collection import Collection
 from .SPM import SPM_image
+from .Block import MissingBlock
 
 class ITA(ITM):
     def __init__(self, filename):
@@ -22,7 +23,7 @@ class ITA(ITM):
                 'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').getLong()
             self.sy = self.root.goto(
                 'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize').getLong()
-        except ValueError:
+        except MissingBlock:
             self.sx = self.size['pixels']['x']
             self.sy = self.size['pixels']['y']
         try:
