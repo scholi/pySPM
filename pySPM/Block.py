@@ -178,7 +178,7 @@ class Block:
         Show a list of all the chrildren (sub-blocks) of the current Block.
         It will also display the value/data of all the children (if any)
         """
-        print('List of', len(self.getList()), 'elements. Type:', self.subType)
+        print('List of', len(self.getList()))
         for i, l in enumerate(self.List):
             self.f.seek(l['bidx'])
             other = ''
