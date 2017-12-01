@@ -176,21 +176,22 @@ class ITM:
                             
         return Vals
 
-    def autoMassCal(self, pos=True, debug=False, Range=5000, FittingPeaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None):
+    def autoMassCal(self, t=None, S=None, pos=True, debug=False, Range=5000, FittingPeaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None):
         """
         perform an auto callibration for positive spectrum. (in test, might be unreliable)
         """
         from scipy.optimize import curve_fit
         TimeWidth = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').getKeyValue()['float']
-        t, D = self.getSpectrum(time=True)
+        if t is None or S is None:
+            t, S = self.getSpectrum(time=True)
         N = np.prod(list(self.size['pixels'].values())) * self.Nscan
-        mask = D > N*0.01/TimeWidth
+        mask = S > N*0.01/TimeWidth
         times_start = t[1:][np.nonzero(mask[1:]*(~mask[:-1]))]
         times_end = t[np.nonzero(mask[:-1]*(~mask[1:]))]
         times = (times_start + times_end)/2
         tH = times[0]
         mask = (t>=tH-TimeWidth)*(t<=tH+TimeWidth)
-        tH = t[mask][np.argmax(D[mask])]
+        tH = t[mask][np.argmax(S[mask])]
         if sf is None or k0 is None:
             sf=1e5
             for i in range(3):
@@ -204,7 +205,7 @@ class ITM:
         ts = []
         for x in [utils.mass2time(utils.getMass(x+'+'), sf=sf, k0=k0) for x in FittingPeaks]:
             mask = (t>=(x-Range))*(t<=(x+Range))
-            t_peak = t[mask][np.argmax(D[mask])]
+            t_peak = t[mask][np.argmax(S[mask])]
             ts.append(t_peak)
         ms = [utils.getMass(x+'+') for x in FittingPeaks]
         if debug:
@@ -427,7 +428,9 @@ class ITM:
         see Ref. T. Stephan, J. Zehnpfenning and A. Benninghoven, J. vac. Sci. A 12 (2), 1994
  
         """
-
+        if ROI is None and 'roi' in kargs:
+            ROI = kargs['roi']
+            
         gun = self.root.goto('propend/Instrument.PrimaryGun.Species').getKeyValue()['string'] # Primary Gun Species (Bi1,Bi3,Bi3++)
         nrj = self.root.goto('propend/Instrument.PrimaryGun.Energy').getKeyValue()['float'] # Primary ion energy (in eV)
         dx = self.size['real']['x']/self.size['pixels']['x'] # distance per pixel
@@ -503,6 +506,8 @@ class ITM:
                 Np = N-np.convolve(Spectrum, np.ones(dt-1,dtype=int), 'full')[:-dt+2]
             Np[Np==0] = 1
             Spectrum = -N*np.log(1-Spectrum/Np)
+        if kargs.get('time',False):
+            return np.arange(number_channels), Spectrum
         return masses, Spectrum
         
     def getRawData(self, scan=0):

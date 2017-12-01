@@ -142,3 +142,4 @@ def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=Tr
     if dofit or debug:
         ax.plot(m[mask], fit(m[mask], *popt), 'r:');
     return res
+    
