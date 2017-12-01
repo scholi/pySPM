@@ -92,20 +92,22 @@ class ITM:
         values = self.getValues(start=False,names=["Instrument.SputterGun.Energy","Instrument.SputterGun.Species",
             "Instrument.LMIG.Extractor","Instrument.LMIG.Lens_Source","Instrument.Analyzer.ExtractionDelay",
             "Analysis.AcquisitionTime","Analysis.SputterTime","Analysis.TotalScans","Analysis.TotalTime"])
-        
+        def Get(v,k):
+            return v.get(k,['Unknown'])[0]
+            
         return {
             'pixels': self.size['pixels'],
             'fov': self.root.goto('Meta/SI Image[0]/fieldofview').getDouble(),
             'LMIG': {
-                'Extractor': values["Instrument.LMIG.Extractor"][0],
-                'Lens_Source':values["Instrument.LMIG.Lens_Source"][0]},
-            'ExtractionDelay': values["Instrument.Analyzer.ExtractionDelay"][0],
+                'Extractor': Get(values,"Instrument.LMIG.Extractor"),
+                'Lens_Source': Get(values,"Instrument.LMIG.Lens_Source")},
+            'ExtractionDelay': Get(values,"Instrument.Analyzer.ExtractionDelay"),
             'SputterSpecies': values.get('Instrument.SputterGun.Species',['Off'])[0],
             'SputterEnergy': values.get('Instrument.SputterGun.Energy',['Off'])[0],
-            'AnalysisTime': values["Analysis.AcquisitionTime"][0],
-            'SputterTime': values["Analysis.SputterTime"][0],
-            'Scans': values["Analysis.TotalScans"][0],
-            'TotalTime':  values["Analysis.TotalTime"][0],
+            'AnalysisTime': Get(values,"Analysis.AcquisitionTime"),
+            'SputterTime': Get(values,"Analysis.SputterTime"),
+            'Scans': Get(values,"Analysis.TotalScans"),
+            'TotalTime':  Get(values, "Analysis.TotalTime"),
             'peaks': self.get_masses(),
             }
         
