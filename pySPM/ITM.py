@@ -135,6 +135,9 @@ class ITM:
         for i, x in enumerate(rs):
             Val.append([x, rs[x], re[x]])
 
+    def getValue(self, name, end=True):
+        return self.root.goto('prop{}/{name}'.format(['start','end'][end],name=name)).getKeyValue()
+    
     def getValues(self, pb=False, start=True,end=True,names=[], startsWith="", nest=False, hidePrefix=True):
         """
         Beta function: Retieve a list of the values
@@ -232,6 +235,12 @@ class ITM:
                 from IPython.core.display import display, HTML
                 res = utils.html_table(Table, header=True)
                 display(HTML(res))
+                
+    def get_mass_cal(self):
+        V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
+        sf = V.goto('sf',lazy=True).getDouble()
+        k0 = V.goto('k0',lazy=True).getDouble()
+        return sf, k0
 
     def channel2mass(self, channels, sf=None, k0=None, binning=1):
         """
@@ -244,24 +253,15 @@ class ITM:
         L is the path length, thus twice the columns length and is about 2m I think
         For an extractor of 2keV and L=2m, 1u = (time[s]*310620.843175[u**.5/s])**2 = [channel/sf]**2 => sf is about 32000 for k0 = 0
         Caution. If data are binned, the channel number should be multiplied by the binning factor in order to use the same sf and k0 factor!
+        
+        For information the channel width is 50ps and is strangely not saved in the file.
         """
         if sf is None or k0 is None:
-            V = self.root.goto(
-                'filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
+            sf0, k00 = self.get_mass_cal()
         if sf is None:
-            for id in [x['id'] for x in V.getList() if x['name']=='sf']:
-                try:
-                    sf = V.gotoItem('sf',id).getDouble()
-                    break
-                except:
-                    pass
+            sf = sf0
         if k0 is None:
-            for id in [x['id'] for x in V.getList() if x['name']=='k0']:
-                try:
-                    k0 = V.gotoItem('k0',id).getDouble()
-                    break
-                except:
-                    pass
+            k0 = k00
         return ((binning*channels-k0)/(sf))**2
 
     def getSpectrum(self, sf=None, k0=None, time=False):
@@ -432,18 +432,22 @@ class ITM:
             ROI = kargs['roi']
             
         gun = self.root.goto('propend/Instrument.PrimaryGun.Species').getKeyValue()['string'] # Primary Gun Species (Bi1,Bi3,Bi3++)
+        
+        # if the + is missing in the name, add it
+        if gun[-1]!='+':
+            gun += '+'
+            
+        Q = gun.count('+') # number of charge
+        
         nrj = self.root.goto('propend/Instrument.PrimaryGun.Energy').getKeyValue()['float'] # Primary ion energy (in eV)
         dx = self.size['real']['x']/self.size['pixels']['x'] # distance per pixel
         
         # Calculate the mass of the primary ion
-        if '+' in gun:
-            mp = utils.getMass(gun)
-        else:
-            mp = utils.getMass(gun+'+')
+        mp = utils.getMass(gun)
             
         # Perform the time of flight correction?
         if FOVcorr:
-            DT = dx*(1/5e-11)*.5*np.sqrt(2)*np.sqrt((1e-3*mp/utils.NA)/(2*nrj*utils.qe)) # delta time in channel per pixel. The 5e-11 is the channelwidth (50ps)
+            DT = dx*(1/5e-11)*.5*np.sqrt(2)*np.sqrt((1e-3*mp/utils.NA)/(Q*2*nrj*utils.qe)) # delta time in channel per pixel. The 5e-11 is the channelwidth (50ps)
             # sqrt(2)/2 is from the sin(45°), nrj=E=.5*mp*v^2
         else:
             DT = 0
