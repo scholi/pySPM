@@ -106,7 +106,7 @@ class ITM:
             'SputterEnergy': values.get('Instrument.SputterGun.Energy',['Off'])[0],
             'AnalysisTime': Get(values,"Analysis.AcquisitionTime"),
             'SputterTime': Get(values,"Analysis.SputterTime"),
-            'Scans': Get(values,"Analysis.TotalScans"),
+            'Scans': values.get("Analysis.TotalScans",[self.Nscan])[0],
             'TotalTime':  Get(values, "Analysis.TotalTime"),
             'peaks': self.get_masses(),
             }
