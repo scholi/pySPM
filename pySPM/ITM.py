@@ -411,7 +411,10 @@ class ITM:
         """
         Reconstruct the spectrum from RAW data.
         scans: List of scans to use. if None all scans are used (default)
-        ROI: Region Of Interest. It's an image of the same size as the measurement having a value of True for pixels to be taken into accoun.
+        ROI: Region Of Interest. It can be:
+            1) None: All pixels are used
+            2) A list of images. The pixels will be added to the spectrum i if the value of the i-th image is True for that pixel
+            3) An image with integer value. The current pixels will be added to the i-th spectrum if the value of ROI at that pixel is i.
         FOVcorr: Correction for the primary time of flight variation
         
         Δt = (√2/2)∙x∙√(mp/(2∙E)) where x is the x-corrdinate (in m), mp, the primary ion mass (in kg) and E the primary energy
@@ -460,13 +463,7 @@ class ITM:
         # Allocate vector for the spectrum
         number_channels = int(round(self.root.goto('propend/Measurement.CycleTime').getKeyValue()['float']\
             / self.root.goto('propend/Registration.TimeResolution').getKeyValue()['float']))
-        multi_roi = False
-        if ROI is None or not(type(ROI)==list or type(ROI)==tuple):
-            Spectrum = np.zeros(number_channels, dtype=np.float32)
-        else:
-            multi_roi = True
-            Spectrum = np.zeros((number_channels,len(ROI)), dtype=np.float32)
-        # Display a progress bar?
+        
         if kargs.get('prog',False):
             try:
                 from tqdm import tqdm_notebook as tqdm
@@ -475,14 +472,40 @@ class ITM:
             T = tqdm(scans)
         else:
             T = scans
-                
-        for s in T:
-            Data = self.getRawData(s)[2]
-            for xy in Data:
-                dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
-                ip = int(dt)
-                fp = dt%1
-                if multi_roi:
+            
+        if ROI is None:
+            Spectrum = np.zeros(number_channels, dtype=np.float32)
+            for s in T:
+                Data = self.getRawData(s)[2]
+                for xy in Data:
+                    dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
+                    ip = int(dt)
+                    fp = dt%1
+                    for x in Data[xy]:
+                        Spectrum[x-ip] += (1-fp)
+                        Spectrum[x-ip-1] += fp
+        elif type(ROI) is np.ndarray:
+            assert np.min(ROI)>=0
+            Spectrum = np.zeros((number_channels,np.max(ROI)+1), dtype=np.float32)
+            for s in T:
+                Data = self.getRawData(s)[2]
+                for xy in Data:
+                    dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
+                    ip = int(dt)
+                    fp = dt%1
+                    id = ROI[xy[1],xy[0]]
+                    for x in Data[xy]:
+                        Spectrum[x-ip, id] += (1-fp)
+                        Spectrum[x-ip-1, id] += fp
+        elif type(ROI) in [list,tuple]:
+            multi_roi = True
+            Spectrum = np.zeros((number_channels,len(ROI)), dtype=np.float32)
+            for s in T:
+                Data = self.getRawData(s)[2]
+                for xy in Data:
+                    dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
+                    ip = int(dt)
+                    fp = dt%1
                     li = []
                     for k,R in enumerate(ROI):
                         if R[xy[1],xy[0]]:
@@ -491,11 +514,6 @@ class ITM:
                         for k in li:
                             Spectrum[x-ip,k] += (1-fp)
                             Spectrum[x-ip-1,k] += fp
-                else:
-                    if ROI is None or ROI[xy[1],xy[0]]:
-                        for x in Data[xy]:
-                            Spectrum[x-ip] += (1-fp)
-                            Spectrum[x-ip-1] += fp
         sf = kargs.get('sf',self.root.goto('MassScale/sf').getDouble())
         k0 = kargs.get('k0',self.root.goto('MassScale/k0').getDouble())
         masses = self.channel2mass(np.arange(number_channels),sf=sf,k0=k0)
@@ -503,8 +521,8 @@ class ITM:
             dt = 2000 # 100ns*(1ch/50ps) = 2000 channels
             N = self.Nscan*self.size['pixels']['x']*self.size['pixels']['y'] # total of count events
             Np = np.zeros(Spectrum.shape)
-            if multi_roi:
-                for i in range(len(ROI)):
+            if Spectrum.ndim>1:
+                for i in range(Spectrum.shape[1]):
                     Np[:,i] = N-np.convolve(Spectrum[:,i], np.ones(dt-1,dtype=int), 'full')[:-dt+2]
             else:
                 Np = N-np.convolve(Spectrum, np.ones(dt-1,dtype=int), 'full')[:-dt+2]
