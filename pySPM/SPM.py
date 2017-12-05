@@ -1051,7 +1051,7 @@ def getTikTf(Img, mu, tukey=0, debug=False, d=200, real=np.real):
     y0 = Img.shape[0]/2
     R = np.sqrt((X-x0)**2+(Y-y0)**2)
     
-    Z = BeamProfile(Img, Img, mu=mu, tukey=tukey, real=real)
+    Z = beam_profile(Img, Img, mu=mu, tukey=tukey, real=real)
     zoom = zoom_center(Z, d)
     P = zoom[zoom.shape[0]//2, :]
     p0 = (1,np.max(zoom), 0, len(P)/2)
