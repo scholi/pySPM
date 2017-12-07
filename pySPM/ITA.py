@@ -169,7 +169,10 @@ class ITA(ITM):
         if ax is not None:
             ax.plot([x1, x2], [y1, y2], col)
         if prog:
-            from tqdm import tqdm
+            try:
+                from tqdm import tqdm_notebook as tqdm
+            except:
+                from tqdm import tqdm as tqdm
             Y = tqdm(Y)
         from scipy.ndimage import map_coordinates
         for s in Y:
@@ -220,7 +223,7 @@ class ITA(ITM):
                 from tqdm import tqdm
             scans = tqdm(scans)
         channels = [self.getChannelByMass(m, full=True) for m in masses]
-        Z = self.__getSumImage(scans, channels)
+        Z = self.__getSumImage(scans, channels, **kargs)
         if raw:
             return Z, channels
         channels_name = [["{:.2f}u".format(m['cmass']['float']),m['assign']['utf16']][m['assign']['utf16']!=''] for m in channels]
@@ -261,13 +264,15 @@ class ITA(ITM):
         if prog:
             try:
                 from tqdm import tqdm_notebook as tqdm
+                scans = tqdm(scans)
             except:
                 warning.warn("tqdm_notebook not available")
                 try:
                     from tqdm import tqdm
+                    scans = tqdm(scans)
                 except:
                     warning.warn("cannot load tqdm library")
-            scans = tqdm(scans)
+            
         im_root =  self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image['+str(channel)+']')
         for scan in scans:
             c = im_root.goto('ImageArray.Long['+str(scan)+']')

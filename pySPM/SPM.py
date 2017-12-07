@@ -891,12 +891,13 @@ def normP(x, p, trunk=True):
     return r
 
 
-def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=True, real=np.real):
+def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=True, real=np.real, **kargs):
     """
     Calculate the PSF by deconvolution of the target
     with the source using a Tikhonov regularization of factor mu.
     """
-    source = 2*source-1
+    if kargs.get('source_centering', True):
+        source = 2*source-1
     if meanCorr:
         target = target-np.mean(target)
     if tukey>0:
@@ -1061,8 +1062,7 @@ def getTikTf(Img, mu, tukey=0, debug=False, d=200, real=np.real):
     if debug:
         return bg+np.exp(-np.abs(R)/a), Z, p0, popt
     return bg+np.exp(-np.abs(R)/a)
-  
-  
+
 DEPRECATED_METHODS = {'getRowProfile':'get_row_profile',
     'plotProfile':'plot_profile',
     'getProfile':'get_profile',
@@ -1075,7 +1075,7 @@ DEPRECATED_METHODS = {'getRowProfile':'get_row_profile',
     'filterLowPass':'filter_lowpass',
     'ResizeInfos':'_resize_infos'
     }
-    
+
 def method_alias(old_name, new_name):
     def _alias_meth(self, *args, **kargs):
         from warnings import warn
