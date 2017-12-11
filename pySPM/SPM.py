@@ -974,7 +974,7 @@ def fit2d(Z0, dx=2, dy=1, mask=None):
     return r, Z2
 
 
-def align(img, tform, cut=True):
+def warp_and_cut(img, tform, cut=True):
     New = tf.warp(img, tform, preserve_range=True)
     Cut = [0, 0] + list(img.shape)
     if tform.translation[0] >= 0:
