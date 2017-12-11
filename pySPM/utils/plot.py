@@ -14,3 +14,13 @@ def Xdist(ax,left, right, y, color='r', linestyle=':', fmt='.2f', xtransf=lambda
     s = "{:"+fmt+"}"+kargs.get('unit','')
     ax.annotate(s.format(xtransf(right-left)),(.5*(left+right),y),(0,2),textcoords='offset pixels',va='bottom',ha='center')
     ax.annotate("",(left,y),(right,y),arrowprops=dict(arrowstyle=kargs.get('arrowstyle','<->')))
+    
+def DualPlot(ax, col1='C0',col2='C1'):
+    axb = ax.twinx()
+    axb.spines['left'].set_color(col1)
+    axb.spines['right'].set_color(col2)
+    ax.yaxis.label.set_color(col1)
+    axb.yaxis.label.set_color(col2)
+    ax.tick_params(axis='y', colors=col1)
+    axb.tick_params(axis='y', colors=col2)
+    return axb
