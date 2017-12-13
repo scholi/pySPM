@@ -138,7 +138,7 @@ class SPM_image:
         counts[counts == 0] = 1
         offset = offset/counts
         offset = np.cumsum(offset)
-        offset = offset.reshape((self.pixels.shape[1], 1))
+        offset = offset.reshape((self.pixels.shape[0], 1))
         if inline:
             self.pixels = self.pixels - \
                 np.flipud(np.repeat(offset, self.pixels.shape[1], axis=1))
