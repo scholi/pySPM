@@ -769,6 +769,26 @@ class SPM_image:
             self.pixels = cut(self.pixels, c, **kargs)
             self._resize_infos()
             return self
+    
+    def zoom(self, zoom_factor, inplace=False, order=3):
+        """
+        Resize the image to a new pixel size (but keep the real size) by pixel interpolation.
+        zoom > 1: up sampling
+        zoom < 1: down sampling
+        order: The spline order to use. (default: 3). Use 0 for binary or very sharp images.
+        """
+        from scipy.ndimage.interpolation import zoom
+        if not inplace:        
+            new = copy.deepcopy(self)
+            new.pixels = zoom(new.pixels, zoom_factor, order=order)
+            new.size['pixels']['x'] = new.pixels.shape[1]
+            new.size['pixels']['y'] = new.pixels.shape[0]
+            return new
+        else:
+            self.pixels = zoom(self.pixels, zoom_factor, order=order)
+            self.size['pixels']['x'] = self.pixels.shape[1]
+            self.size['pixels']['y'] = self.pixels.shape[0]
+            return self
 
 def cut(img, c, **kargs):
     if kargs.get('debug',False):
