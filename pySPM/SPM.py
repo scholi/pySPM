@@ -911,7 +911,7 @@ def normP(x, p, trunk=True):
     return r
 
 
-def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=True, real=np.real, **kargs):
+def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=True, source_tukey=0, real=np.real, **kargs):
     """
     Calculate the PSF by deconvolution of the target
     with the source using a Tikhonov regularization of factor mu.
@@ -922,6 +922,8 @@ def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=True, real=np.real, 
         target = target-np.mean(target)
     if tukey>0:
         target = tukeyfy(target, tukey)
+    if source_tukey>0:
+        source = tukeyfy(source, tukey)
     tf = np.fft.fft2(source)
     tf /= np.size(tf)
     recon_tf = np.conj(tf) / (np.abs(tf)**2 + mu)
