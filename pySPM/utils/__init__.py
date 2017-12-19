@@ -7,6 +7,7 @@ from .elts import *
 from .constants import *
 from .spectra import *
 from .plot import *
+from . import fit
 
 def fitSpectrum(t, m, error=False, dev=False):
     """
