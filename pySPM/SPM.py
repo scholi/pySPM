@@ -526,7 +526,7 @@ class SPM_image:
         xvalues = np.linspace(0, rd, len(p))
         lab = kargs.get("label","")
         if width < 2:
-            profile = p[:, 0]
+            profile = p
         else:
             profile = np.mean(p,axis=1)
             s = np.std(p)
