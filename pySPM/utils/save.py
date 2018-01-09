@@ -1,6 +1,8 @@
 import pickle
 import zipfile
 import os
+import shutil
+import tempfile
 
 """
 This small utility can save and load python objects to a single file.
@@ -18,11 +20,27 @@ def save(filename, *objs, **obj):
     """
     if os.path.splitext(filename)[1]=='':
         filename += '.pkz'
-    out = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
+    out = zipfile.ZipFile(filename, 'a', zipfile.ZIP_DEFLATED)
+    file_list = out.namelist()
+    update = []
     for i,o in enumerate(objs):
         obj[i] = o
     for k in obj:
-        out.writestr(k, pickle.dumps(obj[k] , pickle.HIGHEST_PROTOCOL))
+        if k in file_list:
+            update.append(k)
+    if len(update) == 0 :
+        for k in obj:
+            out.writestr(k, pickle.dumps(obj[k], pickle.HIGHEST_PROTOCOL))
+    else:
+        out.close()
+        _, temp = tempfile.mkstemp()
+        shutil.copy(filename, temp)
+        out = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
+        old = zipfile.ZipFile(temp, 'r')
+        for k in [x for x in file_list if x not in update]:
+            out.writestr(k, old.read(k))
+        for k in update:
+            out.writestr(k, pickle.dumps(obj[k], pickle.HIGHEST_PROTOCOL))
     out.close()
     
 def load(filename, key='0'):
