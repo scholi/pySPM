@@ -22,7 +22,7 @@ class Aligner:
 
         self.initIDX = self.getMatchingIndex()
     
-    def compute(self):
+    def compute(self, prog=False):
         # Compute the correlation to find the best shift as first guess
         if prog:
             print("Progress [1/4] Improve Shift...", end='\r')
