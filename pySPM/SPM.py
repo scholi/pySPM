@@ -1114,6 +1114,7 @@ def fun_alias(old_name, new_name):
     return _alias_fun
         
 DEPRECATED_FUNCTIONS = {
+        'NormP':'normP',
         'getProfile':'get_profile',
         'BeamProfile':'beam_profile',
         'BeamProfile1D':'beam_profile1d',
