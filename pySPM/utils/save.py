@@ -33,13 +33,14 @@ def save(filename, *objs, **obj):
             out.writestr(k, pickle.dumps(obj[k], pickle.HIGHEST_PROTOCOL))
     else:
         out.close()
-        _, temp = tempfile.mkstemp()
+        ft, temp = tempfile.mkstemp()
         shutil.copy(filename, temp)
         out = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
         old = zipfile.ZipFile(temp, 'r')
         for k in [x for x in file_list if x not in update]:
             out.writestr(k, old.read(k))
         old.close()
+        os.fdopen(ft).close()
         os.remove(temp)
         for k in obj:
             out.writestr(k, pickle.dumps(obj[k], pickle.HIGHEST_PROTOCOL))
