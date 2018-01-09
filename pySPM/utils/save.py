@@ -73,7 +73,9 @@ class loader:
         self.local = {}
     
     def __iter__(self):
-        self.keys = set(self.f.namelist()+list(self.local.keys()))
+        f = zipfile.ZipFile(self.filename, 'r')
+        self.keys = set(f.namelist()+list(self.local.keys()))
+        f.close()
         return self
         
     def __next__(self):
