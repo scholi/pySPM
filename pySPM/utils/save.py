@@ -39,6 +39,7 @@ def save(filename, *objs, **obj):
         old = zipfile.ZipFile(temp, 'r')
         for k in [x for x in file_list if x not in update]:
             out.writestr(k, old.read(k))
+        os.remove(temp)
         for k in update:
             out.writestr(k, pickle.dumps(obj[k], pickle.HIGHEST_PROTOCOL))
     out.close()
