@@ -2,7 +2,22 @@ import pickle
 import zipfile
 import os
 
+"""
+This small utility can save and load python objects to a single file.
+It uses ZIP DEFLATE compression method in order to keep the file small.
+It works in a similar way as numpy.savez_compressed and numpy.load, but
+just work with any python objects and thus do not generate a numpy.array
+for every object.
+
+the default file extension is pkz (for Pickle Zip)
+"""
+
 def save(filename, *objs, **obj):
+    """
+    save python objects to file
+    """
+    if os.path.splitext(filename)[1]=='':
+        filename += '.pkz'
     out = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
     for i,o in enumerate(objs):
         obj[i] = o
@@ -11,6 +26,11 @@ def save(filename, *objs, **obj):
     out.close()
     
 def load(filename, key='0'):
+    """
+    load python objects from saved pkz files
+    """
+    if os.path.splitext(filename)[1]=='' and not os.path.exists(filename):
+        filename += '.pkz'
     assert os.path.exists(filename)
     if type(key) is int:
         key = str(key)
@@ -24,6 +44,8 @@ class loader:
     Only retrieved data are kept in memory and not all the data.
     """
     def __init__(self, filename):
+        if os.path.splitext(filename)[1]=='' and not os.path.exists(filename):
+            filename += '.pkz'
         assert os.path.exists(filename)
         self.f = zipfile.ZipFile(filename, 'r')
         self.local = {}
