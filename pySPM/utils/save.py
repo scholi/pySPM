@@ -55,7 +55,9 @@ def load(filename, key='0'):
     if type(key) is int:
         key = str(key)
     f = zipfile.ZipFile(filename, 'r')
-    return pickle.loads(f.read(key))
+    res = pickle.loads(f.read(key))
+    f.close()
+    return res
     
 class loader:
     """
@@ -67,7 +69,7 @@ class loader:
         if os.path.splitext(filename)[1]=='' and not os.path.exists(filename):
             filename += '.pkz'
         assert os.path.exists(filename)
-        self.f = zipfile.ZipFile(filename, 'r')
+        self.filename = filename
         self.local = {}
     
     def __iter__(self):
@@ -82,7 +84,9 @@ class loader:
         
     def __getitem__(self, key):
         if not key in self.local:
-            self.local[key] = pickle.loads(self.f.read(key))
+            f = zipfile.ZipFile(self.filename, 'r')
+            self.local[key] = pickle.loads(f.read(key))
+            f.close()
         return self.local[key]
     
     def __setitem__(self, key, value):
