@@ -1,3 +1,11 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 import numpy as np
 from scipy import stats, optimize as opt
 import re

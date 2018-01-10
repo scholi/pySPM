@@ -1,3 +1,11 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
+"""
+Provides useful functions for fitting with scipy.optimize.curve_fit
+"""
+
 from . import math
 import numpy as np
 

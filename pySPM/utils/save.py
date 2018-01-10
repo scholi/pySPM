@@ -1,3 +1,7 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 import pickle
 import zipfile
 import os
@@ -9,7 +13,8 @@ This small utility can save and load python objects to a single file.
 It uses ZIP DEFLATE compression method in order to keep the file small.
 It works in a similar way as numpy.savez_compressed and numpy.load, but
 just work with any python objects and thus do not generate a numpy.array
-for every object.
+for every object. Several objects can be added to the same file with either one call of save or several.
+The new data will just be appended to your file. It also support the update of the file (in this case the data file is copied in a new one).
 
 the default file extension is pkz (for Pickle Zip)
 """
@@ -25,23 +30,31 @@ def save(filename, *objs, **obj):
     update = []
     for i,o in enumerate(objs):
         obj[i] = o
+        
+    # List objects which are already present in the file (so which will be updated)
     for k in obj:
         if k in file_list:
             update.append(k)
-    if len(update) == 0 :
+            
+    if len(update) == 0 : # No files are updated, just append the new data to the file
         for k in obj:
             out.writestr(k, pickle.dumps(obj[k], pickle.HIGHEST_PROTOCOL))
     else:
+        # close the curent file, copy it to a temp file and reopen the original file in write mode (will thus override all data)
         out.close()
         ft, temp = tempfile.mkstemp()
         shutil.copy(filename, temp)
         out = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
+        
+        # Copy all old data which are not updated and clean tempfile
         old = zipfile.ZipFile(temp, 'r')
         for k in [x for x in file_list if x not in update]:
             out.writestr(k, old.read(k))
         old.close()
         os.fdopen(ft).close()
         os.remove(temp)
+        
+        # Write all new objects
         for k in obj:
             out.writestr(k, pickle.dumps(obj[k], pickle.HIGHEST_PROTOCOL))
     out.close()

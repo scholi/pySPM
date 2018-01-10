@@ -1,5 +1,6 @@
-#!/usr/bin/python
-#*-* encoding: utf-8 *-*
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
 """
 Library to handle SPM data.

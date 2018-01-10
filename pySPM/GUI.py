@@ -1,3 +1,7 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 """
 This module allows to display a small GUI in order to display a table of key/values.
 

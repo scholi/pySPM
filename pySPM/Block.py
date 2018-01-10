@@ -1,3 +1,7 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 """
 Module to handle block type used in iontof file formats ITA,ITM,ITS, etc...
 """
@@ -22,7 +26,8 @@ class Block:
     One iontof file ITA,ITM,ITS contains a lot of Blocks forming a hierarchical structure.
     Each Block can have children (sub-Blocks) and values (data).
     
-    Note: This class was created by reverse engineering on the fileformat of iontof and is most probably not 100% accurate. Nevertheless is works perfercly with our data upto now.
+    Note: This class was created by reverse engineering on the fileformat of iontof and is most probably not 100% accurate.
+    Nevertheless is works in very good agreement with the developer's data.
     """
     def __init__(self, fp, parent=''):
         """
@@ -95,7 +100,7 @@ class Block:
 
     def getList(self):
         """
-        Return the list of the sub-blocks (chrildren) of the current Block.
+        Return the list of the sub-blocks (children) of the current Block.
         """
         if not self.Type[0:1] in [b'\x01', b'\x03']:
             return []
@@ -129,7 +134,7 @@ class Block:
             length, nums, NextBlock = \
                 struct.unpack('<II25xQ', self.f.read(41))
             N = head['N']
-            ## The following is commented as believed to be eronous
+            ## The following is commented as believed to be erroneous
             #if N == 0:
             #    N = nums
             for i in range(N):                
@@ -153,7 +158,7 @@ class Block:
 
     def dictList(self):
         """
-        Return a dictionnary of the value decoded with various formats (raw, long, float, utf16)
+        Return a dictionary of the value decoded with various formats (raw, long, float, utf16)
         As the type of the data is not known, this function is very helpful for debugging purpose
         """
         d = {}
@@ -175,7 +180,7 @@ class Block:
 
     def showList(self):
         """
-        Show a list of all the chrildren (sub-blocks) of the current Block.
+        Show a list of all the children (sub-blocks) of the current Block.
         It will also display the value/data of all the children (if any)
         """
         print('List of', len(self.getList()))
@@ -250,7 +255,8 @@ class Block:
         If more than one children have the same name,
         the second one can by retrieved by idx=1, the third with idx=2, etc.
         
-        Sometimes the id does not start with 0, but with random high values. Instead of looking at the correct id, you can sue lazy=True with idx=0 in order to fetch the first one saved.
+        Sometimes the id does not start with 0, but with random high values.
+        Instead of looking at the correct id, you can sue lazy=True with idx=0 in order to fetch the first one saved.
         """
         if type(name) is bytes:
             name = name.decode('ascii')
@@ -266,12 +272,13 @@ class Block:
         """
         Return a sub Block having a specific path
         path: path is similar to filepath.
-        The block X conatained in B which is itself contained in A,
+        The block X contained in B which is itself contained in A,
         can be retrieved with the path: A/B/X
         if the block B has several children having the same name,
         A/B/X[n] will return the n-th child (note that 0 is the first child)$
         
-        As the id sometimes start at weird values and we just want the first ones saved whatever its id is, we can use the lazy=True argument.
+        As the id sometimes start at weird values and we just want the first ones
+        saved whatever its id is, we can use the lazy=True argument.
         """
         if path == '':
             return self
@@ -340,7 +347,7 @@ class Block:
     def show(self, maxlevel=3, level=0, All=False, out=sys.stdout, digraph=False, parent=None, ex=None):
         """
         Display the children of the current Block (recursively if maxlevel > 1)
-        Very usefull for debugging purpose and looking for the path of valuable data.
+        Very useful for debugging purpose and looking for the path of valuable data.
         out: file instance to write the results (default terminal)
         digraph: if True return a digraph (http://www.graphviz.org/) representation of the children
         level: internal variable used to call the function recursively.

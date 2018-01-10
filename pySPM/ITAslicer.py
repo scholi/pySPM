@@ -1,3 +1,7 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 """
 This is a standalone script which allows the user to perfome cross-section on ToF-SIMS images on different channels
 """

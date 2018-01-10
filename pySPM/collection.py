@@ -1,6 +1,10 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 """
-oollection is a module to handle collection of images.
-This is specially usefull for SPM data which store several channels for the same measurement
+collection is a module to handle collection of images.
+This is specially useful for SPM data which store several channels for the same measurement
 """
 
 import copy
@@ -127,7 +131,7 @@ class Collection:
         Create and return a (pandas) DataFrame of the collection
         channels: List of the channels to use (default: None => all channels)
 
-        Note: The images will be unraveld (flattened)
+        Note: The images will be unraveled (flattened)
         """
         import pandas as pd
         if channels is None:
@@ -165,12 +169,12 @@ class Collection:
     def stitch_correction(self, channel, stitches):
         """
         Function to correct for anomalies seen in stitched image.
-        The function will calculate an average distribution of the stiched field
+        The function will calculate an average distribution of the stitched field
         and average the image with it and return a new collection with the result
 
         channel: name of the channel used as a reference
             (take one with homogeneous intensities in the whole image)
-        stitches: a tuple/list containing the number of stiches in the image (x,y)
+        stitches: a tuple/list containing the number of stitches in the image (x,y)
         """
         result = copy.deepcopy(self)
         del result.channels

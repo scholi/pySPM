@@ -1,14 +1,19 @@
 # -- coding: utf-8 --
 
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
+"""
+This module is used in order to align two different images.
+Usually one from an SPM and the other from the ToF-SIMS.
+
+This module also gives the ability to perform shift correction on images
+which is used in order to align the different scans from ToF-SIMS images.
+"""
+
 import numpy as np
 from skimage import transform as tf
 from scipy.ndimage.filters import gaussian_filter
 
-"""
-This module is used in order to align two different images. Usually one from an SPM and the other fron the ToF-SIMS.
-
-This module also gives the ability to perform shift correction on images which is used in order to align the differents scans from ToF-SIMS images.
-"""
 
 class Aligner:
     def __init__(self, fixed, other, prog=True, FFT=True):

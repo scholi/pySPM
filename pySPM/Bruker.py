@@ -1,3 +1,7 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 """
 Module to handle SPM images recorded by a Bruker AFM
 """

@@ -1,3 +1,7 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 """
 This module performs the PCS with the help of the scikit library and gives the user various function for quick plotting.
 """

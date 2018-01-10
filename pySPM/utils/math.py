@@ -1,9 +1,23 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
+"""
+Provides some useful mathematical functions which are not present in numpy.
+"""
+
 import numpy as np
+import math
 
 def fact(x):
+    """
+    Return the factors of an integer as a list.
+    Warning: This function is not a factorial!
+    """
+    if x < 0 or type(x) is not int:
+        raise ValueError("input must be a positive integer")
     if x < 2:
-        return x
-    import math
+        return x    
     f = []
     i = 2
     while True:
@@ -15,7 +29,6 @@ def fact(x):
             return f
             
 def moving_average(x, N):
-    import numpy as np
     assert len(x) > N
     c = np.cumsum(x)
     return (c[N:]-c[:-N])/N
@@ -38,7 +51,7 @@ def Gauss(x, x0, s, A=None):
     if A is None:
         return R /(s*np.sqrt(2*np.pi))
     return A*R
-    
+
 def Lorentz(x, x0, gamma, A=None):
     R = 1/((x-x0)**2+(.5*gamma)**2)
     if A is None:
@@ -72,6 +85,25 @@ def fitCDF1line(A):
         popt, pcov = opt.curve_fit(CDF, np.arange(A.shape[0]), A[:,x], (10, A.shape[0]/2, 1))
         line[x] = popt[1]
     return line
+
+def FT(x, ufunc=np.real, real=False):
+    """
+    shortcut for 1D/2D Fourier Transform (real and centered)
+    """
+    assert isinstance(x, np.ndarray)
+    if len(x.shape) == 1:
+        if real:
+            F = np.fft.rfft(x)
+        else:
+            F = np.fft.fft(x)
+    elif len(x.shape) == 2:
+        if real:
+            F = np.fft.rfft2(x)
+        else:
+            F = np.fft.fft2(x)
+    else:
+        raise TypeError("The array should be 1D or 2D")
+    return ufunc(np.fft.fftshift(F))
     
 def binning(data, N=2, axis=0, ufunc=np.sum):
     w = int(np.floor(data.shape[axis]/N))

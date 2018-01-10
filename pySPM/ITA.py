@@ -1,3 +1,7 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 """
 This module gives the ability to ready and parse the ITA files.
 You can mainly retrieve the images for each channel and scan.
@@ -293,7 +297,7 @@ class ITA(ITM):
         """
         getImage retrieve the image of a specific channel (ID) and a specific scan.
         channel: channel ID
-        scan: scan nummber (start with 0)
+        scan: scan number (start with 0)
         Shifts: None=No shift, otherwise provide an array of tuple ((x,y) shift for each scan)
         ShiftMode:  * roll (roll the data over. easy but unphysical)
                     * const (replace missing values by a constant. given by argument const)

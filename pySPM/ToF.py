@@ -1,3 +1,7 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 """
 This is an old module which is deprecated now. It is kept in the project as it can be used to read BIF6 and BIF3D images.
 """
@@ -58,7 +62,6 @@ def showElts(Elts):
 
 
 class BIF6:
-
     def __init__(self, filename):
         self.f = open(filename, 'rb')
         self.header = struct.unpack('xx4s5H', self.f.read(16))

@@ -1,5 +1,9 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 """
-Deprecated module. Will be removed in finaly version
+Deprecated module. Will be removed in final version
 """
 
 import math

@@ -1,3 +1,11 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
+"""
+Helper functions to handle spectras.
+"""
+
 def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], **kargs):
     """
     given masses m and Spectrum D, zoom around m0 with Δm=delta.

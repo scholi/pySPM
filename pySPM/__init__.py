@@ -1,4 +1,7 @@
-# *-* encoding: utf-8 *-*
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 from . import ToF
 from .SPM import *
 from . import align

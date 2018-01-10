@@ -1,8 +1,16 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 """
 This module handle sxm file format used by Nanonis instruments
 """
 
 import os
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
 import struct
 import numpy as np
 from .SPM import SPM_image

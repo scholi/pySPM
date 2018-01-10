@@ -1,3 +1,11 @@
+# -- coding: utf-8 --
+
+# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
+
+"""
+Dictionary of common elements present for a given nominal mass
+"""
+
 elts = {
     12:'C',
     13:'CH',
