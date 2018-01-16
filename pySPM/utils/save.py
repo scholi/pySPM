@@ -40,7 +40,7 @@ def save(filename, *objs, **obj):
         for k in obj:
             out.writestr(k, pickle.dumps(obj[k], pickle.HIGHEST_PROTOCOL))
     else:
-        # close the curent file, copy it to a temp file and reopen the original file in write mode (will thus override all data)
+        # close the current file, copy it to a temp file and reopen the original file in write mode (will thus override all data)
         out.close()
         ft, temp = tempfile.mkstemp()
         shutil.copy(filename, temp)

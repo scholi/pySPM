@@ -2,16 +2,17 @@
 
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
-"""
-Deprecated module. Will be removed in final version
-"""
-
 import math
 
 mag = "afpnum1kMGTPE"
 SI_units = ['m', 'kg', 'K', 'A', 's', 'cd', 'mol']
-units_conv = {'Hz': 's-1', 'N': 'kg*m*s-2',
-              'Pa': 'kg*m-1*s-2', 'J': 'kg*m2*s-2', 'V': 'kg*m2*s-3*A-1'}
+units_conv = {
+    'Hz': {'s':-1},
+    'N': {'kg':1,'m':1,'s':-2},
+    'Pa': {'kg':1,'m':-1,'s':-2},
+    'J': {'kg':1,'m':2,'s':-2},
+    'V': {'kg':1,'m':2:'s':-3,'A':-1},
+    }
 
 
 class unit:
