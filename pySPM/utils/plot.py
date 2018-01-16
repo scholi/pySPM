@@ -37,11 +37,20 @@ def DualPlot(ax, col1='C0',col2='C1'):
     axb.tick_params(axis='y', colors=col2)
     return axb
 
-def sp(M,N=1,W=21):
+def sp(M,N=1,W=21,ravel=True):
     """
     Shortcut for creating subplots with max width = W (default 21,
         which seems to correspond to 100% of the width in jupyter).
     Height is calculated in order to have square subplots
     """
     fig, ax = plt.subplots(N,M,figsize=(W,N*W/M))
+    if ravel:
+        return np.ravel(ax)
     return ax
+    
+def get_rect(img, bottom, top, left, right, ax, color='r'):
+    ax.axhline(bottom, color=color)
+    ax.axhline(top, color=color)
+    ax.axvline(left, color=color)
+    ax.axvline(right, color=color)
+    return img[bottom:top,left:right]
