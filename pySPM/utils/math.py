@@ -7,7 +7,6 @@ Provides some useful mathematical functions which are not present in numpy.
 """
 
 import numpy as np
-import math
 
 def fact(x):
     """
