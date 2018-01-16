@@ -4,7 +4,7 @@
 
 from . import ToF
 from .SPM import *
-from . import align
+from . import align, utils
 from .nanoscan import Nanoscan
 from .Bruker import Bruker
 from .collection import Collection
@@ -14,7 +14,7 @@ from .ITA import ITA, ITA_collection
 from .SXM import SXM
 
 __all__ = ["ITA","ITS", "ITM", "PCA", "Block", "SPM", "Bruker", "nanoscan", "utils", "SXM"]
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 __author__ = 'Olivier Scholder'
 __copyright__ = "Copyright 2017, O. Scholder, Zürich, Switzerland"
 __email__ = "o.scholder@gmail.com"
