@@ -11,7 +11,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=Tr
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
     """
-    from . import LG, getMass, elts
+    from . import LG, get_mass, elts
     from scipy.optimize import curve_fit
     import numpy as np
     import copy
@@ -36,11 +36,11 @@ def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=Tr
     if dm is None:
         dm=0
     if len(E)>0:
-        i = np.argmin(abs(np.array([getMass(x+'+') for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the clothest to max_peak
+        i = np.argmin(abs(np.array([get_mass(x+'+') for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the clothest to max_peak
         if dm0 is None:
-            dm = mp-getMass(E[i]+'+')
+            dm = mp-get_mass(E[i]+'+')
     p0 = [1,dm]+[0,0]*len(E) # delta m is estimnated from the deviation of the highest peak
-    m0s = [getMass(x+'+') for x in E]
+    m0s = [get_mass(x+'+') for x in E]
     Et = copy.deepcopy(E) # copy element list
     if debug:
         print(" ; ".join(E))
@@ -49,7 +49,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=Tr
     
     while len(Et)>0:
         mp = mt[np.argmax(Dt)] # mass of max peak
-        ms = [getMass(x+'+') for x in Et]
+        ms = [get_mass(x+'+') for x in Et]
         i = np.argmin(abs(ms-mp))
         idx = E.index(Et[i])
         j = np.argmin(abs(mt-ms[i]-dm))

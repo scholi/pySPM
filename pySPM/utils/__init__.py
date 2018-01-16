@@ -2,10 +2,6 @@
 
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
-# -- coding: utf-8 --
-
-# Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
-
 import numpy as np
 from scipy import stats, optimize as opt
 import re
@@ -46,6 +42,11 @@ def time2mass(t, sf, k0):
     return ((t-k0)/sf)**2
     
 def getMass(elt):
+    from warnings import warn
+    warn("Function getMass is deprecated. Please use \"get_mass\" instead")
+    return get_mass(elt)
+    
+def get_mass(elt):
     import os
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
@@ -59,7 +60,7 @@ def getMass(elt):
         if A == '':
             c.execute("SELECT mass from elements where symbol='{sym}' and abund=(SELECT max(abund) from elements where symbol='{sym}')".format(sym=x))
         else:
-            c.execute("SELECT mass from elements where symbol='{sym}' and A={A}".format(sym=x,A=A))
+            c.execute("SELECT mass from elements where symbol='{sym}' and A={A}".format(sym=x, A=A))
         res = c.fetchone()
         if res is None:
             raise Exception("Cannot fetch mass of {}".format(x))
@@ -142,3 +143,16 @@ def in_ipynb():
             return False
     except NameError:
         return False
+        
+def getToFimg(I, N=100, prog=False):
+    """
+    Simulate obtained counts for N scans from an image
+    """
+    R = np.zeros(I.shape)
+    L = range(N)
+    if prog:
+        from tqdm import tqdm_notebook as tqdm
+        L = tqdm(L)
+    for i in L:
+        R += (np.random.rand(*I.shape)<(1-np.exp(-I)))
+    return R
