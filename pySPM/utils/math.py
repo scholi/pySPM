@@ -113,3 +113,19 @@ def binning(data, N=2, axis=0, ufunc=np.sum):
     r.resize(size)
     return ufunc(r, axis=axis+1)
     
+def stat_info(data):
+    import matplotlib.pyplot as plt
+    D = np.ravel(data)
+    U = np.unique(D)
+    sep = np.min(U[1:]-U[:-1])
+    N = min(100, int(np.ceil((np.max(D)-np.min(D))/sep)))
+    fig, ax = plt.subplots(2,1,figsize=(21,4))
+    ax[0].boxplot(D, 0, 'ro', 0);
+    ax[1].hist(D, N, density=True);
+    print("Stats")
+    print("\tAverage:",np.mean(D))
+    print("\tMinimum:", np.min(D))
+    print("\tQ1:", np.percentile(D, 25))
+    print("\tMedian:", np.percentile(D, 50))
+    print("\tQ3:", np.percentile(D, 75))
+    print("\tMaximum:", np.max(D))
