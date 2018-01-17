@@ -29,5 +29,5 @@ def CDF(x, bg, *args):
         return
         
     for i in range(len(args)//3):
-        r += args[3*i]*math.CDF(x,args[3*i+1],args[3*i+2])
+        r += args[3*i]*math.CDF(x, args[3*i+1], args[3*i+2])
     return r

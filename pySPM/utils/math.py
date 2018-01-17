@@ -117,13 +117,29 @@ def stat_info(data):
     import matplotlib.pyplot as plt
     D = np.ravel(data)
     U = np.unique(D)
-    sep = np.min(U[1:]-U[:-1])
-    N = min(100, int(np.ceil((np.max(D)-np.min(D))/sep)))
+    if len(U)>1:
+        sep = np.min(U[1:]-U[:-1])
+        N = min(100, int(np.ceil((np.max(D)-np.min(D))/sep)))
+    else:
+        N = 1
+    
+    mean = np.mean(D)
+    std = np.std(D)
+    
     fig, ax = plt.subplots(2,1,figsize=(21,4))
     ax[0].boxplot(D, 0, 'ro', 0);
     ax[1].hist(D, N, density=True);
+    ax[1].axvline(mean, color='r', label='mean')
+    ax[1].axvline(mean+std, color='r', linestyle='--', label='1$\\sigma$')
+    ax[1].axvline(mean-std, color='r', linestyle='--', label='1$\\sigma$')
+    if mean-2*std >= U[0]:
+        ax[1].axvline(mean-2*std, color='r', linestyle=':', label='2$\\sigma$')
+    if mean+2*std <= U[-1]:
+        ax[1].axvline(mean+2*std, color='r', linestyle=':', label='2$\\sigma$')
+    ax[1].legend();
     print("Stats")
-    print("\tAverage:",np.mean(D))
+    print("\tAverage:", mean)
+    print("\tStandard-deviation:", std)
     print("\tMinimum:", np.min(D))
     print("\tQ1:", np.percentile(D, 25))
     print("\tMedian:", np.percentile(D, 50))

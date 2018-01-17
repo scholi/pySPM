@@ -21,11 +21,11 @@ def plotMask(ax, mask, color, **kargs):
     ax.imshow(m, cmap=palette, vmin=0, vmax=0.5, **kargs)
     
 def Xdist(ax,left, right, y, color='r', linestyle=':', fmt='.2f', xtransf=lambda x: x, **kargs):
-    ax.axvline(left,color=color, linestyle=linestyle)
-    ax.axvline(right,color=color, linestyle=linestyle)
+    ax.axvline(left, color=color, linestyle=linestyle)
+    ax.axvline(right, color=color, linestyle=linestyle)
     s = "{:"+fmt+"}"+kargs.get('unit','')
-    ax.annotate(s.format(xtransf(right-left)),(.5*(left+right),y),(0,2),textcoords='offset pixels',va='bottom',ha='center')
-    ax.annotate("",(left,y),(right,y),arrowprops=dict(arrowstyle=kargs.get('arrowstyle','<->')))
+    ax.annotate(s.format(xtransf(right-left)), (.5*(left+right), y), (0, 2), textcoords='offset pixels', va='bottom', ha='center')
+    ax.annotate("", (left, y), (right, y), arrowprops=dict(arrowstyle=kargs.get('arrowstyle', '<->')))
     
 def DualPlot(ax, col1='C0',col2='C1'):
     axb = ax.twinx()
@@ -37,15 +37,19 @@ def DualPlot(ax, col1='C0',col2='C1'):
     axb.tick_params(axis='y', colors=col2)
     return axb
 
-def sp(M,N=1,W=21,ravel=True):
+def sp(M, N=1, W=21, ravel=True, fig=False):
     """
     Shortcut for creating subplots with max width = W (default 21,
         which seems to correspond to 100% of the width in jupyter).
     Height is calculated in order to have square subplots
     """
-    fig, ax = plt.subplots(N,M,figsize=(W,N*W/M))
+    f, ax = plt.subplots(N, M, figsize=(W, N*W/M))
     if ravel:
+        if fig:
+            return np.ravel(ax), f
         return np.ravel(ax)
+    if fig:
+        return ax, f
     return ax
     
 def get_rect(img, bottom, top, left, right, ax, color='r'):
