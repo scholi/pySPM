@@ -59,18 +59,26 @@ def save(filename, *objs, **obj):
             out.writestr(k, pickle.dumps(obj[k], pickle.HIGHEST_PROTOCOL))
     out.close()
     
-def load(filename, key='0'):
+def load(filename, *keys):
     """
     load python objects from saved pkz files
     """
     if os.path.splitext(filename)[1]=='' and not os.path.exists(filename):
         filename += '.pkz'
     assert os.path.exists(filename)
-    if type(key) is int:
-        key = str(key)
+    if len(keys) == 0:
+        keys = ['0']
+    elif len(keys) == 1 and ',' in keys[0]:
+        keys = keys[0].split(',')
     f = zipfile.ZipFile(filename, 'r')
-    res = pickle.loads(f.read(key))
+    res = []
+    for key in keys:
+        if type(key) is int:
+            key = str(key)
+        res.append(pickle.loads(f.read(key)))
     f.close()
+    if len(keys)==1:
+        return res[0]
     return res
     
 class loader:
