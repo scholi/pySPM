@@ -170,6 +170,18 @@ def RL(x, image, psf):
     relative_blur[I>0] = relative_blur[I>0]/ I[I>0]
     return x * convolve(relative_blur, psf[::-1,::-1], mode='same') # Correlation is the convolution of mirrored psf
             
+def dampedRL(x, image, psf, T=1, N=3):
+    from scipy.signal import convolve
+    I = convolve(x, psf, mode='same') # reconvoluted estimation.
+    ratio = np.zeros(image.shape)
+    ratio[image>0] = I[image>0] / image[image>0]
+    logarithm = np.zeros(image.shape)
+    logarithm[ratio>0] = np.log(ratio[ratio>0])
+    U = -2*(image*logarithm-I+image)/T**2
+    Ut = np.minimum(U, 1)
+    relative_blur = np.ones(image.shape)
+    relative_blur[I>0] += (Ut[I>0]**(N-1)) * (N-(N-1)*Ut[I>0]) * (image[I>0]-I[I>0])/I[I>0]
+    return x * convolve(relative_blur, psf, mode='same')
     
 def richardson_lucy(image, psf, iterations, damped=0, N=10, **kargs):
     import scipy
@@ -180,10 +192,10 @@ def richardson_lucy(image, psf, iterations, damped=0, N=10, **kargs):
     psf /= np.sum(psf) # Normalize the psf ⇒ ∫∫ psf(x,y) dx dy = 1
     
     # im_deconv = 0.5 * np.ones(image.shape)
-    im_deconv = np.mean(image) * np.ones(image.shape)
+    im_deconv = kargs.get('x0', np.mean(image) * np.ones(image.shape))
             
     # As the image and the psf are both ≥ 0, if the image value is 0, then the result should also be 0 at this position
-    im_deconv[image == 0] = 0
+    #im_deconv[image == 0] = 0
 
     # Is iterations a number of a list of number?
     dict_output = True
@@ -196,38 +208,29 @@ def richardson_lucy(image, psf, iterations, damped=0, N=10, **kargs):
     results = {}
 
     for i in range(N):
-        I = convolve(im_deconv, psf, mode='same') # reconvoluted estimation.
         if damped == 0:            
             im_deconv = RL(im_deconv, image, psf)
         else:
-            ratio = np.zeros(image.shape)
-            ratio = I / image
-            logarithm = np.zeros(image.shape)
-            logarithm[ratio>0] = np.log(ratio[ratio>0])
-            U = -2*(image*logarithm-I+image)/damped**2
-            Ut = np.minimum(U, 1)
-            #relative_blur = np.ones(image.shape)
-            relative_blur = 1 + (Ut**(N-1)) * (N-(N-1)*Ut) * (image-I)/I
-            
-            im_deconv *= convolve(relative_blur, psf, mode=mode)
+            im_deconv = dampedRL(im_deconv, image, psf, T=damped, N=N)
         if i+1 in iterations:
             results[i+1] = np.copy(im_deconv)
     if dict_output:
         return results
     return results[N]
 
-def accelerated_richardson_lucy(image, psf, iterations):    
+def accelerated_richardson_lucy(image, psf, iterations, **kargs):    
     def _RL(x):
-        return RL(x, image, psf)
+        T = kargs.get('T', kargs.get('damped', 0))
+        if T==0:   
+            return RL(x, image, psf)
+        return dampedRL(x, image, psf, N=kargs.get('N',3), T=T)
     
     image = image.astype(np.float)
     psf   = psf.astype(np.float)
     psf  /= np.sum(psf)
     
-    x0 = np.mean(image) * np.ones(image.shape)
-    x0[image == 0] = 0
-    
-    x1 = _RL(x0)
+    x0 = kargs.get('x0', np.mean(image) * np.ones(image.shape))    
+    x1 = kargs.get('x1', _RL(x0))
 
     h1 = x1 - x0
     y0 = x0
