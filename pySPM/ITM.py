@@ -214,9 +214,9 @@ class ITM:
             mask = (t>=(x-Range))*(t<=(x+Range))
             t_peak = t[mask][np.argmax(S[mask])]
             ts.append(t_peak)
-        ms = [utils.getMass(x+'+') for x in FittingPeaks]
+        ms = [utils.get_mass(x+'+') for x in FittingPeaks]
         if debug:
-            return utils.fitSpectrum(ts, ms), ts, ms
+            return utils.fitSpectrum(ts, ms, error=True), ts, ms
         return utils.fitSpectrum(ts, ms)
     
     def showValues(self, pb=False, gui=False, **kargs):
@@ -268,7 +268,7 @@ class ITM:
             k0 = k00
         return ((binning*channels-k0)/(sf))**2
 
-    def getSpectrum(self, sf=None, k0=None, time=False):
+    def getSpectrum(self, sf=None, k0=None, time=False, error=False):
         """
         Retieve a mass,spectrum array
         This only works for .ita and .its files.
@@ -280,7 +280,11 @@ class ITM:
         ch = 2*np.arange(len(D))
         if time:
             return ch, D
-        return self.channel2mass(ch, sf=sf, k0=k0), D
+        m = self.channel2mass(ch, sf=sf, k0=k0)
+        if error:
+            Dm = 2*np.sqrt(m)*np.sqrt(Dk0**2+m*Dsf**2)/sf
+            return m, D, Dm
+        return m, D
     
     def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, debug=False):
         """

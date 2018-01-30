@@ -15,20 +15,26 @@ from . import fit
 from .save import *
 from .restoration import *
 
-def fitSpectrum(t, m, error=False, dev=False):
+def fitSpectrum(t, m, error=False):
     """
-    fit and return the sf and k0 parameters fôr given know times t and masses m
+    fit and return the sf and k0 parameters for given known times t and masses m
     """
     M = np.sqrt(np.array(m))
     T = np.hstack([np.array(t)[:,None],np.ones((len(t),1))])
-    x = np.linalg.lstsq(T,M)
-    sf = 1/x[0][0]
-    k0 = -sf*x[0][1]
+    x = np.linalg.lstsq(T,M)[0]
+    sf = 1/x[0]
+    k0 = -sf*x[1]
     res = [sf, k0]
     if error:
-        res.append(x[1][0])
-    if dev:
-        res.append(np.matmul(T,x[0])-M)
+        mfit = np.dot(T, x)
+        mresid = M - mfit
+        X = np.dot(T.T, T)
+        epsvar = np.var(mresid, ddof=2)
+        xvar = np.linalg.inv(X) * epsvar # correlation matrix
+        D = np.sqrt(np.diag(xvar)) # error vector
+        Dsf = D[0]/x[0]**2
+        Dk0 = np.sqrt((D[1]/x[0])**2+(x[1]*D[0]/x[0]**2)**2)
+        res.append(Dsf, Dk0)
     return res
 
 def chunks(l, n):
