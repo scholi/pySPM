@@ -31,7 +31,6 @@ def save(filename, *objs, **obj):
     """
     if os.path.splitext(filename)[1]=='':
         filename += '.pkz'
-    print("Data path is ",data_path)
     filename = os.path.join(data_path, filename)
     out = zipfile.ZipFile(filename, 'a', zipfile.ZIP_DEFLATED)
     file_list = out.namelist()
