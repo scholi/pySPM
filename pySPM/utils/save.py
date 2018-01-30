@@ -19,12 +19,20 @@ The new data will just be appended to your file. It also support the update of t
 the default file extension is pkz (for Pickle Zip)
 """
 
+data_path = '.'
+
+def set_datapath(path):
+    global data_path
+    data_path = path
+
 def save(filename, *objs, **obj):
     """
     save python objects to file
     """
     if os.path.splitext(filename)[1]=='':
         filename += '.pkz'
+    print("Data path is ",data_path)
+    filename = os.path.join(data_path, filename)
     out = zipfile.ZipFile(filename, 'a', zipfile.ZIP_DEFLATED)
     file_list = out.namelist()
     update = []
@@ -44,7 +52,7 @@ def save(filename, *objs, **obj):
         out.close()
         ft, temp = tempfile.mkstemp()
         shutil.copy(filename, temp)
-        out = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
+        out = zipfile.ZipFile(filename , 'w', zipfile.ZIP_DEFLATED)
         
         # Copy all old data which are not updated and clean tempfile
         old = zipfile.ZipFile(temp, 'r')
@@ -65,6 +73,7 @@ def load(filename, *keys):
     """
     if os.path.splitext(filename)[1]=='' and not os.path.exists(filename):
         filename += '.pkz'
+    filename = os.path.join(data_path, filename)
     assert os.path.exists(filename)
     if len(keys) == 0:
         keys = ['0']
