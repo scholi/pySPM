@@ -2,6 +2,7 @@ import numpy as np
 import scipy.signal.signaltools as sig
 from scipy.signal import convolve
 import numpy as np
+import scipy.signal.signaltools as sig
                            
 def psf(img, sx, sy=None, angle=0):
     """
@@ -113,9 +114,9 @@ def _rl_fast(x, image, otf, iotf, fshape, fslice, **kargs):
     fast algorithm for R-L.
     """
     import scipy.signal.signaltools as sig
-    I = strictly_positify(np.fft.irfftn(rfftn(x, fshape) * otf, fshape)[fslice]) # reconvoluted estimation.
+    I = sig._centered(strictly_positify(np.fft.irfftn(np.fft.rfftn(x, fshape) * otf, fshape)[fslice]), image.shape) # reconvoluted estimation.
     im_ratio = image / I
-    return x * np.fft.irfftn(rfftn(im_ratio, fshape) * iotf, fshape)[fslice]
+    return x *  sig._centered(np.fft.irfftn(np.fft.rfftn(im_ratio, fshape) * iotf, fshape)[fslice], image.shape)
     
 def _rl_damped(x, image, psf, T=1, N=3):
     """
