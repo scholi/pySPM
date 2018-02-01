@@ -1050,7 +1050,11 @@ def get_profile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,
             ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color, alpha=kargs.get('linealpha',1))
         if alpha>0:
             import matplotlib.patches
-            ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),np.sqrt(dx**2+dy**2), np.sqrt((x2-x1)**2+(y2-y1)**2), -np.degrees(np.arctan2(x2-x1,y2-y1)), color=color, alpha=alpha))
+            ax.add_patch(matplotlib.patches.Rectangle(
+                (x1+dx,y1+dy), 
+                2*np.sqrt(dx**2+dy**2),
+                np.sqrt((x2-x1)**2+(y2-y1)**2),
+                -np.degrees(np.arctan2(x2-x1,y2-y1)), color=color, alpha=alpha))
     if len(P)==1:
         return np.linspace(0, d, N), P[0]
     return np.linspace(0, d, N), np.vstack(P).T
