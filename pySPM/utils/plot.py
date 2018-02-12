@@ -20,12 +20,15 @@ def plotMask(ax, mask, color, **kargs):
     palette.set_over(color, 1.0)
     ax.imshow(m, cmap=palette, vmin=0, vmax=0.5, **kargs)
     
-def Xdist(ax,left, right, y, color='r', linestyle=':', fmt='.2f', xtransf=lambda x: x, **kargs):
+def Xdist(ax,left, right, y, color='r', linestyle=':', fmt="{dist:.1f}{unit}", xtransf=lambda x: x, va='bottom', ha='center', offset=(0,2), **kargs):
     ax.axvline(left, color=color, linestyle=linestyle)
     ax.axvline(right, color=color, linestyle=linestyle)
-    s = "{:"+fmt+"}"+kargs.get('unit','')
-    ax.annotate(s.format(xtransf(right-left)), (.5*(left+right), y), (0, 2), textcoords='offset pixels', va='bottom', ha='center')
-    ax.annotate("", (left, y), (right, y), arrowprops=dict(arrowstyle=kargs.get('arrowstyle', '<->')))
+    ann = dict(va=va, ha=ha, color=color)
+    ann.update({k[3:]:kargs[k] for k in kargs if k.startswith('an_')})
+    ax.annotate(fmt.format(dist=xtransf(right-left),unit=kargs.get('unit','')), ({'center':.5*(left+right),'left':right,'right':left}[ann['ha']], y), offset, textcoords='offset pixels', **ann)
+    arr = dict(arrowstyle='<->',color=color)
+    arr.update({k[4:]:kargs[k] for k in kargs if k.startswith('arr_')})
+    ax.annotate("", (left, y), (right, y), arrowprops=arr)
     
 def DualPlot(ax, col1='C0',col2='C1'):
     axb = ax.twinx()
@@ -58,3 +61,17 @@ def get_rect(img, bottom, top, left, right, ax, color='r'):
     ax.axvline(left, color=color)
     ax.axvline(right, color=color)
     return img[bottom:top,left:right]
+    
+def sublegend(*ax, labels=None, color='white', margin=9, titles=None, fontsize=14):
+    props = dict(boxstyle='round', facecolor=color, alpha=1)  
+    if not hasattr(margin, "__getitem__") and not hasattr(margin, "__iter__"):
+        margin = (margin, margin)
+
+    if labels is None:
+        labels = [chr(ord('a')+i) for i,_ in enumerate(np.ravel(ax))]
+    for i,a in enumerate(np.ravel(ax)):
+        if titles is False:
+            a.set_title("")
+        a.annotate(labels[i],(0, 1),xytext=(margin[0],-margin[1]),fontsize=fontsize,verticalalignment='top', bbox=props, xycoords='axes fraction',textcoords='offset pixels');
+
+    

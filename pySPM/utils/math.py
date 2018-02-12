@@ -145,3 +145,18 @@ def stat_info(data):
     print("\tMedian:", np.percentile(D, 50))
     print("\tQ3:", np.percentile(D, 75))
     print("\tMaximum:", np.max(D))
+    
+def LG2D(XY, A, a, sx, sy, x0, y0, lgx, lgy):
+    """
+    Return a 2D Lorentz-Gauss.
+    XY: (X,Y) tuple
+    A: amplitude
+    a: angle
+    sx: sigma for x-axis
+    sy: sigma fdor y-axis
+    x0,y0 : center coordinates of the peak
+    lgx, lgy: Lorentz-Gauss proportion (for x,y axis)
+    """
+    X1 = (XY[0]-x0)*np.cos(a) - (XY[1]-y0)*np.sin(a)
+    Y1 = (XY[0]-x0)*np.sin(a) + (XY[1]-y0)*np.cos(a)
+    return A*LG(X1, 0, sx, 1, lgx)*LG(Y1,0,sy,1, lgy)
