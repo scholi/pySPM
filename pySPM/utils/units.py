@@ -15,7 +15,11 @@ _unit_scale = {
     'y':-24,'z':-21,'a':-18,'f':-15,'p':-12,'n':-9,'u':-6,'m':-3,'c':-2,'d':-1,
     'h':2,'k':3,'M':6,'G':9,'T':12,'P':15,'E':18,'Z':21,'Y':24,'':0}
     
-    
+_unit_revert_scale = {}
+for x in _unit_scale:
+    for y in range(_unit_scale[x],_unit_scale[x]+3):
+        _unit_revert_scale[y] = x
+        
 class UnitMissmatch(Exception):
     pass
 
@@ -32,14 +36,14 @@ class SIunit:
             elif x in _units:
                 self.units = {y: self.units[y]+kargs[x]*_units[x][y] for y in self.units}
             elif x[0] in _unit_scale and x[1:] in _SI_units:
-                self.value *= 10**(_unit_scale[x[0]])
+                self.value *= 10**(kargs[x]*_unit_scale[x[0]])
                 self.units[x[1:]] += kargs[x]
             elif x[0] in _unit_scale and x[1:] in _units:
-                self.value *= 10**(_unit_scale[x[0]])
+                self.value *= 10**(kargs[x]*_unit_scale[x[0]])
                 self.units = {y: self.units[y]+kargs[x]*_units[x][y] for y in self.units}
             elif x[-1] == 'g' and x[:-1] in _unit_scale:
                 self.units['kg'] += kargs[x]
-                self.value *= 10**(_unit_scale[x[:-1]]-3)
+                self.value *= 10**(kargs[x]*(_unit_scale[x[:-1]]-3))
             else:
                 raise InvalidUnit
                 
@@ -67,6 +71,20 @@ class SIunit:
     def __repr__(self):
         return '{value:.3e} ('.format(value=self.value)+self.get_unit()+')'
     
+    def get_scaled(self):
+        if self.value == 0:
+            return (0, self.get_unit())
+            
+        f = math.log10(self.value)
+        if f<-24:
+            f = -24
+        elif f>24:
+            f = 24
+        unit_prefix = _unit_revert_scale[f]
+        prefix_exp = _unit_scale[unit_prefix]
+        val = self.value * 10**(-prefix_exp)
+        return (val, unit_prefix)
+            
     def sqrt(self):
         return SIunit(self.value**.5,**{x:self.units[x]/2 for x in self.units})
     
