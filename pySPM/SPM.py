@@ -103,6 +103,10 @@ class SPM_image:
         New.pixels += b.pixels
         New.channel += " + "+b.channel
         return New
+    
+    def pxs(self):
+        fxy = {xy: funit(self.size['real'][xy], self.size['real']['unit']) for xy in 'xy'}
+        return [(fxy[xy]['value']/self.size['pixels'][xy], fxy[xy]['unit']) for xy in 'xy']
         
     def add_scale(self, length, ax=None, height=20, color='w', loc=4, text=True, pixels=True, fontsize=20):
         import matplotlib.patches
@@ -1068,7 +1072,7 @@ def dist_v2(img):
     X, Y = np.meshgrid(x2, y2)
     return np.sqrt(X+Y)
 
-def getTikTf(Img, mu, tukey=0, debug=False, d=200, real=np.real):
+def getTikTf(Img, mu, tukey=0, source_tukey=0, debug=False, d=200, real=np.real):
     import scipy
     def fit(x, a ,A, bg, x0):
         return bg+(A-bg)*np.exp(-abs(x-x0)/a)
@@ -1080,7 +1084,7 @@ def getTikTf(Img, mu, tukey=0, debug=False, d=200, real=np.real):
     y0 = Img.shape[0]/2
     R = np.sqrt((X-x0)**2+(Y-y0)**2)
     
-    Z = beam_profile(Img, Img, mu=mu, tukey=tukey, real=real)
+    Z = beam_profile(Img, Img, mu=mu, tukey=tukey, source_tukey=source_tukey, real=real)
     zoom = zoom_center(Z, d)
     P = zoom[zoom.shape[0]//2, :]
     p0 = (1,np.max(zoom), 0, len(P)/2)
