@@ -12,6 +12,7 @@ from .ITM import ITM
 from .ITS import ITS
 from .ITA import ITA, ITA_collection
 from .SXM import SXM
+from .utils import constants as const
 
 __all__ = ["ITA","ITS", "ITM", "PCA", "Block", "SPM", "Bruker", "nanoscan", "utils", "SXM"]
 __version__ = '0.2.2'
