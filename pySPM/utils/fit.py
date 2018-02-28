@@ -9,7 +9,7 @@ Provides useful functions for fitting with scipy.optimize.curve_fit
 from . import math
 import numpy as np
 
-def CDF(x, bg, *args):
+def CDF(x, bg, *args, **kargs):
     """
     Return the sum of several CDFs.
     x: values used to evaluate the function
@@ -22,7 +22,9 @@ def CDF(x, bg, *args):
     ex: step edge: _| |_ between 0.2 and 0.7 in y and -1 and 1 in x with sigma=5
         CDF(x, 0.2, 0.5, -1, 5, -0.5, 1, 5)
     """
-    
+    if 'A' in kargs and 'x0' in kargs and 'sig' in kargs:
+        args = [x for y in zip(kargs['A'], kargs['x0'], kargs['sig']) for x in y]
+        
     r = bg * np.ones(x.shape)
     if len(args)%3 != 0:
         raise Exception("Invalid number of arguments. see help.")
@@ -31,8 +33,8 @@ def CDF(x, bg, *args):
     for i in range(len(args)//3):
         r += args[3*i]*math.CDF(x, args[3*i+1], args[3*i+2])
     return r
-    
-def lgCDF(x, bg, lg=0, *args):
+
+def lgCDF(x, bg, lg=0, *args, **kargs):
     """
     Return the sum of several CDFs.
     x: values used to evaluate the function
@@ -47,6 +49,9 @@ def lgCDF(x, bg, lg=0, *args):
         lgCDF(x, lg, 0.2, 0.5, -1, 5, -0.5, 1, 5)
     """
     
+    if 'A' in kargs and 'x0' in kargs and 'sig' in kargs:
+        args = [x for y in zip(kargs['A'], kargs['x0'], kargs['sig']) for x in y]
+    
     r = bg * np.ones(x.shape)
     if len(args)%3 != 0:
         raise Exception("Invalid number of arguments. see help.")
@@ -55,6 +60,30 @@ def lgCDF(x, bg, lg=0, *args):
     for i in range(len(args)//3):
         r += args[3*i]*math.CDF(x, args[3*i+1], args[3*i+2], lg)
     return r
+
+def lgCDF_fit(x,y, p0, dic=False):
+    import scipy.optimize as opt
+    n = (len(p0)-2)//3
+    bounds=[
+        [0,0]+[-np.inf,-np.inf,0]*n,
+        [np.inf,1]+[np.inf,np.inf,np.inf]*n]
+    popt, pcov = opt.curve_fit(lgCDF, x, y, p0, bounds=bounds)
+    if dic:
+        d = np.diag(pcov)
+        return dict(bg=popt[0],lg=popt[1],A=popt[2::3],x0=popt[3::3],sig=popt[4::3]), dict(bg=d[0],lg=d[1],A=d[2::3],x0=d[3::3],sig=d[4::3])
+    return popt, pcov
+
+def CDF_fit(x,y, p0, dic=False):
+    import scipy.optimize as opt
+    n = (len(p0)-1)//3
+    bounds=[
+        [0]+[-np.inf,-np.inf,0]*n,
+        [np.inf]+[np.inf,np.inf,np.inf]*n]
+    popt, pcov = opt.curve_fit(CDF, x, y, p0, bounds=bounds)
+    if dic:
+        d = np.diag(pcov)
+        return dict(bg=popt[0], A=popt[1::3],x0=popt[2::3],sig=popt[3::3]), dict(bg=d[0],A=d[2::3],x0=d[3::3],sig=d[4::3])
+    return popt, pcov
     
 def LG2D(A, Rweight=None, sigma=None, dic=False, **kargs):
     """
