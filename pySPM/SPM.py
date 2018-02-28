@@ -134,6 +134,17 @@ class SPM_image:
                         fontsize=fontsize, va="bottom", ha="center")
 
     def offset(self, profiles, width=1, ax=None, inline=True, **kargs):
+        """
+        Correct an image by offsetting each row individually in order that the lines passed as argument in "profiles" becomes flat.
+        
+        profiles: a list of lines (a lines in a list defined as [x1, y1, x2, y2] in pixels) known to be flat
+        width: the line width used for better statistics
+        ax: the matplotlib axis to plot the profiles in
+        inline: if True perform the correction on the current object, otherwise return a new ones
+        
+        **kargs: arguments passed further to get_row_profile.
+            axPixels: set to True if you axis "ax" have the data plotted in pixel instead of real distance
+        """
         offset = np.zeros(self.pixels.shape[0])
         counts = np.zeros(self.pixels.shape[0])
         for p in profiles:
@@ -160,14 +171,28 @@ class SPM_image:
         return ll,ur[0]-ll[0],ur[1]-ll[1]
     
     def get_row_profile(self, x1, y1, x2, y2, width=1, col='C1', ax=None, alpha=0, **kargs):
-        plotargs = { key: kargs[key] for key in ['linewidth','color','linestyle'] if key in kargs }
+        """
+        Get a profile per row along a given line. This function is mainly useful for the function offset.
+        
+        x1, y1, x2, y2: coordinates of the line.
+        width: the width of the line used for statistics
+        col: color used to plot the line position
+        ax: matplotlib axis in which the lines position will plotted
+        alpha: The alpha channel of the line color
+        **kargs:
+            line style arguments: linewidth, color and linestyle
+            axis units: axPixels set to True if ax has the image plotted in pixels.
+            
+        output: Y coordinates, Z coordinates
+        """
+        plotargs = { key: kargs[key] for key in ['linewidth', 'color', 'linestyle'] if key in kargs }
         if y2 < y1:
             x1, y1, x2, y2 = x2, y2, x1, y1
         if ax is not None:
             d = np.sqrt((x2-x1)**2+(y2-y1)**2)
             dx = -width/2*(y2-y1)/d
             dy = width/2*(x2-x1)/d
-            if kargs.pop('axPixels',False):
+            if kargs.pop('axPixels', False):
                 ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], col)
                 ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], col)
                 ax.plot((x1, x2), (y1, y2), col, **plotargs)
