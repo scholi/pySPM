@@ -941,12 +941,12 @@ def normP(x, p, trunk=True):
     return r
 
 
-def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=True, source_tukey=0, real=np.abs, **kargs):
+def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=False, source_tukey=0, real=np.abs, **kargs):
     """
     Calculate the PSF by deconvolution of the target
     with the source using a Tikhonov regularization of factor mu.
     """
-    if kargs.get('source_centering', True):
+    if kargs.get('source_centering', False):
         source = 2*source-1
     if meanCorr:
         target = target-np.mean(target)
