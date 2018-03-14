@@ -18,6 +18,7 @@ from .ITM import ITM
 from .collection import Collection
 from .SPM import SPM_image
 from .Block import MissingBlock
+from .utils import in_ipynb
 
 class ITA(ITM):
     def __init__(self, filename):
@@ -221,9 +222,12 @@ class ITA(ITM):
         if type(masses) is int or type(masses) is float:
             masses = [masses]
         if prog:
-            try:
-                from tqdm import tqdm_notebook as tqdm
-            except:
+            if in_ipynb():
+                try:
+                    from tqdm import tqdm_notebook as tqdm
+                except:
+                    from tqdm import tqdm
+            else:
                 from tqdm import tqdm
             scans = tqdm(scans)
         channels = [self.getChannelByMass(m, full=True) for m in masses]

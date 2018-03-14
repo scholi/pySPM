@@ -92,7 +92,7 @@ def get_rect(img, bottom, top, left, right, ax, color='r'):
     ax.axhline(top, color=color)
     ax.axvline(left, color=color)
     ax.axvline(right, color=color)
-    return img[bottom:top,left:right]
+    return img[bottom:top, left:right]
     
 def sublegend(*ax, labels=None, color='white', margin=9, titles=None, fontsize=14):
     """

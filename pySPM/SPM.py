@@ -533,8 +533,8 @@ class SPM_image:
         dy = (y2-y1)
         if pixels:
             rd = d
-            u=''
-            unit='px'
+            u = ''
+            unit = 'px'
         else:
             unit = self.size['real']['unit']
             sunit = 'afpnum kMGTPE'
@@ -554,30 +554,30 @@ class SPM_image:
                 u = '$\\mu$'
             rd = np.sqrt(dx**2+dy**2)
         xvalues = np.linspace(0, rd, len(p))
-        lab = kargs.get("label","")
+        lab = kargs.get("label", "")
         if width < 2:
             profile = p
         else:
-            profile = np.mean(p,axis=1)
+            profile = np.mean(p, axis=1)
             s = np.std(p)
-            if kargs.get('stdplot',True):
-                for ns in range(1,kargs.get('sig',2)+1):
+            if kargs.get('stdplot', True):
+                for ns in range(1, kargs.get('sig', 2)+1):
                     ax.fill_between(xvalues, profile-ns*s, profile+ns*s, color=col, alpha=.2, label=[lab+' ($\\sigma,\ldots {}\\sigma$)'.format(kargs.get('sig',2)),None][ns>1])
         
         Plot = ax.plot(xvalues, profile, color=col, linewidth=kargs.get('linewidth',1),linestyle=kargs.get('linestyle','-'), label=lab+[' (mean)',''][width<2])
         if kargs.get('min',False):
-            minStyle = kargs.get('minStyle',kargs.get('minmaxStyle','--'))
-            minColor = kargs.get('minColor',kargs.get('minmaxColor',col))
-            minMarker = kargs.get('minMarker',kargs.get('minmaxMarker',''))
+            minStyle = kargs.get('minStyle', kargs.get('minmaxStyle', '--'))
+            minColor = kargs.get('minColor', kargs.get('minmaxColor', col))
+            minMarker = kargs.get('minMarker', kargs.get('minmaxMarker', ''))
             ax.plot(xvalues, np.min(p, axis=1), color=minColor, linewidth=kargs.get('linewidth',1),linestyle=minStyle, marker=minMarker, label=lab+' (min)')
-        if kargs.get('max',False):
+        if kargs.get('max', False):
             maxStyle = kargs.get('maxStyle',kargs.get('minmaxStyle','--'))
             maxColor = kargs.get('maxColor',kargs.get('minmaxColor',col))
             maxMarker = kargs.get('maxMarker',kargs.get('minmaxMarker',''))
             ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, linewidth=kargs.get('linewidth',1), marker=maxMarker, label=lab+' (max)')
             
-        ax.set_xlabel("Distance [{1}{0}]".format(unit,u))
-        ax.set_ylabel("{1} [{0}]".format(self.zscale,self.channel))
+        ax.set_xlabel("Distance [{1}{0}]".format(unit, u))
+        ax.set_ylabel("{1} [{0}]".format(self.zscale, self.channel))
        
         return {'plot': Plot, 'l': xvalues, 'z': profile}
 
@@ -822,7 +822,7 @@ class SPM_image:
 
 def cut(img, c, **kargs):
     if kargs.get('debug',False):
-        print("cut in x",c[0],"->",c[2], " - in y",c[1],"->",c[3])
+        print("cut in x", c[0], "->", c[2], " - in y", c[1], "->", c[3])
     if c[3] < c[1]:
         c = [c[0],c[3],c[2],c[1]]
     if c[2] < c[0]:
@@ -939,7 +939,6 @@ def normP(x, p, trunk=True):
         r[r < 0] = 0
         r[r > 1] = 1
     return r
-
 
 def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=False, source_tukey=None, real=np.abs, **kargs):
     """
@@ -1122,17 +1121,18 @@ def getTikTf(Img, mu, tukey=0, source_tukey=0, debug=False, d=200, real=np.real)
         return bg+np.exp(-np.abs(R)/a), Z, p0, popt
     return bg+np.exp(-np.abs(R)/a)
 
-DEPRECATED_METHODS = {'getRowProfile':'get_row_profile',
-    'plotProfile':'plot_profile',
-    'getProfile':'get_profile',
-    'getShadowMask':'get_shadow_mask',
-    'addScale':'add_scale',
-    'getExtent':'get_extent',
+DEPRECATED_METHODS = {
+    'getRowProfile': 'get_row_profile',
+    'plotProfile':   'plot_profile',
+    'getProfile':    'get_profile',
+    'getShadowMask': 'get_shadow_mask',
+    'addScale':      'add_scale',
+    'getExtent':     'get_extent',
     'getBinThreshold':'get_bin_threshold',
-    'corrFit2d':'corrr_fit2d',
-    'getFFT':'get_fft',
-    'filterLowPass':'filter_lowpass',
-    'ResizeInfos':'_resize_infos'
+    'corrFit2d':      'corrr_fit2d',
+    'getFFT':         'get_fft',
+    'filterLowPass':  'filter_lowpass',
+    'ResizeInfos':    '_resize_infos'
     }
 
 def method_alias(old_name, new_name):

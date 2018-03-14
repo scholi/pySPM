@@ -95,7 +95,7 @@ def LG2D(A, Rweight=None, sigma=None, dic=False, **kargs):
     Amplitude, Angle, Sigma_x, Sigma_y, Center_x, Center_y, LGx, LGy
     """
     from scipy.optimize import curve_fit
-    params = ['amplitude', 'angle', 'sig_x', 'sig_y', 'x0', 'y0', 'LG_x', 'LG_y']
+    params = ['amplitude', 'angle', 'sig_x', 'sig_y', 'x0', 'y0', 'LG_x', 'LG_y','bg']
     def fit(XY, *args):
         # Add default parameters to the argument list at the right position
         j = 0
@@ -107,15 +107,15 @@ def LG2D(A, Rweight=None, sigma=None, dic=False, **kargs):
                 a.append(args[j])
                 j += 1
         # Calculate the 2D Lorentz-Gauss
-        return math.LG2D(XY, *a).ravel()
+        return a[-1]+math.LG2D(XY, *a[:-1]).ravel()
         
     # First guess for parameters
     Amplitude = np.max(A)
     Center = np.unravel_index(np.argmax(A), A.shape)
-    p0_def = [Amplitude, 0, 10, 10, Center[1], Center[0], 0, 0]
+    p0_def = [Amplitude, 0, 10, 10, Center[1], Center[0], 0, 0, 0]
     bounds_def = [
-        [0     , np.radians(-45),       0,       0, -np.inf, -np.inf, 0, 0],
-        [np.inf, np.radians(45) , +np.inf, +np.inf,  np.inf,  np.inf, 1, 1]
+        [0     , np.radians(-45),       0,       0, -np.inf, -np.inf, 0, 0, 0],
+        [np.inf, np.radians(45) , +np.inf, +np.inf,  np.inf,  np.inf, 1, 1, np.inf]
         ]
     p0 = [p0_def[i] for i,x in enumerate(params) if x not in kargs]
     bounds = [

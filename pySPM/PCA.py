@@ -165,7 +165,6 @@ class PCA:
 
 
 class ITA_PCA(PCA):
-
     def __init__(self, c, channels=None):
         """Init a PCA class from a collection"""
         self.col = c

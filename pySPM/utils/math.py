@@ -146,7 +146,7 @@ def stat_info(data):
     print("\tQ3:", np.percentile(D, 75))
     print("\tMaximum:", np.max(D))
     
-def LG2D(XY, amplitude, angle, sig_x, sig_y, x0, y0, LG_x, LG_y):
+def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0, LG_y=0, bg=0):
     """
     Return a 2D Lorentz-Gauss.
     XY: (X,Y) tuple
@@ -157,6 +157,10 @@ def LG2D(XY, amplitude, angle, sig_x, sig_y, x0, y0, LG_x, LG_y):
     x0,y0 : center coordinates of the peak
     lgx, lgy: Lorentz-Gauss proportion (for x,y axis)
     """
+    if x0 is None:
+        x0 = XY[0].shape[1]/2
+    if y0 is None:
+        y0 = XY[0].shape[0]/2
     X1 = (XY[0]-x0)*np.cos(angle) - (XY[1]-y0)*np.sin(angle)
     Y1 = (XY[0]-x0)*np.sin(angle) + (XY[1]-y0)*np.cos(angle)
-    return amplitude*LG(X1, 0, sig_x, 1, LG_x)*LG(Y1,0,sig_y,1, LG_y)
+    return bg+amplitude*LG(X1, 0, sig_x, 1, LG_x)*LG(Y1,0,sig_y,1, LG_y)
