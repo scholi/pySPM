@@ -168,3 +168,9 @@ def getToFsimg(I, N=[10, 50, 100, 300, 500], prog=False):
     Ns = np.insert(np.diff(N),0,N[0])
     T = [getToFimg(I, n) for n in Ns]
     return dict(zip(N,np.cumsum(T, axis=0)))
+
+def centered_meshgrid(A):
+    w = A.shape[1]
+    h = A.shape[0]
+    Y, X = np.mgrid[-h//2:h//2,-w//2:w//2]
+    return Y,X

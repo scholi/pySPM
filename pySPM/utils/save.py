@@ -25,6 +25,19 @@ def set_datapath(path):
     global data_path
     data_path = path
 
+def findPKZ(filename):
+    if os.path.splitext(filename)[1]=='':
+        filename += '.pkz'
+    p2 = os.path.join(data_path, filename)
+    if os.path.exists(p2):
+        return p2
+    if os.path.exists(filename):
+        return filename
+    if not os.path.exists(filename):
+        raise IOError("File \"{}\" not found".format(filename))
+    return filename
+        
+        
 def save(filename, *objs, **obj):
     """
     save python objects to file
@@ -70,10 +83,7 @@ def load(filename, *keys):
     """
     load python objects from saved pkz files
     """
-    if os.path.splitext(filename)[1]=='' and not os.path.exists(filename):
-        filename += '.pkz'
-    filename = os.path.join(data_path, filename)
-    assert os.path.exists(filename)
+    filename = findPKZ(filename)
     if len(keys) == 0:
         keys = ['0']
     elif len(keys) == 1 and ',' in keys[0]:
@@ -96,10 +106,7 @@ class loader:
     Only retrieved data are kept in memory and not all the data.
     """
     def __init__(self, filename):
-        if os.path.splitext(filename)[1]=='' and not os.path.exists(filename):
-            filename += '.pkz'
-        assert os.path.exists(filename)
-        self.filename = filename
+        self.filename = findPKZ(filename)
         self.local = {}
     
     def __iter__(self):
@@ -126,3 +133,52 @@ class loader:
         
     def __delitem__(self, key):
         delf.local.delitem(key)
+        
+class BidirData:
+    """
+    This class act as a dictionary and read default value for compressed pkz files.
+    Values can be set to new values without changing the content of the saved data.
+    Only retrieved data are kept in memory and not all the data.
+    """
+    def __init__(self, filename):
+        try:
+            self.filename = findPKZ(filename)
+        except IOError:
+            if os.path.splitext(filename)[1]=='':
+                filename += '.pkz'
+            self.filename = os.path.join(data_path, filename)
+            out = zipfile.ZipFile(filename, 'a', zipfile.ZIP_DEFLATED)
+            out.close()
+        self.local = {}
+    
+    def __iter__(self):
+        f = zipfile.ZipFile(self.filename, 'r')
+        self.keys = set(f.namelist()+list(self.local.keys()))
+        f.close()
+        return self
+        
+    def __next__(self):
+        if len(self.keys) == 0:
+            raise StopIteration()
+        else:
+            return self.keys.pop()
+        
+    def __getitem__(self, key):
+        if not key in self.local:
+            f = zipfile.ZipFile(self.filename, 'r')
+            self.local[key] = pickle.loads(f.read(key))
+            f.close()
+        return self.local[key]
+    
+    def __setitem__(self, key, value):
+        self.local[key] = value
+        save(self.filename, key=value)
+        
+    def __delitem__(self, key):
+        delf.local.delitem(key)
+        
+    def keys(self):
+        f = zipfile.ZipFile(self.filename, 'r')
+        keys = f.filelist
+        f.close()
+        return [x.filename for x in keys]
