@@ -1,6 +1,11 @@
 import numpy as np
 import copy
 
+"""
+This code was borrowed from: https://github.com/spacetelescope/sprint_notebooks/blob/master/lucy_damped_haar.ipynb
+I believe it was initially written by Justin Ely: https://github.com/justincely
+"""
+
 def sign(abs_var, sign_var):
     return abs(abs_var) * (1 - np.where(sign_var < 0, 2*sign_var, sign_var))
     
