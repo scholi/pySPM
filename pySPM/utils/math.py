@@ -7,7 +7,26 @@ Provides some useful mathematical functions which are not present in numpy.
 """
 
 import numpy as np
+    
+def strictly_positify(x):
+    """
+    Make the result strictly positive by setting the minimum value to
+    the lower allowed float value
+    """
+    return np.fmax(x, np.finfo(x.dtype).eps)
+    
+def positify(x):
+    """
+    Set to zero all negative values
+    """
+    return np.fmax(0, x)
 
+def clip01(x):
+    """
+    clip data x between 0 and 1
+    """
+    return np.fmax(np.fmin(x, 1), 0)
+    
 def fact(x):
     """
     Return the factors of an integer as a list.
