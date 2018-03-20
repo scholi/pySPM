@@ -164,7 +164,17 @@ def stat_info(data):
     print("\tMedian:", np.percentile(D, 50))
     print("\tQ3:", np.percentile(D, 75))
     print("\tMaximum:", np.max(D))
-    
+
+def ellipse(a,b,phi):
+    """
+    return the x,y coordinates of an ellipse with major axis=a and minor axis=b at angle phi(radians)
+    """
+    if a == 0:
+        return b*np.sin(phi)
+    elif b==0:
+        return a*np.cos(phi)
+    return a*b/np.sqrt((b*np.cos(phi))**2+(a*np.sin(phi))**2)
+
 def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0, LG_y=0, bg=0):
     """
     Return a 2D Lorentz-Gauss.
@@ -182,4 +192,16 @@ def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0,
         y0 = XY[0].shape[0]/2
     X1 = (XY[0]-x0)*np.cos(angle) - (XY[1]-y0)*np.sin(angle)
     Y1 = (XY[0]-x0)*np.sin(angle) + (XY[1]-y0)*np.cos(angle)
-    return bg+amplitude*LG(X1, 0, sig_x, 1, LG_x)*LG(Y1,0,sig_y,1, LG_y)
+    
+    R1 = np.sqrt(X1**2+Y1**2)
+    angle = np.abs(np.arctan2(Y1,X1))
+    sig = ellipse(sig_x,sig_y,angle)
+    gamma = np.sqrt(2*np.log(2))*sig
+    LG = ellipse(LG_x, LG_y, angle)
+    
+    Gxy = Gauss(R1, 0, sig, 1)
+    Lxy = 1/((R1/gamma)**2+1)
+    
+    f = (1-LG)*Gxy+LG*Lxy
+    out = bg+amplitude*f
+    return out
