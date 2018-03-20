@@ -170,9 +170,9 @@ def ellipse(a,b,phi):
     return the x,y coordinates of an ellipse with major axis=a and minor axis=b at angle phi(radians)
     """
     if a == 0:
-        return b*np.sin(phi)
+        return np.abs(b*np.sin(phi))
     elif b==0:
-        return a*np.cos(phi)
+        return np.abs(a*np.cos(phi))
     return a*b/np.sqrt((b*np.cos(phi))**2+(a*np.sin(phi))**2)
 
 def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0, LG_y=0, bg=0):
@@ -205,3 +205,11 @@ def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0,
     f = (1-LG)*Gxy+LG*Lxy
     out = bg+amplitude*f
     return out
+    
+def Voigt(x, x0, sig, gamma, A=1):
+    import scipy
+    L = Lorentz(x, x0, gamma, A=1)
+    G = Gauss(x, x0, sig)
+    out = scipy.signal.convolve(L, G, 'same')
+    out /= np.max(out)
+    return A*out
