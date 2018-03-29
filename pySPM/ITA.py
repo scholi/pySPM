@@ -335,11 +335,12 @@ class ITA(ITM):
         return V
         
     def showSpectrumAround(self, m0,delta=0.15, sf=None, k0=None, **kargs):
+        polarity = '+'
+        if self.getValue('Instrument.Analyzer_Polarity_Switch')['string'] == 'Negative':
+            polarity = '-'
         from . import utils
         m, D = self.getSpectrum(sf=sf,k0=k0)
-        return utils.showPeak(m,D,m0,delta,**kargs)
-        
-        
+        return utils.showPeak(m,D,m0,delta,polarity=polarity, **kargs)
 
 class ITA_collection(Collection):
     def __init__(self, filename, channels1=None, channels2=None, name=None, mass=False, strict=False):

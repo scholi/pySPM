@@ -57,3 +57,10 @@ elts = {
     62:['SNO','CH2SO','NO3','C5H2','C2H6S','CH4NO2','C2H8NO','C3H10O'],
     74:['C3H8NO','CH2N2O2','C2H4NO2','C3H6O2','C3H10N2','C4H12N','C4H10O','C2H8N3','C2H6N2O','C3H6S','C6H2','C2H4SN','C5N','C2H2O3']
    }
+   
+neg_elts = {
+    19: 'F',
+    35: 'Cl',
+    37: '^37Cl',
+    197: 'Au'
+}

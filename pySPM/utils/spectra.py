@@ -6,12 +6,12 @@
 Helper functions to handle spectras.
 """
 
-def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], **kargs):
+def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", **kargs):
     """
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
     """
-    from . import LG, get_mass, elts
+    from . import LG, get_mass, elts, neg_elts
     from scipy.optimize import curve_fit
     import numpy as np
     import copy
@@ -29,6 +29,16 @@ def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=Tr
     if type(E) is not list:
         E=[E]
     E = [x for x in E if x not in exclude] + include
+    if debug:
+        print("Polarity:", polarity)
+    if polarity in ['-','Negative','negative','neg','Neg','NEG']:
+        if int(round(m0)) in neg_elts:
+            nE = neg_elts[int(round(m0))]
+            if type(nE) is not list:
+                nE = [nE]
+            if debug:
+                print(nE)
+            E += nE
     if debug:
         print("Elements:",", ".join(E))
     mp = m[mask][np.argmax(D[mask])] # mass of max peak

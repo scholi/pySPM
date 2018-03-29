@@ -104,7 +104,7 @@ class ITM:
         """
         values = self.getValues(start=False,names=["Instrument.SputterGun.Energy","Instrument.SputterGun.Species",
             "Instrument.LMIG.Extractor","Instrument.LMIG.Lens_Source","Instrument.Analyzer.ExtractionDelay",
-            "Analysis.AcquisitionTime","Analysis.SputterTime","Analysis.TotalScans","Analysis.TotalTime"])
+            "Analysis.AcquisitionTime","Analysis.SputterTime","Analysis.TotalScans","Analysis.TotalTime","Instrument.Analyzer_Polarity_Switch"])
         def Get(v,k):
             return v.get(k,['Unknown'])[0]
             
@@ -122,6 +122,7 @@ class ITM:
             'Scans': values.get("Analysis.TotalScans",[self.Nscan])[0],
             'TotalTime':  Get(values, "Analysis.TotalTime"),
             'peaks': self.get_masses(),
+            'polarity': Get(values,"Instrument.Analyzer_Polarity_Switch")
             }
         
     def getIntensity(self):
@@ -202,15 +203,15 @@ class ITM:
         if sf is None or k0 is None:
             sf=1e5
             for i in range(3):
-                k0 = tH-sf*np.sqrt(utils.getMass('H+'))
+                k0 = tH-sf*np.sqrt(utils.get_mass('H+'))
                 m = utils.time2mass(t, sf=sf, k0=k0)
                 mP = utils.time2mass(times, sf=sf, k0=k0)
                 t0 = times[np.argmin(np.abs(mP-12))]
                 t1 = times[np.argmin(np.abs(mP-12))+1]
                 sf = np.sqrt((t1-k0)**2 - (t0-k0)**2)
-                k0 = tH-sf*np.sqrt(utils.getMass('H+'))
+                k0 = tH-sf*np.sqrt(utils.get_mass('H+'))
         ts = []
-        for x in [utils.mass2time(utils.getMass(x+'+'), sf=sf, k0=k0) for x in FittingPeaks]:
+        for x in [utils.mass2time(utils.get_mass(x+'+'), sf=sf, k0=k0) for x in FittingPeaks]:
             mask = (t>=(x-Range))*(t<=(x+Range))
             t_peak = t[mask][np.argmax(S[mask])]
             ts.append(t_peak)
@@ -454,7 +455,7 @@ class ITM:
         dx = self.size['real']['x']/self.size['pixels']['x'] # distance per pixel
         
         # Calculate the mass of the primary ion
-        mp = utils.getMass(gun)
+        mp = utils.get_mass(gun)
             
         # Perform the time of flight correction?
         if FOVcorr:
