@@ -293,7 +293,7 @@ class SPM_image:
         y2 = (np.minimum(y2, self.size['pixels']['y'] - y2) * dy)**2
         X, Y = np.meshgrid(x2, y2)
         return np.sqrt(X+Y)
-
+    
     def inv_calc_flat(self, d, l=0.1):
         work_image = self.pixels
         ny, nx = self.pixels.shape
@@ -495,7 +495,7 @@ class SPM_image:
         width: the width of the profile (for averaging/statistics)
         """
         if kargs.get('debug',False):
-            print("get_profile input coordinates:",x1,x2,y1,y2)
+            print("get_profile input coordinates:", x1, x2, y1, y2)
         if axPixels is None:
             axPixels = pixels
         if not pixels:
@@ -783,14 +783,16 @@ class SPM_image:
         if not inline:
             return C
 
-    def cut(self, c, inplace=False, pixels=True, **kargs):
+    def cut(self, c, inline=False, pixels=True, **kargs):
+        if 'inplace' in kargs:
+            inline=kargs['inplace']
         if kargs.get('debug',False):
             print("cut) Input coordinates:", c)
         if not pixels:
             c = [z for s in zip(*self.real2pixels(c[0::2], c[1::2])) for z in s]
             if kargs.get('debug',False):
                 print("cut) pixel coordinates:", c)
-        if not inplace:
+        if not inline:
             new = copy.deepcopy(self)
             new.pixels = cut(self.pixels, c, **kargs)
             new._resize_infos()
@@ -875,11 +877,14 @@ def adjust_position(fixed, to_adjust, shift=False):
     return adj
 
 
-def tukeyfy(A, alpha):
+def tukeyfy(A, alpha, type='default'):
     tuky = tukeywin(A.shape[0], alpha)
     tukx = tukeywin(A.shape[1], alpha)
     tuk = np.multiply(tukx[:, None].T, tuky[:, None])
-    return A * tuk
+    if type is 'default':
+        return A * tuk
+    avg = np.mean(A)
+    return avg+(A-avg) * tuk
 
 
 def tukeywin(window_length, alpha=0.5):
@@ -958,7 +963,7 @@ def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=False, source_tukey=
     tf = np.fft.fft2(source)
     tf /= np.size(tf)
     recon_tf = np.conj(tf) / (np.abs(tf)**2 + mu)
-    return np.fft.fftshift(real(np.fft.ifft2(np.fft.fft2(target) * recon_tf)))
+    return np.fft.fftshift(real(np.fft.ifft2(np.fft.fft2(target) * recon_tf)))/np.size(target)
 
 
 def beam_profile1d(target, source, mu=1e-6):
@@ -1090,13 +1095,61 @@ def get_profile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,
     return np.linspace(0, d, N), np.vstack(P).T
 
 
-def dist_v2(img):
+def dist_v2(img, dx=1, dy=1):
     x2 = np.arange(img.shape[1])
-    x2 = (np.minimum(x2, img.shape[1]-x2))**2
+    x2 = (np.minimum(x2, img.shape[1]-x2) * dx)**2
     y2 = np.arange(img.shape[0])
-    y2 = (np.minimum(y2, img.shape[0] - y2))**2
+    y2 = (np.minimum(y2, img.shape[0] - y2) * dy)**2
     X, Y = np.meshgrid(x2, y2)
     return np.sqrt(X+Y)
+
+def generate_k_matrices(A, dx, dy):
+    ny, nx = A.shape
+    dkx = 2*np.pi/(nx*dx)
+    dky = 2*np.pi/(ny*dy)
+    
+    ky = np.arange(0, ny);
+    ky = (np.mod(ky+ny/2, ny) - ny/2) * dky
+    
+    kx = np.arange(0, nx);
+    kx = (np.mod(kx+nx/2, nx) - nx/2) * dkx
+    
+    kx, ky = np.meshgrid(kx, ky)
+    k = dist_v2(A, dkx, dky)
+    k[0, 0] = 1.0 # Prevent division by zero error and illegal operand errors. This may be improved...
+    return k, kx, ky
+        
+def mfm_tf(nx, dx, ny, dy, tf_in, derivative=0, transform=0, z=0, A=0, theta=None, phi=None, d=None, delta_w=None):
+    k, kx, ky = generate_k_matrices(tf_in, dx, dy)
+    # Distance loss
+    tf_out = np.exp(-z*k)
+    if d is not None:
+        tf_out = tf_out / 2.0
+        if not np.isinf(d):
+            if d == 0:
+                tf_out *= k
+            else:
+                tf_out *= 1 - np.exp(-d*k)
+    if A == 0:
+        if transform != 0:
+            assert theta is not None
+            assert phi is not None
+            tf_out *= ((np.cos(theta)+1j*(np.cos(phi)*np.sin(-theta)*kx+np.sin(phi)*np.sin(-theta)*ky)) / k)**transform
+        if derivative == 1:
+            tf_out *= k
+    else:
+        pass # TODO
+    return tf_out * tf_in
+
+def mfm_inv_calc_flat(img, z, tf_in, thickness=None, delta_w=None, amplitude=0, derivative=0, transform=0, mu=1e-8):
+    theta = np.radians(12)
+    phi = np.radians(-90)
+    ny, nx = img.shape
+    tf = mfm_tf(nx, 1, ny, 1, tf_in, derivative, transform, z, amplitude, theta, phi, thickness, delta_w)
+    tf[0,0] = np.real(np.mean(tf))
+    recon_tf = np.conj(tf) / (mu+np.abs(tf)**2)
+    work_img = np.abs(np.fft.ifft2(np.fft.fft2(img) * recon_tf ))
+    return work_img
 
 def getTikTf(Img, mu, tukey=0, source_tukey=0, debug=False, d=200, real=np.real):
     import scipy
@@ -1120,7 +1173,7 @@ def getTikTf(Img, mu, tukey=0, source_tukey=0, debug=False, d=200, real=np.real)
     if debug:
         return bg+np.exp(-np.abs(R)/a), Z, p0, popt
     return bg+np.exp(-np.abs(R)/a)
-
+    
 DEPRECATED_METHODS = {
     'getRowProfile': 'get_row_profile',
     'plotProfile':   'plot_profile',
