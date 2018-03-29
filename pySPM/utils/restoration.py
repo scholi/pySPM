@@ -124,7 +124,7 @@ def richardson_lucy(image, psf, iterations, damping=0, ndamp=10,
         'image': the start value x is the image itself
         numpy array: if init is a 2d numpy array, its value will be used as init value for x
     """
-    assert core in ['default','fft','accurate']
+    assert core in ['default', 'fft', 'accurate']
         
     image = image.astype(np.float)
     psf = psf.astype(np.float)
@@ -167,26 +167,29 @@ def richardson_lucy(image, psf, iterations, damping=0, ndamp=10,
         return results
     return results[N]
     
-def img_extend(img, margin):
+def img_extend(img, margin, block=1):
     I = np.pad(img, margin, 'constant')
     for i in range(img.shape[1]):
-        I[:margin, i+margin] = img[0, i]
-        I[-margin:, i+margin] = img[-1, i]
+        I[:margin, i+margin] = np.mean(img[:block, i])
+        I[-margin:, i+margin] = np.mean(img[-block:, i])
     for i in range(img.shape[0]):
-        I[i+margin, :margin] = img[i, 0]
-        I[i+margin, -margin:] = img[i, -1]
-    I[:margin, :margin] = img[0, 0]
-    I[:margin, -margin:] = img[0, -1]
-    I[-margin:, :margin] = img[-1, 0]
-    I[-margin:, -margin:] = img[-1, -1]
+        I[i+margin, :margin] = np.mean(img[i, :block])
+        I[i+margin, -margin:] = np.mean(img[i, -block:])
+    I[:margin, :margin] = np.mean(img[:block, :block])
+    I[:margin, -margin:] = np.mean(img[:block, -block:])
+    I[-margin:, :margin] = np.mean(img[-block:, :block])
+    I[-margin:, -margin:] = np.mean(img[-block:, -block:])
     return I
-   
+    
 def convolve(img, psf, type='default', extend=True, mode='same', extend_margin=100, **kargs):
     """
     Compute the convolution of two 2D signals: img and psf
     type:
         define the convolution type
     """
+    if extend is int:
+        extend_margin = extend
+        
     if extend:
         img = img_extend(img, extend_margin)
         
