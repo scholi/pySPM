@@ -29,7 +29,7 @@ def hfilter(diff_image, var_image, threshold=1, ndamp=10, damp_func='ely'):
         sqhim = (ndamp-1)*(1-sqhim[index]**(ndamp+1))+sqhim[index]**ndamp
     him[index] = sign(threshold*np.sqrt(dvarim[index] * sqhim), him[index])
     
-    return pywt.waverec2(pywt.array_to_coeffs(him, coeff_slices, output_format='wavedec2'), 'haar')
+    return pywt.waverec2(pywt.array_to_coeffs(him, coeff_slices, output_format='wavedec2'), 'haar')[:diff_image.shape[0],:diff_image.shape[1]]
 
 def htrans(A):
     h0 = A
