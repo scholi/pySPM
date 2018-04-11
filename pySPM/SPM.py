@@ -966,13 +966,13 @@ def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=False, source_tukey=
     return np.fft.fftshift(real(np.fft.ifft2(np.fft.fft2(target) * recon_tf)))/np.size(target)
 
 
-def beam_profile1d(target, source, mu=1e-6):
+def beam_profile1d(target, source, mu=1e-6, real=np.abs):
     source = source
     tf = np.fft.fft(source)
     tf /= np.size(tf)
     recon_tf = np.conj(tf) / (np.abs(tf)**2 + mu)
     F = np.fft.fft(target) * recon_tf
-    return np.fft.fftshift(np.real(np.fft.ifft(F))), F
+    return np.fft.fftshift(real(np.fft.ifft(F))), F
 
 
 def zoom_center(img, sx, sy=None):
