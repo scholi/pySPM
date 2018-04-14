@@ -172,7 +172,7 @@ class BidirData:
     
     def __setitem__(self, key, value):
         self.local[key] = value
-        save(self.filename, key=value)
+        save(self.filename, **{key:value})
         
     def __delitem__(self, key):
         delf.local.delitem(key)
@@ -182,3 +182,4 @@ class BidirData:
         keys = f.filelist
         f.close()
         return [x.filename for x in keys]
+        

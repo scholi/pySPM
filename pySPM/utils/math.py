@@ -174,8 +174,14 @@ def ellipse(a,b,phi):
     elif b==0:
         return np.abs(a*np.cos(phi))
     return a*b/np.sqrt((b*np.cos(phi))**2+(a*np.sin(phi))**2)
+    
+def assym_ellipse(left, right, upper, lower, phi):
+    phi = np.divmod(phi,2*np.pi)[1] # Be sure phi ∈ [0,2π]
+    b = np.where(phi<=np.pi,upper, lower)
+    a = np.where(np.logical_or(phi<=np.pi/2, phi>= 3*np.pi/2), right, left)
+    return a*b/np.sqrt((b*np.cos(phi))**2+(a*np.sin(phi))**2)
 
-def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0, LG_y=0, bg=0):
+def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0, LG_y=0, assym_x=1, assym_y=1, bg=0):
     """
     Return a 2D Lorentz-Gauss.
     XY: (X,Y) tuple
@@ -185,6 +191,7 @@ def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0,
     sy: sigma fdor y-axis
     x0,y0 : center coordinates of the peak
     lgx, lgy: Lorentz-Gauss proportion (for x,y axis)
+    assym_x, assym_y: The assymetry in sig_x/sig_y for the left/right or upper/lower part of the curve
     """
     if x0 is None:
         x0 = XY[0].shape[1]/2
@@ -195,7 +202,7 @@ def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0,
     
     R1 = np.sqrt(X1**2+Y1**2)
     angle = np.abs(np.arctan2(Y1,X1))
-    sig = ellipse(sig_x,sig_y,angle)
+    sig = assym_ellipse(sig_x, sig_x*assym_x, sig_y, sig_y*assym_y, angle)
     gamma = np.sqrt(2*np.log(2))*sig
     LG = ellipse(LG_x, LG_y, angle)
     

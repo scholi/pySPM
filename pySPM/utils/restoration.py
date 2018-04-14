@@ -99,7 +99,7 @@ def _rl_accelerate(x, x1, x2, g1=None, g2=None, order=1):
 
     
 def richardson_lucy(image, psf, iterations, damping=0, ndamp=10,
-        core='default', acceleration=1, init='mean', extend=True, clip=False, **kargs):
+        core='default', acceleration=2, init='mean', extend=True, clip=False, **kargs):
     """
     Richardson-Lucy algorithm
     image: the image to enhance (numpy 2d array)
