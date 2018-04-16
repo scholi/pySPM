@@ -2,6 +2,7 @@
 
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
+import scipy.optimize as opt
 """
 Provides some useful mathematical functions which are not present in numpy.
 """
