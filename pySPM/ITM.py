@@ -61,6 +61,7 @@ class ITM:
             pass
         self.peaks = {}
         self.MeasData = {}
+        self.rawlist = None
         try:
             self.Nscan = self.root.goto('propend/Measurement.ScanNumber').getKeyValue()['int']
         except:
@@ -242,9 +243,13 @@ class ITM:
                 display(HTML(res))
                 
     def get_mass_cal(self):
-        V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
-        sf = V.goto('sf',lazy=True).getDouble()
-        k0 = V.goto('k0',lazy=True).getDouble()
+        try:
+            V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
+            sf = V.goto('sf',lazy=True).getDouble()
+            k0 = V.goto('k0',lazy=True).getDouble()
+        except:
+            sf = self.root.goto('MassScale/sf').getDouble()
+            k0 = self.root.goto('MassScale/k0').getDouble()
         return sf, k0
 
     def channel2mass(self, channels, sf=None, k0=None, binning=1):
@@ -540,21 +545,15 @@ class ITM:
         if kargs.get('time',False):
             return np.arange(number_channels), Spectrum
         return masses, Spectrum
-        
-    def getRawData(self, scan=0):
-        """
-        Function which allows you to read and parse the raw data.
-        With this you are able to reconstruct the data.
-        Somehow the number of channel is double in the raw data compared
-        to the compressed version saved in the ITA files.
-        scan: The scan number. Start at 0
-        """
+
+    def getRawRawData(self, scan=0):
         assert scan < self.Nscan
         found = False
         RAW = b''
-        list_ = self.root.goto('rawdata').getList()
+        if self.rawlist is None:
+            self.rawlist = self.root.goto('rawdata').getList()
         startFound = False
-        for x in list_:
+        for x in self.rawlist:
             if x['name'] == '   6':
                 if not startFound:
                     startFound = x['id'] == scan
@@ -564,11 +563,21 @@ class ITM:
                 self.root.f.seek(x['bidx'])
                 child = Block.Block(self.root.f)
                 RAW += zlib.decompress(child.value)
+        return RAW
+        
+    def getRawData(self, scan=0):
+        """
+        Function which allows you to read and parse the raw data.
+        With this you are able to reconstruct the data.
+        Somehow the number of channel is double in the raw data compared
+        to the compressed version saved in the ITA files.
+        scan: The scan number. Start at 0
+        """
+        RAW = self.getRawRawData(scan)
         Blocks = {}
         _Block = []
         PixelList = []
-        PixelOrder = np.zeros(
-            (self.size['pixels']['y'], self.size['pixels']['x']))
+        PixelOrder = np.zeros((self.size['pixels']['y'], self.size['pixels']['x']))
         i = 0
         while i < len(RAW):
             b = RAW[i:i+4]
@@ -653,3 +662,46 @@ class ITM:
             
     def modify_block_and_export(self, path, new_data, output, **kargs):
         self.root.modify_block_and_export(path, new_data, output, **kargs)
+
+    def reconstruct(self, channels, scans=None, sf=None, k0=None, prog=False, time=False):
+        """
+        Reconstruct an Image from a raw spectra by defining the lower and upper mass
+        channels: list of (lower_mass, upper_mass)
+        upper_mass: upper mass of the peak
+        scans: The list of the scans to take into account (if None, all scans are taken)
+        sf/k0: mass callibration. If none take the saved values
+        time: If true the upper/lower_mass will be understood as time value
+        prog: If True display a progressbar with tqdm
+        """
+        from .utils import mass2time
+        from . import SPM_image
+        assert hasattr(channels, '__iter__')
+        if not hasattr(channels[0], '__iter__'):
+            channels = [channels]
+        for c in channels:
+            assert len(c)==2
+        if scans is None:
+            scans = range(self.Nscan)
+        if prog:
+            try:
+                from tqdm import tqdm_notebook as tqdm
+            except:
+                from tqdm import tqdm as tqdm
+            scans = tqdm(scans)
+        left = np.array([x[0] for x in channels])
+        right = np.array([x[1] for x in channels])
+        if not time:
+            if sf is None or k0 is None:
+                sf, k0 = self.get_mass_cal()
+            left = mass2time(left, sf=sf, k0=k0)
+            right = mass2time(right, sf=sf, k0=k0)
+        Counts = [np.zeros((self.size['pixels']['x'],self.size['pixels']['y'])) for x in channels]
+        for s in scans:
+            PixelList, PixelOrder, Data = self.getRawData(s)
+            for xy in Data:
+                for i,ch in enumerate(channels):
+                    Counts[i][xy[1],xy[0]] += np.sum((Data[xy]>=left[i])*(Data[xy]<=right[i]))
+        res = [SPM_image(C, real=self.size['real'], _type='TOF', channel="{0[0]:.2f}{unit}-{0[1]:.2f}{unit}".format(channels[i],unit=["u","s"][time]), zscale="Counts") for i,C in enumerate(Counts)]
+        if len(res) == 1:
+            return res[0]
+        return res
