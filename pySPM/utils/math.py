@@ -77,10 +77,10 @@ def Lorentz(x, x0, gamma, A=None):
         return .5*gamma*R/np.pi
     return A*R*(.5*gamma)**2
 
-def CDF(x,mu,sig, lg=0):
+def CDF(x,mu,sig, Amp=1, lg=0):
     from scipy.special import erf
     g = sig*np.sqrt(2*np.log(2))
-    return lg*(.5+np.arctan2(x-mu,g)/np.pi)+(1-lg)*.5*(1+erf((x-mu)/(sig*np.sqrt(2))))
+    return Amp*lg*(.5+np.arctan2(x-mu,g)/np.pi)+(1-lg)*Amp*.5*(1+erf((x-mu)/(sig*np.sqrt(2))))
     
 def LG(x, x0, sig=None, Amp=1, lg=.5, FWHM=None, asym=1):
     assert sig is not None or FWHM is not None
@@ -101,8 +101,13 @@ def logistic(x, lower=0, upper=1, growth=1, x0=0, nu=1, C=1):
 def fitCDF1line(A):
     line = np.zeros(A.shape[1])
     for x in range(A.shape[1]):
-        popt, pcov = opt.curve_fit(CDF, np.arange(A.shape[0]), A[:,x], (10, A.shape[0]/2, 1))
-        line[x] = popt[1]
+        popt, pcov = opt.curve_fit(CDF,
+            np.arange(A.shape[0]),
+            A[:,x],
+            (A.shape[0]/2, 1, np.max(A[:,x])),
+            bounds=(0,(A.shape[1],np.inf,np.inf))
+            )
+        line[x] = popt[0]
     return line
 
 def FT(x, ufunc=np.real, real=False):
@@ -176,11 +181,15 @@ def ellipse(a,b,phi):
         return np.abs(a*np.cos(phi))
     return a*b/np.sqrt((b*np.cos(phi))**2+(a*np.sin(phi))**2)
     
-def assym_ellipse(left, right, upper, lower, phi):
-    phi = np.divmod(phi,2*np.pi)[1] # Be sure phi ∈ [0,2π]
-    b = np.where(phi<=np.pi,upper, lower)
-    a = np.where(np.logical_or(phi<=np.pi/2, phi>= 3*np.pi/2), right, left)
-    return a*b/np.sqrt((b*np.cos(phi))**2+(a*np.sin(phi))**2)
+def asymm_ellipse(left, right, upper, lower, phi):
+    phi = np.divmod(phi+2*np.pi,2*np.pi)[1] # Be sure phi ∈ [0,2π]
+    b = np.where(phi<=np.pi, upper, lower)
+    a = np.where(np.logical_or(phi<=np.pi/2, phi>=3*np.pi/2), right, left)
+    r = np.abs(b*np.sin(phi))
+    r[b==0] = np.abs(a[b==0]*np.cos(phi[b==0]))
+    m = (b!=0)*(a!=0)
+    r[m] = a[m]*b[m]/np.sqrt((b[m]*np.cos(phi[m]))**2+(a[m]*np.sin(phi[m]))**2)
+    return r
 
 def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0, LG_y=0, assym_x=1, assym_y=1, bg=0):
     """
@@ -202,10 +211,40 @@ def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0,
     Y1 = (XY[0]-x0)*np.sin(angle) + (XY[1]-y0)*np.cos(angle)
     
     R1 = np.sqrt(X1**2+Y1**2)
-    angle = np.abs(np.arctan2(Y1,X1))
-    sig = assym_ellipse(sig_x, sig_x*assym_x, sig_y, sig_y*assym_y, angle)
+    angle = np.arctan2(Y1,X1)
+    sig = asymm_ellipse(sig_x, sig_x*assym_x, sig_y, sig_y*assym_y, angle)
     gamma = np.sqrt(2*np.log(2))*sig
     LG = ellipse(LG_x, LG_y, angle)
+    
+    Gxy = Gauss(R1, 0, sig, 1)
+    Lxy = 1/((R1/gamma)**2+1)
+    
+    f = (1-LG)*Gxy+LG*Lxy
+    out = bg+amplitude*f
+    return out
+    
+def LG2Da(XY, amplitude=1, angle=0, sigN=10, sigS=None, sigE=10, sigW=None, x0=None, y0=None, LGN=0, LGS=None, LGE=0, LGW=None, bg=0):
+    if x0 is None:
+        x0 = XY[0].shape[1]/2
+    if y0 is None:
+        y0 = XY[0].shape[0]/2
+    if sigS is None:
+        sigS = sigN
+    if sigW is None:
+        sigW = sigE
+    if LGS is None:
+        LGS = LGN
+    if LGW is None:
+        LGW = LGE
+        
+    X1 = (XY[0]-x0)*np.cos(angle) - (XY[1]-y0)*np.sin(angle)
+    Y1 = (XY[0]-x0)*np.sin(angle) + (XY[1]-y0)*np.cos(angle)
+    
+    R1 = np.sqrt(X1**2+Y1**2)
+    angle = np.arctan2(Y1, X1)
+    sig = asymm_ellipse(sigW, sigE, sigN, sigS, angle)
+    gamma = np.sqrt(2*np.log(2))*sig # HFHM
+    LG = asymm_ellipse(LGW, LGE, LGN, LGS, angle)
     
     Gxy = Gauss(R1, 0, sig, 1)
     Lxy = 1/((R1/gamma)**2+1)

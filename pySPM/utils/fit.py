@@ -225,3 +225,75 @@ def LG2D(A, Rweight=None, sigma=None, dic=False, **kargs):
     if dic:
        return dict(zip(params, pout)), dict(zip(params, dpout))
     return pout, dpout
+
+def LG2Da(A, Rweight=None, sigma=None, dic=False, **kargs):
+    """
+    Perform a 2D Lorentz-Gauss fitting on a 2D array A
+    dic: if True return the solution as a dictionary
+    
+    output: list of popt and pcov array.
+    The parameter order is:
+    Amplitude, Angle, Sigma_x, Sigma_y, Center_x, Center_y, LGx, LGy
+    """
+    from scipy.optimize import curve_fit
+    params = ['amplitude', 'angle', 'sigN', 'sigS', 'sigE','sigW','x0', 'y0', 'LGN', 'LGS','LGE','LGW','bg']
+    def fit(XY, *args):
+        # Add default parameters to the argument list at the right position
+        j = 0
+        a = []
+        for x in params:
+            if x in kargs:
+                a.append(kargs[x])
+            else:
+                a.append(args[j])
+                j += 1
+        # Calculate the 2D Lorentz-Gauss
+        return a[-1]+math.LG2Da(XY, *a[:-1]).ravel()
+        
+    # First guess for parameters
+    Amplitude = np.max(A)
+    Center = np.unravel_index(np.argmax(A), A.shape)
+    #   Amplitude,           angle,    sigN,    sigS,    sigE,    sigW,        x0,        y0, LGN, LGS, LGE, LGW, bg
+    p0_def = [
+        Amplitude,               0,      10,      10,      10,      10, Center[1], Center[0], 0, 0, 0, 0, 0]
+    bounds_def = [
+        [0       , np.radians(-45),       0,       0,       0,       0,   -np.inf,   -np.inf, 0, 0, 0, 0, -np.inf],
+        [  np.inf,  np.radians(45), +np.inf, +np.inf, +np.inf, +np.inf,   +np.inf,    np.inf, 1, 1, 1, 1, np.inf]
+        ]
+    p0 = [p0_def[i] for i,x in enumerate(params) if x not in kargs]
+    bounds = [
+        [bounds_def[0][i] for i,x in enumerate(params) if x not in kargs],
+        [bounds_def[1][i] for i,x in enumerate(params) if x not in kargs]
+        ]
+    # Kick out arguments for the given default parameters
+
+    x = np.arange(A.shape[1])
+    y = np.arange(A.shape[0])
+    X, Y = np.meshgrid(x, y)
+    R = np.sqrt((X-Center[1])**2+(Y-Center[0])**2)
+    if Rweight is not None:
+        if Rweight is 'R':
+            sigma = 0.001+R
+        else:
+            sigma = Rweight(R)
+    if sigma is not None:
+        sigma = np.ravel(sigma)
+    pfit = curve_fit(fit, (X, Y), np.ravel(A), p0=p0, sigma = sigma, bounds=bounds)        
+    
+    # Re-add default parameters to the output
+    pout = []
+    dpout = []
+    j = 0
+    for i,x in enumerate(params):
+        if x in kargs:
+            pout.append(kargs[x])
+            dpout.append(0)
+        else:
+            pout.append(pfit[0][j])
+            dpout.append(np.sqrt(pfit[1][j,j]))
+            j += 1
+            
+    if dic:
+       return dict(zip(params, pout)), dict(zip(params, dpout))
+    return pout, dpout
+    
