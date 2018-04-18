@@ -58,7 +58,7 @@ def lgCDF(x, bg, lg=0, *args, **kargs):
         return
         
     for i in range(len(args)//3):
-        r += args[3*i]*math.CDF(x, args[3*i+1], args[3*i+2], lg)
+        r += args[3*i]*math.CDF(x, args[3*i+1], args[3*i+2], lg=lg)
     return r
 
 def lgCDF_fit(x,y, p0, dic=False):
