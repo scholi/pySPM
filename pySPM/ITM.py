@@ -329,6 +329,14 @@ class ITM:
         else:
             raise KeyError(name)
     
+    def show_stability(self, ax=None):
+        if ax is None:
+            import matplotlib.pyplot as plt
+            ax = plt.gca()
+        self.showMeasData(ax=ax, scans=3, mul=1e6);
+        axb = utils.DualPlot(ax)
+        self.showMeasData("Instrument.LMIG.Suppressor", ax=axb, color='orange', scans=False);
+        
     def showMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, mul=1, scans=2, **kargs):
         t = self.getMeasData('Measurement.AcquisitionTime')
         S = self.getMeasData("Measurement.ScanNumber")
