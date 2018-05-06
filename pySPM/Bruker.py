@@ -66,12 +66,12 @@ class Bruker:
         for x in [z[b'@2:Image Data'][0] for z in self.layers]:
             print("\t"+x.decode('utf8'))
 
-    def get_channel(self, channel="Height Sensor", backward=False, corr=None, debug=False):
+    def get_channel(self, channel="Height Sensor", backward=False, corr=None, debug=False, encoding='latin1'):
         """
         Load the SPM image contained in a channel
         """
         for i in range(len(self.layers)):
-            layer_name = self.layers[i][b'@2:Image Data'][0].decode('utf8')
+            layer_name = self.layers[i][b'@2:Image Data'][0].decode(encoding)
             result = re.match(
                 r'([^ ]+) \[([^\]]*)\] "([^"]*)"', layer_name).groups()
             if result[2] == channel:
@@ -83,22 +83,27 @@ class Bruker:
                 if bck == backward:
                     if debug:
                         print("Direction found")
-                    var = self.layers[i][b'@2:Z scale'][0].decode('utf8')
+                    var = self.layers[i][b'@2:Z scale'][0].decode(encoding)
                     if '[' in var:
-                        result = re.match(r'[A-Z]+\s+\[([^\]]+)\]\s+\([0-9\.]+ .*?\)\s+([0-9\.]+)\s+.*?$', var).groups()
+                        result = re.match(r'[A-Z]+\s+\[([^\]]+)\]\s+\([0-9\.]+ .*?\)\s+([0-9\.]+)\s+(.*?)$', var).groups()
+                        if debug:
+                            print(result)
                         scale = float(result[1])/65536.0
-                        result = self.scanners[0][b'@'+result[0].encode('utf8')][0].split()
+                        result = self.scanners[0][b'@'+result[0].encode(encoding)][0].split()
                         scale2 = float(result[1])
-                        zscale = result[2].split(b'/')[0]
-                        var = self.layers[i][b'@2:Z offset'][0].decode('utf8')
+                        if len(result)>2:
+                            zscale = result[2]
+                        else:
+                            zscale = result[0]
+                        var = self.layers[i][b'@2:Z offset'][0].decode(encoding)
                         result = re.match(r'[A-Z]+\s+\[[^\]]+\]\s+\([0-9\.]+ .*?\)\s+([0-9\.]+)\s+.*?$', var).groups()
                         offset = float(result[0])
                     else:
-                        result = re.match(r'[A-Z]+ \([0-9\.]+ [^\)]+\) ([0-9\.]+) [\w]+', var).groups()
+                        result = re.match(r'[A-Z]+ \([0-9\.]+ [^\)]+\)\s+([0-9\.]+) [\w]+', var).groups()
                         scale = float(result[0])/65536.0
                         scale2 = 1
                         zscale = b'V'
-                        result = re.match(r'[A-Z]+ \([0-9\.]+ .*?\) ([0-9\.]+) .*?', self.layers[i][b'@2:Z offset'][0].decode('utf8')).groups()
+                        result = re.match(r'[A-Z]+ \([0-9\.]+ .*?\)\s+([0-9\.]+) .*?', self.layers[i][b'@2:Z offset'][0].decode(encoding)).groups()
                         offset = float(result[0])
                     data = self._get_raw_layer(i)*scale*scale2
 
@@ -108,13 +113,13 @@ class Bruker:
                     size = {
                         'x': float(scan_size[0]),
                         'y': float(scan_size[1]),
-                        'unit': scan_size[2].decode('utf8')}
+                        'unit': scan_size[2].decode(encoding)}
                     image = pySPM.SPM_image(
                         channel=channel,
                         BIN=data,
                         real=size,
                         _type='Bruker AFM',
-                        zscale=zscale.decode('utf8'),
+                        zscale=zscale.decode(encoding),
                         corr=corr)
                     return image
         raise Exception("Channel {} not found".format(channel))
