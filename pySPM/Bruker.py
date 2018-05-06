@@ -49,10 +49,15 @@ class Bruker:
         off = int(self.layers[i][b'Data offset'][0])
         cols = int(self.layers[i][b'Number of lines'][0])
         rows = int(self.layers[i][b'Samps/line'][0])
+        byte_length = int(self.layers[i][b'Data length'][0])
+        length = rows*cols
+        bpp = byte_length // length
+        byte_length = length * bpp
+        
         self.file.seek(off)
-        length = cols*rows
+        print(bpp, byte_length, length*bpp)
         return np.array(
-            struct.unpack("<"+str(length)+"h", self.file.read(length*2)),
+            struct.unpack("<"+str(length)+{2:'h',4:'I',8:'q'}[bpp], self.file.read(byte_length)),
             dtype='float64').reshape((cols, rows))
 
     def load_image(self, channel="Height Sensor", backward=False, corr=None):
