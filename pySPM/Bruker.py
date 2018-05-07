@@ -55,9 +55,8 @@ class Bruker:
         byte_length = length * bpp
         
         self.file.seek(off)
-        print(bpp, byte_length, length*bpp)
         return np.array(
-            struct.unpack("<"+str(length)+{2:'h',4:'I',8:'q'}[bpp], self.file.read(byte_length)),
+            struct.unpack("<"+str(length)+{2:'h',4:'i',8:'q'}[bpp], self.file.read(byte_length)),
             dtype='float64').reshape((cols, rows))
 
     def load_image(self, channel="Height Sensor", backward=False, corr=None):
