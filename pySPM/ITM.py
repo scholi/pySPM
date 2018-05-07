@@ -2,7 +2,7 @@
 
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
-from pySPM import Block, utils
+from pySPM import Block
 import numpy as np
 import struct
 import os.path
@@ -189,6 +189,7 @@ class ITM:
         """
         perform an auto callibration for positive spectrum. (in test, might be unreliable)
         """
+        from .utils import get_mass, time2mass, fitSpectrum
         from scipy.optimize import curve_fit
         TimeWidth = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').getKeyValue()['float']
         if t is None or S is None:
@@ -204,24 +205,25 @@ class ITM:
         if sf is None or k0 is None:
             sf=1e5
             for i in range(3):
-                k0 = tH-sf*np.sqrt(utils.get_mass('H+'))
-                m = utils.time2mass(t, sf=sf, k0=k0)
-                mP = utils.time2mass(times, sf=sf, k0=k0)
+                k0 = tH-sf*np.sqrt(get_mass('H+'))
+                m = time2mass(t, sf=sf, k0=k0)
+                mP = time2mass(times, sf=sf, k0=k0)
                 t0 = times[np.argmin(np.abs(mP-12))]
                 t1 = times[np.argmin(np.abs(mP-12))+1]
                 sf = np.sqrt((t1-k0)**2 - (t0-k0)**2)
-                k0 = tH-sf*np.sqrt(utils.get_mass('H+'))
+                k0 = tH-sf*np.sqrt(get_mass('H+'))
         ts = []
-        for x in [utils.mass2time(utils.get_mass(x+'+'), sf=sf, k0=k0) for x in FittingPeaks]:
+        for x in [mass2time(get_mass(x+'+'), sf=sf, k0=k0) for x in FittingPeaks]:
             mask = (t>=(x-Range))*(t<=(x+Range))
             t_peak = t[mask][np.argmax(S[mask])]
             ts.append(t_peak)
-        ms = [utils.get_mass(x+'+') for x in FittingPeaks]
+        ms = [get_mass(x+'+') for x in FittingPeaks]
         if debug:
-            return utils.fitSpectrum(ts, ms, error=True), ts, ms
-        return utils.fitSpectrum(ts, ms)
+            return fitSpectrum(ts, ms, error=True), ts, ms
+        return fitSpectrum(ts, ms)
     
     def showValues(self, pb=False, gui=False, **kargs):
+        from .utils import html_table, aa_table
         html = True
         if 'html' in kargs:
             html = kargs['html']
@@ -236,10 +238,10 @@ class ITM:
             for x in Vals:
                 Table.append(tuple([x]+Vals[x]))
             if not html:
-                print(utils.aa_table(Table, header=True))
+                print(aa_table(Table, header=True))
             else:
                 from IPython.core.display import display, HTML
-                res = utils.html_table(Table, header=True)
+                res = html_table(Table, header=True)
                 display(HTML(res))
                 
     def get_mass_cal(self):
@@ -300,8 +302,8 @@ class ITM:
         """
         if name in self.MeasData:
             return self.MeasData[name]
-        rawdata = self.root.goto('rawdata')
-        L = rawdata.getList()
+        self.rawdata = self.root.goto('rawdata')
+        L = self.rawdata.getList()
         i = 1
         while L[-i]['name'] !=  '  20':
             i += 1
@@ -311,7 +313,10 @@ class ITM:
                 from tqdm import tqdm_notebook as tqdm
             except:
                 from tqdm import tqdm as tqdm
-            T = tqdm(L)
+            if prog is True:
+                T = tqdm(L)
+            else:
+                T = prog(L)
         else:
             T=L
         for i,elt in enumerate(T):
@@ -329,13 +334,14 @@ class ITM:
         else:
             raise KeyError(name)
     
-    def show_stability(self, ax=None):
+    def show_stability(self, ax=None, prog=False):
+        from .utils.plot import DualPlot
         if ax is None:
             import matplotlib.pyplot as plt
             ax = plt.gca()
-        self.showMeasData(ax=ax, scans=3, mul=1e6);
-        axb = utils.DualPlot(ax)
-        self.showMeasData("Instrument.LMIG.Suppressor", ax=axb, color='orange', scans=False);
+        self.showMeasData(ax=ax, scans=3, mul=1e6, prog=prog);
+        axb = DualPlot(ax)
+        self.showMeasData("Instrument.LMIG.Suppressor", ax=axb, color='orange', scans=False, prog=prog);
         
     def showMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, mul=1, scans=2, **kargs):
         t = self.getMeasData('Measurement.AcquisitionTime')
@@ -453,6 +459,7 @@ class ITM:
         see Ref. T. Stephan, J. Zehnpfenning and A. Benninghoven, J. vac. Sci. A 12 (2), 1994
  
         """
+        from .utils import get_mass, constants as const
         if ROI is None and 'roi' in kargs:
             ROI = kargs['roi']
             
@@ -468,11 +475,11 @@ class ITM:
         dx = self.size['real']['x']/self.size['pixels']['x'] # distance per pixel
         
         # Calculate the mass of the primary ion
-        mp = utils.get_mass(gun)
+        mp = get_mass(gun)
             
         # Perform the time of flight correction?
         if FOVcorr:
-            DT = dx*(1/5e-11)*.5*np.sqrt(2)*np.sqrt((1e-3*mp/utils.NA)/(Q*2*nrj*utils.qe)) # delta time in channel per pixel. The 5e-11 is the channelwidth (50ps)
+            DT = dx*(1/5e-11)*.5*np.sqrt(2)*np.sqrt((1e-3*mp/const.NA)/(Q*2*nrj*const.qe)) # delta time in channel per pixel. The 5e-11 is the channelwidth (50ps)
             # sqrt(2)/2 is from the sin(45°), nrj=E=.5*mp*v^2
         else:
             DT = 0
@@ -499,7 +506,11 @@ class ITM:
             Spectrum = np.zeros(number_channels, dtype=np.float32)
             for s in T:
                 Data = self.getRawData(s)[2]
-                for xy in Data:
+                if kargs.get('prog', False):
+                    LData = tqdm(Data, leave=False)
+                else:
+                    LData = Data
+                for xy in LData:
                     dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
                     ip = int(dt)
                     fp = dt%1
@@ -511,7 +522,11 @@ class ITM:
             Spectrum = np.zeros((number_channels,np.max(ROI)+1), dtype=np.float32)
             for s in T:
                 Data = self.getRawData(s)[2]
-                for xy in Data:
+                if kargs.get('prog', False):
+                    LData = tqdm(Data, leave=False)
+                else:
+                    LData = Data
+                for xy in LData:
                     dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
                     ip = int(dt)
                     fp = dt%1
@@ -540,7 +555,7 @@ class ITM:
         k0 = kargs.get('k0',self.root.goto('MassScale/k0').getDouble())
         masses = self.channel2mass(np.arange(number_channels),sf=sf,k0=k0)
         if deadTimeCorr:
-            dt = 2000 # 100ns*(1ch/50ps) = 2000 channels
+            dt = 600 # 30ns*(1ch/50ps) = 600 channels
             N = self.Nscan*self.size['pixels']['x']*self.size['pixels']['y'] # total of count events
             Np = np.zeros(Spectrum.shape)
             if Spectrum.ndim>1:
