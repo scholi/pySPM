@@ -276,14 +276,14 @@ class ITM:
             k0 = k00
         return ((binning*channels-k0)/(sf))**2
 
-    def getSpectrum(self, sf=None, k0=None, time=False, error=False):
+    def getSpectrum(self, sf=None, k0=None, time=False, error=False, **kargs):
         """
         Retieve a mass,spectrum array
         This only works for .ita and .its files.
         For this reason it is implemented in the itm class.
         """
         RAW = zlib.decompress(self.root.goto(
-            'filterdata/TofCorrection/Spectrum/Reduced Data/IITFSpecArray/CorrectedData').value)
+            'filterdata/TofCorrection/Spectrum/Reduced Data/IITFSpecArray/'+['CorrectedData','Data'][kargs.get('uncorrected',False)]).value)
         D = np.array(struct.unpack("<{0}f".format(len(RAW)//4), RAW))
         ch = 2*np.arange(len(D))
         if time:
@@ -380,14 +380,14 @@ class ITM:
             axs.set_ylim(*lim)
         return p
 
-    def showSpectrum(self, low=0, high=None, sf=None, k0=None, ax=None, log=False, showPeaks=True):
+    def showSpectrum(self, low=0, high=None, sf=None, k0=None, ax=None, log=False, showPeaks=True, **kargs):
         """
         Plot the (summed) spectrum
         low and high: mass boundary of the plotted data
         ax: matplotlib axis
         log: plot the log of the intensity if True
         """
-        m, s = self.getSpectrum(sf=sf,k0=k0)
+        m, s = self.getSpectrum(sf=sf,k0=k0,**kargs)
         if ax is None:
             import matplotlib.pyplot as plt
             ax = plt.gca()
@@ -555,7 +555,7 @@ class ITM:
         k0 = kargs.get('k0',self.root.goto('MassScale/k0').getDouble())
         masses = self.channel2mass(np.arange(number_channels),sf=sf,k0=k0)
         if deadTimeCorr:
-            dt = 600 # 30ns*(1ch/50ps) = 600 channels
+            dt = 650 # 32.5ns*(1ch/50ps) = 650 channels
             N = self.Nscan*self.size['pixels']['x']*self.size['pixels']['y'] # total of count events
             Np = np.zeros(Spectrum.shape)
             if Spectrum.ndim>1:
