@@ -9,7 +9,6 @@ Module to handle block type used in iontof file formats ITA,ITM,ITS, etc...
 import sys
 import binascii
 import struct
-import numpy as np
 import os
 
 class MissingBlock(Exception):
@@ -425,7 +424,7 @@ class Block:
                 raise ex
             self.f.seek(current.offset)
             curr_block_length = current.head['length1'] + current.head['name_length'] + 25
-            debug_msg.append('Block Name: "{}" / length: {}'.format(current.name.decode('utf8'), curr_block_length))
+            debug_msg.append('Block Name: "{}" / length: {}'.format(current.name, curr_block_length))
             if current.offset == block_offset: # Found the block to change
                 debug_msg.append("Block to change FOUND!")
                 out.write(self.f.read(5)) # Write block type

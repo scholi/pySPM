@@ -114,4 +114,8 @@ def sublegend(*ax, labels=None, color='white', margin=9, titles=None, fontsize=1
             a.set_title("")
         a.annotate(labels[i],(0, 1),xytext=(margin[0],-margin[1]),fontsize=fontsize,verticalalignment='top', bbox=props, xycoords='axes fraction',textcoords='offset pixels');
 
-    
+def formula(x):
+    import re
+    x = re.sub('_([0-9]+)',r'$_{\1}$',x)
+    x = re.sub(r'\^([0-9\+\-]+)',r'$^{\1}$',x)
+    return x

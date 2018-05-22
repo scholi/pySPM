@@ -64,11 +64,11 @@ class Bruker:
             "Deprecated. Please use get_image() instead.", DeprecationWarning)
         return self.get_channel(channel, backward, corr=corr)
 
-    def list_channels(self):
+    def list_channels(self, encoding='latin1'):
         print("Channels")
         print("========")
         for x in [z[b'@2:Image Data'][0] for z in self.layers]:
-            print("\t"+x.decode('utf8'))
+            print("\t"+x.decode(encoding))
 
     def get_channel(self, channel="Height Sensor", backward=False, corr=None, debug=False, encoding='latin1'):
         """

@@ -189,7 +189,7 @@ class ITM:
         """
         perform an auto callibration for positive spectrum. (in test, might be unreliable)
         """
-        from .utils import get_mass, time2mass, fitSpectrum
+        from .utils import get_mass, time2mass, fitSpectrum, mass2time
         from scipy.optimize import curve_fit
         TimeWidth = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').getKeyValue()['float']
         if t is None or S is None:
@@ -555,7 +555,7 @@ class ITM:
         k0 = kargs.get('k0',self.root.goto('MassScale/k0').getDouble())
         masses = self.channel2mass(np.arange(number_channels),sf=sf,k0=k0)
         if deadTimeCorr:
-            dt = 650 # 32.5ns*(1ch/50ps) = 650 channels
+            dt = 1300 # 65ns*(1ch/50ps) = 1300 channels
             N = self.Nscan*self.size['pixels']['x']*self.size['pixels']['y'] # total of count events
             Np = np.zeros(Spectrum.shape)
             if Spectrum.ndim>1:

@@ -229,7 +229,7 @@ class ITA(ITM):
                     from tqdm import tqdm
             else:
                 from tqdm import tqdm
-            scans = tqdm(scans)
+            scans = tqdm(scans, leave=False)
         channels = [self.getChannelByMass(m, full=True) for m in masses]
         Z = self.__getSumImage(scans, channels, **kargs)
         if raw:

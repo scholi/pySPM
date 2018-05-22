@@ -6,7 +6,25 @@
 Helper functions to handle spectras.
 """
 
-def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", **kargs):
+def get_substance_peaks(substance, negative=True):
+    import os
+    import sqlite3
+    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT Peaks.Fragment from Peaks where Peaks.Substance==(SELECT ID from substance where Name LIKE '%{name}%') and Polarity{pol}=0".format(name=substance,pol='><'[negative]))
+    return [x[0] for x in c.fetchall()]
+    
+def get_peaklist(nominal_mass, negative=False):
+    import os
+    import sqlite3
+    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT Formula from fragments where NominalMass={nm} and (Polarity is NULL or Polarity=={pol})".format(nm=nominal_mass,pol=[1,-1][negative]))
+    return [x[0] for x in c.fetchall()]
+
+def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", **kargs):
     """
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
@@ -79,12 +97,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=Tr
         return y
         
     ax = kargs.get('ax',plt.gca())
-    if label is None:
-        ax.plot(m[mask],D[mask])
-    else:
-        ax.plot(m[mask],D[mask], label=label)
-    for i in range((len(p0)-1)//2):
-        ax.axvline(m0s[i], color='r', alpha=.3, linestyle=':');
+    
     fit_type = None
     if debug:
         print("p0",p0)
@@ -116,10 +129,14 @@ def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=Tr
     else:
         popt = p0
         pcov = np.zeros((len(p0),len(p0)))
+    if label is None:
+        p = ax.plot(m[mask]-popt[1],D[mask])
+    else:
+        p = ax.plot(m[mask]-popt[1],D[mask], label=label)
     res = {}
     err = np.sqrt(np.diag(pcov))
     for i in range((len(popt)-1)//2):
-        Y = LG(m[mask], m0s[i]+popt[1], popt[2+2*i], popt[3+2*i],lg=0, asym=popt[0])
+        Y = LG(m[mask], m0s[i], popt[2+2*i], popt[3+2*i],lg=0, asym=popt[0])
         Area = popt[2*i+3]*popt[2*i+2]*np.sqrt(2*np.pi)*(.5+.5*popt[0])
         Area_err = np.sqrt(
             (err[2*i+3]*popt[2*i+2]*np.sqrt(2*np.pi)*(.5+.5*popt[0]))**2+
@@ -150,14 +167,15 @@ def showPeak(m,D,m0, delta=0.15, errors=False,dm0=None, dofit=False, showElts=Tr
                 }
 
         if showElts:
-            ax.axvline(m0s[i]+popt[1], color='r', alpha=.5);
-            ax.annotate(E[i], (m0s[i]+popt[1], ax.get_ylim()[1]),(3,-1),textcoords='offset pixels', rotation=90, va='top',ha='left');
+            ax.axvline(m0s[i], color='r', alpha=.5);
+            ax.annotate(E[i], (m0s[i], ax.get_ylim()[1]),(3,-1), textcoords='offset pixels', rotation=90, va='top',ha='left');
         if dofit:
+            ax.plot(m[mask],D[mask],color=p[0].get_color(), alpha=.2)
             ax.plot(m[mask], Y, '--');
             ax.annotate("{:.2f}".format(Area), (m0s[i]+popt[1], popt[2+2*i]/2))
     if debug:
         print(popt)
     if dofit or debug:
-        ax.plot(m[mask], fit(m[mask], *popt), 'r:');
+        ax.plot(m[mask]-popt[1], fit(m[mask], *popt), 'r:');
     return res
     

@@ -21,7 +21,7 @@ def fitSpectrum(t, m, error=False):
     """
     M = np.sqrt(np.array(m))
     T = np.hstack([np.array(t)[:,None],np.ones((len(t),1))])
-    x = np.linalg.lstsq(T,M)[0]
+    x = np.linalg.lstsq(T,M,rcond=-1)[0]
     sf = 1/x[0]
     k0 = -sf*x[1]
     res = [sf, k0]
