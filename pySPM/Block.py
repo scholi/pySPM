@@ -99,7 +99,7 @@ class Block:
                 callback(self)
             if self.Type[0] in [1,3]:
                 for x in self:
-                    res += x.BreathFirstSearch(callback=callback, filter=filter, func=func)
+                    res += x.BreadthFirstSearch(callback=callback, filter=filter, func=func)
         return res
     
     def getName(self):
