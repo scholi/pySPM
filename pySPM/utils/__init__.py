@@ -43,10 +43,10 @@ def chunks(l, n):
         yield l[i:i + n]
         
 def mass2time(m, sf, k0):
-    return k0+sf*np.sqrt(m)
+    return sf*np.sqrt(m)-k0
     
 def time2mass(t, sf, k0):
-    return ((t-k0)/sf)**2
+    return ((t+k0)/sf)**2
     
 def getMass(elt):
     from warnings import warn

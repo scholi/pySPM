@@ -40,23 +40,11 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
     if type(exclude) is str:
        exclude = [exclude]
     mask = (m>=m0-delta)*(m<=m0+delta)
-    if int(round(m0)) in elts:
-        E = elts[int(round(m0))]
-    else:
-        E=[]
-    if type(E) is not list:
-        E=[E]
-    E = [x for x in E if x not in exclude] + include
-    if debug:
-        print("Polarity:", polarity)
+    negative = False
     if polarity in ['-','Negative','negative','neg','Neg','NEG']:
-        if int(round(m0)) in neg_elts:
-            nE = neg_elts[int(round(m0))]
-            if type(nE) is not list:
-                nE = [nE]
-            if debug:
-                print(nE)
-            E += nE
+        negative = True
+    E = get_peaklist(int(round(m0)), negative)
+    E = [x for x in E if x not in exclude] + include
     if debug:
         print("Elements:",", ".join(E))
     mp = m[mask][np.argmax(D[mask])] # mass of max peak
@@ -128,6 +116,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
                     ax.spines[x].set_color('red')
     else:
         popt = p0
+        popt[1] = 0
         pcov = np.zeros((len(p0),len(p0)))
     if label is None:
         p = ax.plot(m[mask]-popt[1],D[mask])
@@ -170,7 +159,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
             ax.axvline(m0s[i], color='r', alpha=.5);
             ax.annotate(E[i], (m0s[i], ax.get_ylim()[1]),(3,-1), textcoords='offset pixels', rotation=90, va='top',ha='left');
         if dofit:
-            ax.plot(m[mask],D[mask],color=p[0].get_color(), alpha=.2)
+            ax.plot(m[mask],D[mask],color=p[0].get_color(), alpha=.1)
             ax.plot(m[mask], Y, '--');
             ax.annotate("{:.2f}".format(Area), (m0s[i]+popt[1], popt[2+2*i]/2))
     if debug:

@@ -59,6 +59,7 @@ class ITM:
                     'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfScans').getULong()
         except:
             pass
+        self.polarity = self.getValue("Instrument.Analyzer_Polarity_Switch")['string']
         self.peaks = {}
         self.MeasData = {}
         self.rawlist = None
@@ -246,12 +247,14 @@ class ITM:
                 
     def get_mass_cal(self):
         try:
+            sf = self.root.goto('MassScale/sf').getDouble()
+            k0 = self.root.goto('MassScale/k0').getDouble()
+        except:
+            print("Failed to get sf,k0, find alternative")
             V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
             sf = V.goto('sf',lazy=True).getDouble()
             k0 = V.goto('k0',lazy=True).getDouble()
-        except:
-            sf = self.root.goto('MassScale/sf').getDouble()
-            k0 = self.root.goto('MassScale/k0').getDouble()
+            
         return sf, k0
 
     def channel2mass(self, channels, sf=None, k0=None, binning=1):
@@ -274,7 +277,7 @@ class ITM:
             sf = sf0
         if k0 is None:
             k0 = k00
-        return ((binning*channels-k0)/(sf))**2
+        return ((binning*channels+k0)/(sf))**2
 
     def getSpectrum(self, sf=None, k0=None, time=False, error=False, **kargs):
         """
