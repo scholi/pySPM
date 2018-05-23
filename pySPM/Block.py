@@ -90,7 +90,18 @@ class Block:
         self.value = self.f.read(self.head['length1'])
         self.List = None
         self.iterP = 0
-
+        
+    def BreadthFirstSearch(self, callback=None, filter=lambda x: True, func=lambda x: x):
+        res = []
+        if filter(self):
+            res += [func(self)]
+            if callback is not None:
+                callback(self)
+            if self.Type[0] in [1,3]:
+                for x in self:
+                    res += x.BreathFirstSearch(callback=callback, filter=filter, func=func)
+        return res
+    
     def getName(self):
         """
         Return the name of the Block
@@ -106,6 +117,13 @@ class Block:
         if self.List is None:
             return self.createList()
         return self.List
+    
+    def gotoFollowingBlock(self):
+        offset = self.offset+25+self.head['name_length']+self.head['length1']
+        if offset < os.fstat(self.f.fileno()).st_size:
+            self.f.seek(offset)
+            return Block(self.f, parent=None)
+        return None
         
     def gotoNextBlock(self):
         offset = self.offset
@@ -196,11 +214,6 @@ class Block:
                         vL = child.getDouble()
                         Dtype = 'double'
                         other += ' = '+str(child.getLongLong())+" (long64)"
-                    elif len(child.value)%2 == 0:
-                        vL = child.value.decode('utf16', "ignore")
-                        if len(vL) > 20:
-                            vL = vL[:20]+'...'
-                        Dtype = 'UTF-16'
                     elif len(child.value) == 2:
                         vL = child.getShort()
                         Dtype = 'short'
@@ -210,11 +223,19 @@ class Block:
                     else:
                         vL = '???'
                         Dtype = '???'
+                    
                     value = binascii.hexlify(child.value)
                     if len(value) > 16:
                         value = value[:16]+b'...'
-                    print(u"{name} ({id}) <{blen}> @{bidx}, value = {value} (hex) = {vL} ({Dtype}){other}"\
-                        .format(value=value, vL=vL, Dtype=Dtype, other=other, **l))
+                    if len(child.value)%2 == 0:
+                        vS = child.value.decode('utf16', "ignore")
+                        if len(vS) > 20:
+                            vS = vS[:20]+'...'
+                        print(u"{name} ({id}) <{blen}> @{bidx}, value = {value} (hex) = \"{vS}\" (UTF-16)= {vL} ({Dtype}){other}"\
+                            .format(value=value, vL=vL, Dtype=Dtype, other=other, vS=vS, **l))
+                    else:
+                        print(u"{name} ({id}) <{blen}> @{bidx}, value = {value} (hex) = {vL} ({Dtype}){other}"\
+                            .format(value=value, vL=vL, Dtype=Dtype, other=other, **l))
                 else:
                     print("{name} ({id}) [{T}] <{blen}> @{bidx}".format(T=child.Type[0], **l))
                 del child
@@ -370,7 +391,7 @@ class Block:
                     try:
                         self.gotoItem(l['name'], l['id'])\
                             .show(maxlevel, level+1, All=All, out=out, digraph=digraph\
-                            , parent=parent+'-'+l['name'].decode('utf8'), ex=ex)
+                            , parent=parent+'-'+l['name'], ex=ex)
                     except:
                         pass
         if digraph and level == 0:
