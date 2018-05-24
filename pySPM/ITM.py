@@ -39,7 +39,9 @@ class ITM:
                                 The rest are the detected peaks measured in channel unit for that specific pixel. In order to get the mass see the channel2mass function
         """
         self.filename = filename
-        assert os.path.exists(filename)
+        if not os.path.exists(filename):
+            print("ERROR: File \"{}\" not found".format(filename))
+            raise FileNotFoundError
         self.f = open(self.filename, 'rb')
         self.Type = self.f.read(8)
         assert self.Type == b'ITStrF01'
@@ -247,13 +249,13 @@ class ITM:
                 
     def get_mass_cal(self):
         try:
-            sf = self.root.goto('MassScale/sf').getDouble()
-            k0 = self.root.goto('MassScale/k0').getDouble()
-        except:
-            print("Failed to get sf,k0, find alternative")
             V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
             sf = V.goto('sf',lazy=True).getDouble()
             k0 = V.goto('k0',lazy=True).getDouble()
+        except:
+            print("Failed to get sf,k0, find alternative")
+            sf = self.root.goto('MassScale/sf').getDouble()
+            k0 = self.root.goto('MassScale/k0').getDouble()
             
         return sf, k0
 
@@ -277,7 +279,7 @@ class ITM:
             sf = sf0
         if k0 is None:
             k0 = k00
-        return ((binning*channels+k0)/(sf))**2
+        return ((binning*channels-k0)/(sf))**2
 
     def getSpectrum(self, sf=None, k0=None, time=False, error=False, **kargs):
         """
