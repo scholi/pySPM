@@ -43,7 +43,7 @@ def chunks(l, n):
         yield l[i:i + n]
         
 def mass2time(m, sf, k0):
-    return -sf*np.sqrt(m)+k0
+    return sf*np.sqrt(m)+k0
     
 def time2mass(t, sf, k0):
     return ((t-k0)/sf)**2
