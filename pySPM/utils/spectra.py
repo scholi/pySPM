@@ -112,16 +112,18 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
                     raise e
                 popt = p0
                 pcov = np.zeros((len(p0),len(p0)))
-                for x in ['right','left','top','bottom']:
-                    ax.spines[x].set_color('red')
+                if ax is not None:
+                    for x in ['right','left','top','bottom']:
+                        ax.spines[x].set_color('red')
     else:
         popt = p0
         popt[1] = 0
         pcov = np.zeros((len(p0),len(p0)))
-    if label is None:
-        p = ax.plot(m[mask]-popt[1],D[mask])
-    else:
-        p = ax.plot(m[mask]-popt[1],D[mask], label=label)
+    if ax is not None:
+        if label is None:
+            p = ax.plot(m[mask]-popt[1],D[mask])
+        else:
+            p = ax.plot(m[mask]-popt[1],D[mask], label=label)
     res = {}
     err = np.sqrt(np.diag(pcov))
     for i in range((len(popt)-1)//2):
@@ -155,16 +157,16 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
                 'fit': fit_type
                 }
 
-        if showElts:
+        if showElts and ax is not None:
             ax.axvline(m0s[i], color='r', alpha=.5);
             ax.annotate(E[i], (m0s[i], ax.get_ylim()[1]),(3,-1), textcoords='offset pixels', rotation=90, va='top',ha='left');
-        if dofit:
+        if dofit and ax is not None:
             ax.plot(m[mask],D[mask],color=p[0].get_color(), alpha=.1)
             ax.plot(m[mask], Y, '--');
             ax.annotate("{:.2f}".format(Area), (m0s[i]+popt[1], popt[2+2*i]/2))
     if debug:
         print(popt)
-    if dofit or debug:
+    if (dofit or debug) and ax is not None:
         ax.plot(m[mask]-popt[1], fit(m[mask], *popt), 'r:');
     return res
     

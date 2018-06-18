@@ -82,7 +82,7 @@ def CDF(x,mu,sig, Amp=1, lg=0):
     g = sig*np.sqrt(2*np.log(2))
     return Amp*lg*(.5+np.arctan2(x-mu,g)/np.pi)+(1-lg)*Amp*.5*(1+erf((x-mu)/(sig*np.sqrt(2))))
     
-def LG(x, x0, sig=None, Amp=1, lg=.5, FWHM=None, asym=1):
+def LG(x, x0, sig=None, Amp=1, lg=.5, asym=1, FWHM=None):
     assert sig is not None or FWHM is not None
       
     if FWHM is None:
@@ -177,7 +177,7 @@ def ellipse(a,b,phi):
     """
     r = np.zeros(phi.shape) # if a & b is zero, result is zero
     m = np.logical_and(a!=0,b!=0)
-    r[m] = a[m]*b[m]/np.sqrt((b[m]*np.cos(phi[m]))**2+(a[m]*np.sin(phi[m]))**2)
+    r[m] = a*b/np.sqrt((b*np.cos(phi[m]))**2+(a*np.sin(phi[m]))**2)
     return r
     
 def asymm_ellipse(left, right, upper, lower, phi):
@@ -250,6 +250,10 @@ def LG2Da(XY, amplitude=1, angle=0, sigN=10, sigS=None, sigE=10, sigW=None, x0=N
     f = (1-LG)*Gxy+LG*Lxy
     out = bg+amplitude*f
     return out
+
+def MaxwellBoltzmann(E,T):
+    from . import constants as const
+    return 2*const.qe*np.sqrt(E/np.pi)*np.exp(-E/(const.kb*T))/(const.kb*T)**1.5
     
 def Voigt(x, x0, sig, gamma, A=1):
     import scipy
