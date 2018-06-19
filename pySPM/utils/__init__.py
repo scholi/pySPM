@@ -41,13 +41,13 @@ def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
-        
+
 def mass2time(m, sf, k0):
     return sf*np.sqrt(m)+k0
-    
+
 def time2mass(t, sf, k0):
     return ((t-k0)/sf)**2
-    
+
 def show_table(t):
     from IPython.core.display import display, HTML
     display(HTML(html_table(t)))
@@ -105,12 +105,12 @@ def htmlTable(t, show=True, header=False):
         display(HTML(s))
     else:
         return s
-    
+
 def zfit_level(A, processes=4):
     import multiprocessing as mp
     level = np.array(mp.Pool(processes).map(fitCDF1line, (A[:,i,:] for i in range(A.shape[1]))))
     return level
-    
+
 def in_ipynb():
     try:
         cfg = get_ipython().config 
@@ -120,7 +120,7 @@ def in_ipynb():
             return False
     except NameError:
         return False
-        
+
 def getToFimg(I, N=100, prog=False):
     """
     Simulate obtained counts for N scans from an image
@@ -133,7 +133,7 @@ def getToFimg(I, N=100, prog=False):
     for i in L:
         R += (np.random.rand(*I.shape)<(1-np.exp(-I)))
     return R
-    
+
 def getToFsimg(I, N=[10, 50, 100, 300, 500], prog=False):
     Ns = np.insert(np.diff(N),0,N[0])
     T = [getToFimg(I, n) for n in Ns]

@@ -29,7 +29,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
     """
-    from . import LG, get_mass, elts, neg_elts
+    from . import LG, get_mass
     from scipy.optimize import curve_fit
     import numpy as np
     import copy
@@ -45,6 +45,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
         negative = True
     E = get_peaklist(int(round(m0)), negative)
     E = [x for x in E if x not in exclude] + include
+    E = list(set(E))
     if debug:
         print("Elements:",", ".join(E))
     mp = m[mask][np.argmax(D[mask])] # mass of max peak

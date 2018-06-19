@@ -6,8 +6,13 @@
 Handle elements to calculate mass, abundance, etc.
 """
 
+import sqlite3
+import os
+import re
+
+from .constants import me
+
 def get_mass(elt):
-    import os
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -29,7 +34,6 @@ def get_mass(elt):
     return m
     
 def get_main_isotope(elt):
-    import os
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -40,7 +44,6 @@ def get_main_isotope(elt):
     return res[0]
 
 def is_main_isotope(elt, A):
-    import os
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -52,7 +55,6 @@ def is_main_isotope(elt, A):
 
 
 def get_isotopes_of_element(elt):
-    import os
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -137,7 +139,6 @@ def get_isotopes(elt):
     return [(x,get_mass(x),res[x]*get_abund(x)) for x in res]
 
 def get_abund(elt):
-    import os
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -159,7 +160,6 @@ def get_abund(elt):
 
 def getOrganicAt(m0):
     import numpy as np
-    from . import get_mass
     res = []
     for C in range(1, 1+m0//12):
        for N in range(1+(m0-12*C)//15):
