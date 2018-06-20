@@ -164,8 +164,6 @@ def __get_isotopes_elt(n, x, min_abund=0):
     return [(x, res[x]) for x in res]
 
 def get_isotopes(elt, min_abund=0):
-    import time
-    t0 = time.time()
     res = {'':1}
     for A,x,n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)',elt):
         if n == '':
@@ -180,10 +178,7 @@ def get_isotopes(elt, min_abund=0):
                 if ab >= min_abund:
                     Nres[x0+x] = ab
         res = Nres
-    t1 = time.time()
     R = [(x,get_mass(x),res[x]) for x in res]
-    t2 = time.time()
-    print(t1-t0, t2-t1)
     return R
 
 def get_abund(elt):
