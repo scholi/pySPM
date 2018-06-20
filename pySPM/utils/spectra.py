@@ -6,6 +6,8 @@
 Helper functions to handle spectras.
 """
 
+from.misc import dec_debug, do_debug
+
 def get_substance_peaks(substance, negative=True):
     import os
     import sqlite3
@@ -15,7 +17,7 @@ def get_substance_peaks(substance, negative=True):
     c.execute("SELECT Peaks.Fragment from Peaks where Peaks.Substance==(SELECT ID from substance where Name LIKE '%{name}%') and Polarity{pol}=0".format(name=substance,pol='><'[negative]))
     return [x[0] for x in c.fetchall()]
 
-def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", colors='rgb', **kargs):
+def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", colors='rgb', pretty=False, **kargs):
     """
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
@@ -25,7 +27,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     import numpy as np
     import copy
     import matplotlib.pyplot as plt
-    if debug:
+    if do_debug(debug):
         import time
         t0 = time.time()
     
@@ -40,7 +42,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     E = get_peaklist(int(round(m0)), negative)
     E = [x for x in E if x not in exclude] + include
     E = list(set(E))
-    if debug:
+    if do_debug(debug):
         print("Elements:",", ".join(E))
     mp = m[mask][np.argmax(D[mask])] # mass of max peak
     dm = dm0
@@ -53,7 +55,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     p0 = [1,dm]+[0,0]*len(E) # delta m is estimnated from the deviation of the highest peak
     m0s = [get_mass(x+'+') for x in E]
     Et = copy.deepcopy(E) # copy element list
-    if debug:
+    if do_debug(debug):
         print(" ; ".join(E))
     Dt = np.copy(D[mask])
     mt = m[mask]
@@ -64,7 +66,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
         i = np.argmin(abs(ms-mp))
         idx = E.index(Et[i])
         j = np.argmin(abs(mt-ms[i]-dm))
-        if debug:
+        if do_debug(debug):
             print("Max element:",Et[i],mp,ms[i],Dt[j], idx)
         p0[2+2*idx] = kargs.get('sig0',0.002)
         p0[3+2*idx] = Aredux*Dt[j]
@@ -82,7 +84,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     ax = kargs.get('ax',plt.gca())
     
     fit_type = None
-    if debug:
+    if do_debug(debug):
         print("p0",p0)
         t1 = time.time()
         print("setup time: ",t1-t0)
@@ -105,7 +107,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
                 fit_type = 1
             except Exception as e:
                 fit_type = 2
-                if debug:
+                if do_debug(debug):
                     raise e
                 popt = p0
                 pcov = np.zeros((len(p0),len(p0)))
@@ -154,27 +156,37 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
                 'fit': fit_type
                 }
     if showElts and ax is not None:
-        if debug:
+        if do_debug(debug):
             print("put labels")
             t2 = time.time()
             print("fitting time: ",t2-t1)
         from . import put_Xlabels
         if dofit and ax is not None:
             ax.plot(m[mask],D[mask],color=p[0].get_color(), alpha=.1)
-            put_Xlabels(ax, m0s, ["{0}: {res[Area]:.2f}".format(E,res=res[E]) for E in res], color=colors)
+            if pretty:
+                put_Xlabels(ax, m0s, ["{0}: {res[Area]:.2f}".format(E,res=res[E]) for E in res], color=colors, debug=dec_debug(debug))
             resO = [(res[x]['m0'],res[x]) for x in res]
             resO.sort(key=lambda x: x[0])
             for i,(_,r) in enumerate(resO):
                 col = colors[i%len(colors)]
                 Y = LG(m[mask], r['m0'], r['sig'], r['Amp'],lg=0, asym=r['assym'])
                 ax.plot(m[mask], Y, '--', color=col);
-        else:
-            put_Xlabels(ax, m0s, E, color=colors)
-    if debug:
+        elif pretty:
+            put_Xlabels(ax, m0s, E, color=colors, debug=dec_debug(debug))
+        if not pretty:
+            P = list(zip(m0s, E))
+            P.sort(key=lambda x: x[0])
+            y = ax.get_ylim()[1]
+            for i,(mi,Ei) in enumerate(P):
+                col = colors[i%len(colors)]
+                ax.axvline(mi, color=col, alpha=.5)
+                ax.annotate(Ei, (mi,y), (5,-5), rotation=90, va='top', ha='left', textcoords='offset pixels')
+
+    if do_debug(debug):
         print(popt)
-    if (dofit or debug) and ax is not None:
+    if (dofit or do_debug(debug)) and ax is not None:
         ax.plot(m[mask]-popt[1], fit(m[mask], *popt), 'r:');
-    if debug:
+    if do_debug(debug):
         t3 = time.time()
         print("labeling time: ",t3-t2)
     return res
