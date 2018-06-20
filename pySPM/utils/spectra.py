@@ -15,7 +15,7 @@ def get_substance_peaks(substance, negative=True):
     c.execute("SELECT Peaks.Fragment from Peaks where Peaks.Substance==(SELECT ID from substance where Name LIKE '%{name}%') and Polarity{pol}=0".format(name=substance,pol='><'[negative]))
     return [x[0] for x in c.fetchall()]
 
-def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", colors='rgb', **kargs):
+def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", colors='rgb', **kargs):
     """
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
