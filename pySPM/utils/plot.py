@@ -8,6 +8,7 @@ Various helper function for plotting data with matplotlib
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 def plotMask(ax, mask, color, **kargs):
     """
@@ -138,4 +139,77 @@ def formula(x):
     x = re.sub(r'\^([0-9\+\-]+)',r'$^{\1}$',x)
     return x
 
+def __points_in_bbox(x,y,bbox):
+    x_in = np.logical_and(x>=bbox.xmin, x<=bbox.xmax)
+    y_in = np.logical_and(y>=bbox.ymin, y<=bbox.ymax)
+    mask = x_in & y_in
+    return np.any(mask), mask
 
+def __bbox_overlap(bbox1, bbox2):
+    x_overlap = (bbox1.xmax >= bbox2.xmin) and (bbox1.xmin <= bbox2.xmax)
+    y_overlap = (bbox1.ymax >= bbox2.ymin) and (bbox1.ymin <= bbox2.ymax)
+    return x_overlap and y_overlap
+
+def __overlap(ax, obj, objs, debug=False):
+    fig = ax.get_figure()
+    renderer = fig.canvas.get_renderer()
+    tr = ax.transData
+    tri = tr.inverted()
+    r = obj.get_window_extent(renderer) # got object bbox
+    for o in objs:
+        if type(o) is mpl.lines.Line2D:
+            xyd = np.vstack(o.get_data()).T # retriev data in data coordinates
+            xy = tr.transform(xyd) # retrieve data in pixel coordinates
+            isin,ins = __points_in_bbox(xy[:,0],xy[:,1],r)
+            if isin:
+                if debug: ax.plot(xyd[:,0][ins],xyd[:,1][ins],'rx')
+                return o
+        else:
+            ro = o.get_window_extent(renderer)
+            if __bbox_overlap(r,ro):
+                return o
+    return False
+
+def __get_yextend_of_curve(ax, bbox, curve):
+    tri = ax.transData.inverted()
+    rd = bbox.transformed(tri) # bbox in data coordinates
+    x, y = curve.get_data()
+    mask = (x>=rd.xmin)*(x<=rd.xmax)
+    return (np.min(y[mask]), np.max(y[mask]))
+
+
+def put_Xlabels(ax, pos, labels, colors='rgb', debug=False, **kargs):
+    fig = ax.get_figure()
+    renderer = fig.canvas.get_renderer()
+    tr = ax.transData
+    tri = tr.inverted()
+    P = list(zip(pos, labels))
+    P.sort(key=lambda x: x[0]) # sort labels by ascending x
+    labs = []
+    ylim = ax.get_ylim()
+    objs = ax.get_children()[:-6]
+    for i, (x, lab) in enumerate(P):
+        col = colors[i%len(colors)]
+        labs.append(ax.annotate(lab,offset_coord((x,ylim[0]), (2,5)), va='bottom', ha='left', rotation=90, color=col))
+        ax.axvline(x, color=col, linestyle=kargs.get('linestyle','-'), alpha=kargs.get('line_alpha',.5))
+        ax.draw(renderer) # make sure to draw the new object
+        r = labs[-1].get_window_extent(renderer) # get the Bbox of the last label
+        ov = __overlap(ax, labs[-1], objs+labs[:-1])
+        last_ov = ov
+        y_offset = 0
+        while ov:
+            if debug: print("Label \"{}\" overlap with {}".format(labs[-1].get_text(), repr(ov)))
+            if type(ov) is mpl.lines.Line2D:
+                new_y = __get_yextend_of_curve(ax, r, ov)[1]
+                if debug: labs[-1].set_color('b')
+            else:
+                rov = ov.get_window_extent(renderer) # get the Bbox
+                new_y = rov.ymax
+                if debug: labs[-1].set_color('g')
+            if ov == last_ov:
+                y_offset += 5
+            last_ov = ov
+            new_xy = tri.transform(tr.transform((x,new_y))+np.array([2,y_offset])) # Offset the new_y of 5 pixels
+            labs[-1].set_position(new_xy)
+            ax.draw(renderer)
+            ov = __overlap(ax, labs[-1], objs+labs[:-1], debug=debug)
