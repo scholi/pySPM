@@ -24,7 +24,25 @@ def plotMask(ax, mask, color, **kargs):
     palette = copy.copy(plt.cm.gray)
     palette.set_over(color, 1.0)
     ax.imshow(m, cmap=palette, vmin=0, vmax=0.5, **kargs)
-    
+
+def offset_coord(xy, offset=(0,0), ax=None, fig=None, unit='px'):
+    if ax is None:
+        ax = plt.gca()
+
+    if fig is None:
+        fig = plt.gcf()
+
+    tr = ax.transData
+    tri = tr.inverted()
+
+    if unit is 'px':
+        offset = np.array(offset)
+    elif unit is 'ax':
+        offset = ax.transAxes.transform(offset)
+    elif unit is 'fig':
+        offset = fig.transFigure.transform(offset)
+    return tri.transform(tr.transform(xy)+offset)
+
 def Xdist(ax,left, right, y, color='r', linestyle=':', fmt="{dist:.1f}{unit}", xtransf=lambda x: x, va='bottom', ha='center', offset=(0,2), **kargs):
     """
     Show the distance between to x-values
@@ -119,3 +137,5 @@ def formula(x):
     x = re.sub('_([0-9]+)',r'$_{\1}$',x)
     x = re.sub(r'\^([0-9\+\-]+)',r'$^{\1}$',x)
     return x
+
+
