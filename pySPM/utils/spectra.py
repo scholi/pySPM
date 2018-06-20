@@ -14,22 +14,13 @@ def get_substance_peaks(substance, negative=True):
     c = conn.cursor()
     c.execute("SELECT Peaks.Fragment from Peaks where Peaks.Substance==(SELECT ID from substance where Name LIKE '%{name}%') and Polarity{pol}=0".format(name=substance,pol='><'[negative]))
     return [x[0] for x in c.fetchall()]
-    
-def get_peaklist(nominal_mass, negative=False):
-    import os
-    import sqlite3
-    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT Formula from fragments where NominalMass={nm} and (Polarity is NULL or Polarity=={pol})".format(nm=nominal_mass,pol=[1,-1][negative]))
-    return [x[0] for x in c.fetchall()]
 
 def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", **kargs):
     """
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
     """
-    from . import LG, get_mass
+    from . import LG, get_mass, get_peaklist
     from scipy.optimize import curve_fit
     import numpy as np
     import copy
@@ -170,4 +161,4 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
     if (dofit or debug) and ax is not None:
         ax.plot(m[mask]-popt[1], fit(m[mask], *popt), 'r:');
     return res
-    
+
