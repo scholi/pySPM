@@ -15,7 +15,7 @@ def get_substance_peaks(substance, negative=True):
     c.execute("SELECT Peaks.Fragment from Peaks where Peaks.Substance==(SELECT ID from substance where Name LIKE '%{name}%') and Polarity{pol}=0".format(name=substance,pol='><'[negative]))
     return [x[0] for x in c.fetchall()]
 
-def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", **kargs):
+def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", colors='rgb', **kargs):
     """
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
@@ -25,6 +25,9 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
     import numpy as np
     import copy
     import matplotlib.pyplot as plt
+    if debug:
+        import time
+        t0 = time.time()
     
     if type(include) is str:
         include=[include]
@@ -81,6 +84,8 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
     fit_type = None
     if debug:
         print("p0",p0)
+        t1 = time.time()
+        print("setup time: ",t1-t0)
     if dofit:
         try:
             popt, pcov = curve_fit(fit, m[mask], D[mask], p0=p0,
@@ -148,17 +153,29 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=None, dofit=False, showElts=T
                 'dm': (popt[1]*1e6/m0s[i],err[1]*1e6/m0s[i]),
                 'fit': fit_type
                 }
-
-        if showElts and ax is not None:
-            ax.axvline(m0s[i], color='r', alpha=.5);
-            ax.annotate(E[i], (m0s[i], ax.get_ylim()[1]),(3,-1), textcoords='offset pixels', rotation=90, va='top',ha='left');
+    if showElts and ax is not None:
+        if debug:
+            print("put labels")
+            t2 = time.time()
+            print("fitting time: ",t2-t1)
+        from . import put_Xlabels
         if dofit and ax is not None:
             ax.plot(m[mask],D[mask],color=p[0].get_color(), alpha=.1)
-            ax.plot(m[mask], Y, '--');
-            ax.annotate("{:.2f}".format(Area), (m0s[i]+popt[1], popt[2+2*i]/2))
+            put_Xlabels(ax, m0s, ["{0}: {res[Area]:.2f}".format(E,res=res[E]) for E in res], color=colors)
+            resO = [(res[x]['m0'],res[x]) for x in res]
+            resO.sort(key=lambda x: x[0])
+            for i,(_,r) in enumerate(resO):
+                col = colors[i%len(colors)]
+                Y = LG(m[mask], r['m0'], r['sig'], r['Amp'],lg=0, asym=r['assym'])
+                ax.plot(m[mask], Y, '--', color=col);
+        else:
+            put_Xlabels(ax, m0s, E, color=colors)
     if debug:
         print(popt)
     if (dofit or debug) and ax is not None:
         ax.plot(m[mask]-popt[1], fit(m[mask], *popt), 'r:');
+    if debug:
+        t3 = time.time()
+        print("labeling time: ",t3-t2)
     return res
 
