@@ -12,6 +12,13 @@ import re
 
 from .constants import me
 
+def get_peaklist(nominal_mass, negative=False):
+    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT Formula from fragments where NominalMass={nm} and (Polarity is NULL or Polarity=={pol})".format(nm=nominal_mass,pol=[1,-1][negative]))
+    return [x[0] for x in c.fetchall()]
+
 def get_mass(elt):
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
@@ -61,7 +68,7 @@ def get_isotopes_of_element(elt):
     c.execute("SELECT symbol, A, abund from elements where symbol='{sym}'".format(sym=elt))
     return c.fetchall()
 
-def simplify_formula(elt, debug=False):
+def formula2dict(elt, iso=True):
     elts = {}
     for A,x,n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)', elt):
         if A == '':
@@ -72,10 +79,28 @@ def simplify_formula(elt, debug=False):
             n = 1
         else:
             n = int(n)
-        if (A,x) not in elts:
-            elts[(A,x)] = n
+        if iso:
+            if (A,x) not in elts:
+                elts[(A,x)] = n
+            else:
+                elts[(A,x)] += n
         else:
-            elts[(A,x)] += n
+            if x not in elts:
+                elts[x] = n
+            else:
+                elts[x] += n
+    return elts
+
+def is_fragment_of(fragment, element):
+    f = formula2dict(fragment, iso=False)
+    e = formula2dict(element, iso=False)
+    for x in f:
+        if x not in e or e[x]<f[x]:
+            return False
+    return True
+
+def simplify_formula(elt, debug=False):
+    elts = formula2dict(elt)
     if debug:
         print(elts)
     order = "CHSNO"
@@ -85,7 +110,7 @@ def simplify_formula(elt, debug=False):
         miso = get_main_isotope(o)
         filt2 = [x for x in filt if x!=miso]
         for A in filt2:
-            n = elts[(A,o)]
+            n = elts[(A, o)]
             if n==0:
                 continue
             fmt = "^{A}{sym}"
@@ -117,26 +142,49 @@ def simplify_formula(elt, debug=False):
         res += fmt.format(A=A, sym=sym, n=n)
     return res 
 
-def get_isotopes(elt):
+def __get_isotopes_elt(n, x, min_abund=0):
+    """
+    get the isotopes of n atoms x
+    """
+    res = {'':1}
+    iso = get_isotopes_of_element(x)
+    for i in range(n):
+        r = []
+        Nres = {}
+        for x in res:
+            for y in iso:
+                X = simplify_formula(x+'^{1}{0}'.format(*y))
+                ab = res[x]*y[2]
+                if X not in Nres:
+                    if n*ab>=min_abund:
+                        Nres[X] = ab
+                else:
+                    Nres[X] += ab
+        res = Nres
+    return [(x, res[x]) for x in res]
+
+def get_isotopes(elt, min_abund=0):
+    import time
+    t0 = time.time()
     res = {'':1}
     for A,x,n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)',elt):
         if n == '':
             n = 1
         else:
             n = int(n)
-        iso = get_isotopes_of_element(x)
-        for i in range(n):
-            r = []
-            for x in res:
-                    for y in iso:
-                        r.append(simplify_formula(x+'^{1}{0}'.format(*y)))
-            res = {}
-            for x in r:
-                if x not in res:
-                    res[x] = 1
-                else:
-                    res[x] += 1
-    return [(x,get_mass(x),res[x]*get_abund(x)) for x in res]
+        R = __get_isotopes_elt(n, x, min_abund=min_abund)
+        Nres = {}
+        for x0 in res:
+            for x, ab0 in R:
+                ab = res[x0]*ab0
+                if ab >= min_abund:
+                    Nres[x0+x] = ab
+        res = Nres
+    t1 = time.time()
+    R = [(x,get_mass(x),res[x]) for x in res]
+    t2 = time.time()
+    print(t1-t0, t2-t1)
+    return R
 
 def get_abund(elt):
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
