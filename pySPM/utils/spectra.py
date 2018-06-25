@@ -81,7 +81,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
             y += LG(x, x0, p[2+2*i], Amp=p[3+2*i], asym=p[0], lg=0)
         return y
         
-    ax = kargs.get('ax',plt.gca())
+    ax = kargs.pop('ax',plt.gca())
     
     fit_type = None
     if do_debug(debug):
@@ -164,7 +164,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
         if dofit and ax is not None:
             ax.plot(m[mask],D[mask],color=p[0].get_color(), alpha=.1)
             if pretty:
-                put_Xlabels(ax, m0s, ["{0}: {res[Area]:.2f}".format(E,res=res[E]) for E in res], color=colors, debug=dec_debug(debug))
+                put_Xlabels(ax, m0s, ["{0}: {res[Area]:.2f}".format(E,res=res[E]) for E in res], color=colors, debug=dec_debug(debug), **kargs)
             resO = [(res[x]['m0'],res[x]) for x in res]
             resO.sort(key=lambda x: x[0])
             for i,(_,r) in enumerate(resO):
@@ -172,7 +172,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
                 Y = LG(m[mask], r['m0'], r['sig'], r['Amp'],lg=0, asym=r['assym'])
                 ax.plot(m[mask], Y, '--', color=col);
         elif pretty:
-            put_Xlabels(ax, m0s, E, color=colors, debug=dec_debug(debug))
+            put_Xlabels(ax, m0s, E, color=colors, debug=dec_debug(debug), **kargs)
         if not pretty:
             P = list(zip(m0s, E))
             P.sort(key=lambda x: x[0])
@@ -180,7 +180,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
             for i,(mi,Ei) in enumerate(P):
                 col = colors[i%len(colors)]
                 ax.axvline(mi, color=col, alpha=.5)
-                ax.annotate(Ei, (mi,y), (5,-5), rotation=90, va='top', ha='left', textcoords='offset pixels')
+                ax.annotate(Ei, (mi,y), (5,0), rotation=90, va='bottom', ha='left', textcoords='offset pixels')
 
     if do_debug(debug):
         print(popt)
