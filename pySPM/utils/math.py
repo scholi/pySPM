@@ -66,10 +66,16 @@ def butter_lowpass_filter(data, cutOff, fs, order=4):
     return y
 
 def Gauss(x, x0, s, A=None):
+    old = np.geterr()
+    np.seterr(all='ignore')
     R = np.exp(-(x-x0)**2/(2*s**2))
     if A is None:
-        return R /(s*np.sqrt(2*np.pi))
-    return A*R
+        R /= (s*np.sqrt(2*np.pi))
+    else:
+        R *= A
+    R[s==0] = (x[s==0]==x0)*1.0
+    np.seterr(**old)
+    return R
 
 def Lorentz(x, x0, gamma, A=None):
     R = 1/((x-x0)**2+(.5*gamma)**2)
