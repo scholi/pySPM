@@ -205,7 +205,7 @@ def put_Xlabels(ax, pos, labels, colors='rgb', debug=False, save=False, bbox=Fal
     labs = []
     ax.draw(renderer) # make sure to draw the new object
     ylim = ax.get_ylim()
-    objs = [o for o in ax.get_children() if type(o) not in [mpl.spines.Spine, mpl.axis.XAxis, mpl.axis.YAxis, mpl.patches.Rectangle]]
+    objs = [o for o in ax.get_children() if type(o) not in [mpl.patches.Rectangle]]
     coli = [None, None]
     for i, (x, lab) in enumerate(P):
         col = colors[i%len(colors)]

@@ -27,10 +27,10 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     import numpy as np
     import copy
     import matplotlib.pyplot as plt
+    import re
     if do_debug(debug):
         import time
         t0 = time.time()
-    
     if type(include) is str:
         include=[include]
     if type(exclude) is str:
@@ -42,6 +42,10 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     E = get_peaklist(int(round(m0)), negative)
     E = [x for x in E if x not in exclude] + include
     E = list(set(E))
+    fE = E
+    if kargs.get('formula', False):
+        fE = ['$'+re.sub('([0-9]+)',r'_{\1}',re.sub(r'\^([0-9]+)',r'^{\1}',x))+'$' for x in E]
+
     if do_debug(debug):
         print("Elements:",", ".join(E))
     mp = m[mask][np.argmax(D[mask])] # mass of max peak
@@ -172,7 +176,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
                 Y = LG(m[mask], r['m0'], r['sig'], r['Amp'],lg=0, asym=r['assym'])
                 ax.plot(m[mask], Y, '--', color=col);
         elif pretty:
-            put_Xlabels(ax, m0s, E, color=colors, debug=dec_debug(debug), **kargs)
+            put_Xlabels(ax, m0s, fE, color=colors, debug=dec_debug(debug), **kargs)
         if not pretty:
             P = list(zip(m0s, E))
             P.sort(key=lambda x: x[0])
