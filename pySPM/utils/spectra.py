@@ -17,6 +17,11 @@ def get_substance_peaks(substance, negative=True):
     c.execute("SELECT Peaks.Fragment from Peaks where Peaks.Substance==(SELECT ID from substance where Name LIKE '%{name}%') and Polarity{pol}=0".format(name=substance,pol='><'[negative]))
     return [x[0] for x in c.fetchall()]
 
+        
+def formulafy(x):
+    import re
+    return '$'+re.sub('([a-zA-Z])([0-9]+)',r'\1_{\2}',re.sub(r'\^([0-9]+)',r'^{\1}',re.sub('-$','^-',x)))+'$'
+
 def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", colors='rgb', pretty=False, **kargs):
     """
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
@@ -27,7 +32,6 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     import numpy as np
     import copy
     import matplotlib.pyplot as plt
-    import re
     if do_debug(debug):
         import time
         t0 = time.time()
@@ -42,10 +46,10 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     E = get_peaklist(int(round(m0)), negative)
     E = [x for x in E if x not in exclude] + include
     E = list(set(E))
-    fE = E
     if kargs.get('formula', False):
-        fE = ['$'+re.sub('([0-9]+)',r'_{\1}',re.sub(r'\^([0-9]+)',r'^{\1}',x))+'$' for x in E]
-
+        E_labels = [formulafy(x) for x in E]
+    else:
+        E_labels = E
     if do_debug(debug):
         print("Elements:",", ".join(E))
     mp = m[mask][np.argmax(D[mask])] # mass of max peak
@@ -53,7 +57,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     if dm is None:
         dm=0
     if len(E)>0:
-        i = np.argmin(abs(np.array([get_mass(x+'+') for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the clothest to max_peak
+        i = np.argmin(abs(np.array([get_mass(x+'+') for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the closest to max_peak
         if dm0 is None:
             dm = mp-get_mass(E[i]+'+')
     p0 = [1,dm]+[0,0]*len(E) # delta m is estimnated from the deviation of the highest peak
@@ -176,7 +180,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
                 Y = LG(m[mask], r['m0'], r['sig'], r['Amp'],lg=0, asym=r['assym'])
                 ax.plot(m[mask], Y, '--', color=col);
         elif pretty:
-            put_Xlabels(ax, m0s, fE, color=colors, debug=dec_debug(debug), **kargs)
+            put_Xlabels(ax, m0s, E_labels, color=colors, debug=dec_debug(debug), **kargs)
         if not pretty:
             P = list(zip(m0s, E))
             P.sort(key=lambda x: x[0])
