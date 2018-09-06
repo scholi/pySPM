@@ -694,10 +694,13 @@ class ITM:
         ax.set_ylim((0, H))
 
     def showPeaks(self):
-        self.getMassInt()
         for p in self.peaks:
-            P = {k.decode('utf8'): self.peaks[p][k] for k in self.peaks[p]}
-            print("{0}) {peaklabel}".format(p, **P))
+            P = self.peaks[p]
+            label = P['assign']['utf16']
+            if label:
+                print("{0}) {peaklabel}".format(p, peaklabel=label))
+            else:
+                print("{0}) {cmass:.2f}u [{lmass:.2f}u-{umass:.2f}u]".format(p, cmass=P['cmass']['float'],lmass=P['lmass']['float'],umass=P['umass']['float']))
             
     def modify_block_and_export(self, path, new_data, output, **kargs):
         self.root.modify_block_and_export(path, new_data, output, **kargs)
