@@ -58,7 +58,7 @@ pip install -e .
 
 ## Documentation
 The documentation is still in its early stage
-[read the documentation](../master/doc/pySPM%20Documentation.ipynb)
+[read the documentation](https://nbviewer.jupyter.org/github/scholi/pySPM/blob/master/doc/pySPM%20Documentation.ipynb)
 
 ## Citing
 If you use this library for your work, please think about citing it.
