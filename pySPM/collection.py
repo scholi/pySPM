@@ -161,7 +161,7 @@ class Collection:
                   for i in range(len(channel_names))]
         overlay = np.sum(layers, axis=0)
         o = self.create_image(overlay, key="overlay")
-        ch = [self.create_image(x, key=channel_names[i]) for i,x in enumerate(layers)]
+        ch = [self.create_image(x, key=self[channel_names[i]].channel) for i,x in enumerate(layers)]
         if 'ax' in kargs:
             o.show(**kargs)
         return o, ch
