@@ -261,7 +261,7 @@ class SPM_image:
             Y = Y0
             Z = Z0
         A = np.column_stack((np.ones(Z.ravel().size), X.ravel(), Y.ravel()))
-        c, resid, rank, sigma = np.linalg.lstsq(A, Z.ravel())
+        c, resid, rank, sigma = np.linalg.lstsq(A, Z.ravel(), rcond=-1)
         if inline:
             self.pixels -= c[0] * \
                 np.ones(self.pixels.shape) + c[1] * X0 + c[2] * Y0
@@ -318,7 +318,7 @@ class SPM_image:
         return (0, W, 0, H)
 
     def show(self, ax=None, sig=None, cmap=None, title=None,
-             adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, wrap=None, mul=1, **kargs):
+             adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, wrap=None, mul=1, symmetric=False, **kargs):
         mpl.rc('axes', grid=False)
         
         if ax is None:
@@ -376,6 +376,9 @@ class SPM_image:
         if 'vmax' in kargs:
             vmax = kargs['vmax']
             del kargs['vmax']
+        if symmetric:
+            vmax = abs(max(vmin,vmax))
+            vmin = -vmax
         if not flip:
             if pixels:
                 r = ax.imshow(np.flipud(img), cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
@@ -521,7 +524,7 @@ class SPM_image:
         xvalues = np.linspace(0, rd, len(p))
         return xvalues, p
 
-    def plot_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, img=None, imgColor='w', **kargs):
+    def plot_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, img=None, imgColor='w', ztransf=lambda x: x, zunit=None, **kargs):
         col = kargs.get('color',kargs.get('col','C0'))
         W = self.size['real']['x']
         fact = int(np.floor(np.log(W)/np.log(10)/3))*3
@@ -556,9 +559,9 @@ class SPM_image:
         xvalues = np.linspace(0, rd, len(p))
         lab = kargs.get("label", "")
         if width < 2:
-            profile = p
+            profile = ztransf(p)
         else:
-            profile = np.mean(p, axis=1)
+            profile = ztransf(np.mean(p, axis=1))
             s = np.std(p)
             if kargs.get('stdplot', True):
                 for ns in range(1, kargs.get('sig', 2)+1):
@@ -577,7 +580,10 @@ class SPM_image:
             ax.plot(xvalues, np.max(p, axis=1), color=maxColor, linestyle=maxStyle, linewidth=kargs.get('linewidth',1), marker=maxMarker, label=lab+' (max)')
             
         ax.set_xlabel("Distance [{1}{0}]".format(unit, u))
-        ax.set_ylabel("{1} [{0}]".format(self.zscale, self.channel))
+        if zunit is not None:
+            ax.set_ylabel("{1} [{0}]".format(zunit, self.channel))
+        else:
+            ax.set_ylabel("{1} [{0}]".format(self.zscale, self.channel))
        
         return {'plot': Plot, 'l': xvalues, 'z': profile}
 

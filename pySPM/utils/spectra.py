@@ -20,7 +20,7 @@ def get_substance_peaks(substance, negative=True):
         
 def formulafy(x):
     import re
-    return '$'+re.sub('([a-zA-Z])([0-9]+)',r'\1_{\2}',re.sub(r'\^([0-9]+)',r'^{\1}',re.sub('-$','^-',x)))+'$'
+    return '$'+re.sub('([a-zA-Z])_?([0-9]+)',r'\1_{\2}',re.sub(r'\^([0-9]+)',r'^{\1}',re.sub('([+-])$',r'^\1',x)))+'$'
 
 def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", colors='rgb', pretty=False, **kargs):
     """
@@ -142,7 +142,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
             (err[0]*popt[2*i+2]*popt[2*i+3]*np.sqrt(2*np.pi)*.5)**2
             )
         if not errors:
-            res[E[i]] = {
+            res[E_labels[i]] = {
                 'm0': m0s[i],
                 'mass': m0s[i]+popt[1],
                 'Area' : Area,
@@ -153,7 +153,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
                 'fit': fit_type
                 }
         else:
-            res[E[i]] = {
+            res[E_labels[i]] = {
                 'm0': m0s[i],
                 'mass': (m0s[i]+popt[1],err[1]),
                 'Area' : (Area,Area_err),

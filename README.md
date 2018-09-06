@@ -19,22 +19,16 @@ If you find bugs and issues, please report them to the developpe: https://github
 ### Structure reformatting
 A setup.py is prestent in order to install the package easily. => in order to use the library do ```pip install -e . ```
 
-### Data correction for getRawSpectrum
-it now supports Field of View correction as well as the dead-time correction. So now both ITA spectra and the reconstructed ones fit perfectly:
-
+### Nice Spectra Plotting
 ```python
-import matplotlib.pyplot as plt
 import pySPM
-import numpy as np
 
-A = pySPM.ITA(filename_ita)
-I = pySPM.ITM(filename_itm)
-m, S = A.getSpectrum()
-m_raw, S_raw = I.getRawSpectrum()
-plt.plot(m, S)
-plt.plot(pySPM.utils.binning(m_raw,ufunc=np.mean), pySPM.utils.binning(S_raw))
-plt.show()
+filename = "..."
+TOF = pySPM.ITA(filename)
+TOF.showSpectrumAround(pySPM.utils.get_mass('C2H3NO'), pretty=True, formula=True)
 ```
+
+![Spectra](../master/doc/Spectra.png)
 
 ## Dependencies
 This library requires the following packages

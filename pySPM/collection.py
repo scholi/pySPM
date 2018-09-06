@@ -144,7 +144,7 @@ class Collection:
                 {k: self.channels[k].ravel() for k in channels})
         return data
 
-    def overlay(self, channel_names, colors=[[0, .5, .3], [1, 0, 0]],
+    def overlay(self, channel_names, colors=[[1, 0, 0], [0,1,0],[0,0,1]],
                 sig=None, vmin=None, vmax=None, **kargs):
         """
         Create an overlay (in color) of several channels.
@@ -153,7 +153,7 @@ class Collection:
             (Its length should be identical to channel_names)
         """
         assert len(channel_names) >= 2
-        assert len(colors) == len(channel_names)
+        assert len(colors) >= len(channel_names)
         data = [SPM.normalize(
             self[ch].pixels, sig=sig, vmin=vmin, vmax=vmax)
             for ch in channel_names]
@@ -211,7 +211,7 @@ def PointInTriangle(pt, v1, v2, v3):
     return (b1 == b2) * (b2 == b3)
 
 
-def overlay_triangle(channel_names, colors, radius=.8,proportion = .8,ax=None, size=512, bgcolor=[0,0,0], textcolor='white',fontsize=20):
+def overlay_triangle(channel_names, colors=[[1,0,0],[0,1,0],[0,0,1]], radius=.8,proportion = .8,ax=None, size=512, bgcolor=[0,0,0], textcolor='white',fontsize=20):
     """
     Create the image of a triangle, where the color is a gradient between three colors
     (one for each vertex).

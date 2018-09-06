@@ -127,7 +127,7 @@ class PCA:
         # variables
         if self.pca is None:
             self.runPCA()
-        pc = np.matmul(self.standX.as_matrix(), self.pca.components_[id].T)
+        pc = np.matmul(self.standX.values, self.pca.components_[id].T)
         return pc
 
     def loadings(self, id=None):
@@ -173,11 +173,18 @@ class ITA_PCA(PCA):
         mul = self.col.get_multivariate(channels)
         PCA.__init__(self, mul)
 
-    def showPCA(self, num=None, ax=None, **kargs):
-        c = self.getPCAcol(num)
-        c.show(ax=ax, cmap='hot', **kargs)
+    def showPCA(self, num=None, ax=None, pn=False, cmap=None, symmetric=True, **kargs):
+        c = self.getPCAcol(num, pn)
+        if cmap is None:
+            if pn:
+                cmap = 'viridis'
+                symmetric = False
+            else:
+                cmap = 'bwr'
+        c.show(ax=ax, cmap=cmap, symmetric=symmetric, **kargs)
 
-    def getPCAcol(self, num=None):
+
+    def getPCAcol(self, num=None, pn=False):
         if num is None:
             num = self.data.shape[1]
         assert num <= self.data.shape[1]
@@ -185,7 +192,11 @@ class ITA_PCA(PCA):
             cls=self.col, name=self.col.name+"[PCA]")
         for i in range(num):
             PC = self.getPCA(i)
-            PCA_col.add(PC, 'PC{0}'.format(i+1))
+            if pn:
+                PCA_col.add(PC*(PC>=0), 'PC{0}+'.format(i+1))
+                PCA_col.add(-PC*(PC<=0), 'PC{0}-'.format(i+1))
+            else:
+                PCA_col.add(PC, 'PC{0}'.format(i+1))
         return PCA_col
 
     def getPCA(self, id=0):

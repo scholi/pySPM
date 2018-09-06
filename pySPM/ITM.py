@@ -264,7 +264,8 @@ class ITM:
             sf = V.goto('sf',lazy=True).getDouble()
             k0 = V.goto('k0',lazy=True).getDouble()
         except:
-            print("Failed to get sf,k0, find alternative")
+            import warnings
+            warnings.warn("Failed to get sf,k0, find alternative")
             sf = self.root.goto('MassScale/sf').getDouble()
             k0 = self.root.goto('MassScale/k0').getDouble()
             
