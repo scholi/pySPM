@@ -603,6 +603,8 @@ class ITM:
                 self.root.f.seek(x['bidx'])
                 child = Block.Block(self.root.f)
                 RAW += zlib.decompress(child.value)
+        if type(RAW) is str:
+            return bytearray(RAW)
         return RAW
         
     def getRawData(self, scan=0):
@@ -633,10 +635,10 @@ class ITM:
                 b = b[:3] + b'\x00'
                 y = struct.unpack('<I', b)[0]
                 i += 4
-                b = RAW[i:i+4]
+                b = bytearray(RAW[i:i+4])
                 if b[3] < 64:
                     raise TypeError("Expecting a 40 or higher block at {}, got {:02x}".format(i+3,b[3]))
-                b = b[:3] + bytes([b[3]&16])
+                b = b[:3] + bytearray([b[3]&16])
                 _Block = []
                 id = struct.unpack('<I', b)[0]
                 PixelOrder[y, x] = id
@@ -712,7 +714,7 @@ class ITM:
         channels: list of (lower_mass, upper_mass)
         upper_mass: upper mass of the peak
         scans: The list of the scans to take into account (if None, all scans are taken)
-        sf/k0: mass callibration. If none take the saved values
+        sf/k0: mass calibration. If none take the saved values
         time: If true the upper/lower_mass will be understood as time value
         prog: If True display a progressbar with tqdm
         """

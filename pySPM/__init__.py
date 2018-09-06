@@ -2,7 +2,9 @@
 
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
-from . import ToF
+from __future__ import absolute_import
+
+#from . import ToF
 from .SPM import *
 from . import align, utils
 from .nanoscan import Nanoscan

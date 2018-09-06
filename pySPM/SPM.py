@@ -19,7 +19,7 @@ import scipy.interpolate
 from skimage import transform as tf
 import copy
 from .utils import CDF
-from . import SPM
+import sys
 
 try:
     from tqdm import tqdm_notebook as tqdm
@@ -1221,5 +1221,6 @@ DEPRECATED_FUNCTIONS = {
 for x in DEPRECATED_METHODS:
     setattr(SPM_image, x, method_alias(x, DEPRECATED_METHODS[x]))
 
+thisModule = sys.modules[__name__]
 for x in DEPRECATED_FUNCTIONS:
-    setattr(SPM, x, fun_alias(x, DEPRECATED_FUNCTIONS[x]))    
+    setattr(thisModule, x, fun_alias(x, DEPRECATED_FUNCTIONS[x]))    

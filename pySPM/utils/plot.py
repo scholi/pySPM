@@ -120,7 +120,12 @@ def get_rect(img, bottom, top, left, right, ax, color='r'):
     ax.axvline(right, color=color)
     return img[bottom:top, left:right]
     
-def sublegend(*ax, labels=None, color='white', margin=9, titles=None, fontsize=14):
+def sublegend(*ax, **kargs):
+    labels   = kargs.get('labels', None)
+    color    = kargs.get('color', 'white')
+    margin   = kargs.get('margin', 9)
+    titles   = kargs.get('titles', None)
+    fontsize = kargs.get('fontsize',14)
     """
     ax: list of axes
     labels: If None, the will be a, b, c, d, ...

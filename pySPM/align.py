@@ -10,6 +10,7 @@ This module also gives the ability to perform shift correction on images
 which is used in order to align the different scans from ToF-SIMS images.
 """
 
+from __future__ import print_function
 import numpy as np
 from skimage import transform as tf
 from scipy.ndimage.filters import gaussian_filter

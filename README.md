@@ -30,6 +30,9 @@ TOF.showSpectrumAround(pySPM.utils.get_mass('C2H3NO'), pretty=True, formula=True
 
 ![Spectra](../master/doc/Spectra.png)
 
+### Python 2.7 compatible
+The library is now compatibe with Python 3 and Python 2.7
+
 ## Dependencies
 This library requires the following packages
 * mendatory

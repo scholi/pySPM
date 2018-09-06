@@ -17,7 +17,7 @@ def get_peaklist(nominal_mass, negative=False):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT Formula from fragments where NominalMass={nm} and (Polarity is NULL or Polarity=={pol})".format(nm=nominal_mass,pol=[1,-1][negative]))
-    return [x[0] for x in c.fetchall()]
+    return [str(x[0]) for x in c.fetchall()]
 
 def get_mass(elt):
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
