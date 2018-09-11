@@ -39,12 +39,33 @@ except:
     from skimage.filters import threshold_adaptive as threshold_local
 
 
-def funit(value, unit=None, iMag=True):
+def funit(value, unit=None):
     """
     Convert a value and unit to proper value
-    e.g. 0.01m will be converted to 1cm
+    e.g. 0.01m will be converted to 10mm
     e.g. 1000A will be converted to 1kA
     etc.
+
+    Parameters
+    ----------
+    value : int, float or dictionary with 'value' and 'unit' key
+        numerical value to work with
+    unit : string or None
+        name of the unit
+
+    Returns
+    -------
+    dictionary with formated 'value' and 'unit'.
+    The value will be: ≥1 and <1000
+
+    Examples
+    --------
+    >>> funit(0.01,'m')
+    {'value': 10.0, 'unit': 'mm'}
+    >>> funit(1, 'cm')
+    {'value': 1.0, 'unit': 'cm'}
+    >>> funit({'value':2340, 'unit': 'um'})
+    {'value': 2.34, 'unit': 'mm'}
     """
     if unit == None:
         unit = value['unit']
@@ -72,11 +93,33 @@ def funit(value, unit=None, iMag=True):
    
 class SPM_image:
     """
-    Main class to handle SPM images
+    Main class to handle SPM images.
+    This class contains the pixels data of the images as well as it's real size.
+    It also provides a lot of tools to correct and perform various analysis and tasks on the image.
     """
     
     def __init__(self, BIN, channel='Topography',
                  corr=None, real=None, zscale='?', _type='Unknown'):
+        """
+        Create a new SPM_image
+
+        Parameters
+        ----------
+        BIN : 2D numpy array
+            The pixel values of the image as a 2D numpy array
+        channel : string
+            The name of the channel. What does the image represents?
+        corr : string or None
+            'slope' : correct the SPM image for its slope (see pySPM.SPM.SPM_image.correct_slope)
+            'lines' : correct the SPM image for its lines (see pySPM.SPM.SPM_image.correct_lines)
+            'plane' : correct the SPM image by plane fitting (see pySPM.SPM.SPM_image.correct_plane)
+        real : None or dictionary
+            Information about the real size of the image {'x':width,'y':height,'unit':unit_name}
+        zscale : string
+            Unit used to describe the z-scale. (units of the data of BIN)
+        _type : string
+            represent the type of measurement
+        """
         self.channel = channel
         self.direction = 'Unknown'
         self.size = {'pixels': {'x': BIN.shape[1], 'y': BIN.shape[0]}}
@@ -99,16 +142,61 @@ class SPM_image:
                 self.correct_plane()
             
     def __add__(self, b):
+        """
+        Add up two images. This is a low level function and no check is performed to proof that both images have the same size.
+        """
         New = copy.deepcopy(self)
         New.pixels += b.pixels
         New.channel += " + "+b.channel
         return New
     
     def pxs(self):
+        """
+        Return the pixel size
+        """
         fxy = {xy: funit(self.size['real'][xy], self.size['real']['unit']) for xy in 'xy'}
         return [(fxy[xy]['value']/self.size['pixels'][xy], fxy[xy]['unit']) for xy in 'xy']
         
     def add_scale(self, length, ax=None, height=20, color='w', loc=4, text=True, pixels=True, fontsize=20):
+        """
+        Display a scale marker on an existing image
+
+        Parameters
+        ----------
+
+        length : float
+            The length of the scale in real units
+        ax : matplotlib axis
+            if None the current axis will be taken (plt.gca())
+        height : int
+            The height of the scale bar in pixels
+        color : string
+            The color used to display the scale bar
+        loc : int
+            The location of the scale bar.
+            1 : top right
+            2 : top left
+            3 : bottom left
+            4 : bottom right
+        text : bool
+            display the size of the scale on top of it?
+        pixels : bool
+            Is the image plotted in ax with a x/y scale in pixels?
+        fontsize : float
+            The fontsize used to display the text
+
+        Example
+        -------
+        >>> img = pySPM.SPM_image()
+        >>> img.show()
+        >>> img.add_scale(50e-6, pixels=False);
+        Add a scale of 50 μm on an image displayed with real units
+
+        >>> img = pySPM.SPM_image()
+        >>> img.show(pixels=True)
+        >>> img.add_scale(50e-6);
+        Add a scale of 50 μm on an image displayed in pixels
+        """
         import matplotlib.patches
         L = length*self.size['pixels']['x']/self.size['real']['x']
         ref = [height, height]
@@ -118,6 +206,8 @@ class SPM_image:
             ref[1] = self.size['pixels']['y'] - ref[1] - height
         if ax is None:
             ax = plt.gca()
+        if text and loc in [1,2]:
+            ref[1] += fontsize + height
         if not pixels:
             x,y = self.px2real(ref[0]+L,ref[1]+height)
             ref = self.px2real(*ref)
@@ -133,22 +223,45 @@ class SPM_image:
                         (ref[0]+L/2, ref[1]), color=color,
                         fontsize=fontsize, va="bottom", ha="center")
 
-    def offset(self, profiles, width=1, ax=None, inline=True, **kargs):
+    def offset(self, profiles, width=1, ax=None, col='w', inline=True, **kargs):
         """
         Correct an image by offsetting each row individually in order that the lines passed as argument in "profiles" becomes flat.
-        
-        profiles: a list of lines (a lines in a list defined as [x1, y1, x2, y2] in pixels) known to be flat
-        width: the line width used for better statistics
-        ax: the matplotlib axis to plot the profiles in
-        inline: if True perform the correction on the current object, otherwise return a new ones
-        
+
+        Parameters
+        ----------
+        profiles: list of list
+            each sublist represent a line as [x1, y1, x2, y2] in pixels known to be flat
+        width : int, float
+            the line width in pixels used for better statistics
+        ax : matplotlib axis or None
+            If not None, axis in which the profiles will be plotted in
+        inline : bool
+            If True perform the correction on the current object, otherwise return a new image
+        col : string
+            matrplotlib color used to plot the profiles (if ax is not None)
         **kargs: arguments passed further to get_row_profile.
             axPixels: set to True if you axis "ax" have the data plotted in pixel instead of real distance
+
+        Example
+        -------
+        Exampel if the data are plotted in pixels:
+        >>> topo = pySPM.SPM_image(...)
+        >>> fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        >>> topoC = topo.offset([[150, 0, 220, 255]], inline=False,axPixels=True)
+        >>> topo.show(pixels=True, ax=ax[0])
+        >>> topoC.show(ax=ax[1]);
+
+        Example if the data are plotted with real units
+        >>> topo = pySPM.SPM_image(...)
+        >>> fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        >>> topoC = topo.offset([[150, 0, 220, 255]], inline=False)
+        >>> topo.show(ax=ax[0])
+        >>> topoC.show(ax=ax[1]);
         """
         offset = np.zeros(self.pixels.shape[0])
         counts = np.zeros(self.pixels.shape[0])
         for p in profiles:
-            y, D = self.get_row_profile(*p, width=width, ax=ax, **kargs)
+            y, D = self.get_row_profile(*p, width=width, ax=ax, col=col, **kargs)
             counts[y] += 1
             offset[y[1:]] += np.diff(D)
         counts[counts == 0] = 1
@@ -166,6 +279,9 @@ class SPM_image:
             return C
             
     def pxRect2Real(self, xy, width, height):
+        """
+        Transform a xy, width, height data in pixels to an equivalentz one with real units
+        """
         ll = self.px2real(xy[0],xy[1])
         ur = self.px2real(xy[0]+width,xy[1]+height)
         return ll,ur[0]-ll[0],ur[1]-ll[1]
@@ -174,16 +290,26 @@ class SPM_image:
         """
         Get a profile per row along a given line. This function is mainly useful for the function offset.
         
-        x1, y1, x2, y2: coordinates of the line.
-        width: the width of the line used for statistics
-        col: color used to plot the line position
-        ax: matplotlib axis in which the lines position will plotted
-        alpha: The alpha channel of the line color
+        x1, y1, x2, y2: int
+            coordinates of the line.
+        width : int
+            the width of the line used for statistics (in pixels)
+        col: string
+            color used to plot the line position
+        ax : matplotlib axis
+            axis in which the lines position will plotted
+        alpha : float
+            The alpha channel of the line color (≥0 and ≤1)
         **kargs:
             line style arguments: linewidth, color and linestyle
             axis units: axPixels set to True if ax has the image plotted in pixels.
             
-        output: Y coordinates, Z coordinates
+        Returns
+        -------
+        Y coordinates : 1D numpy array
+            distance along the profile starting at 0
+        Z coordinates : 1D numpy array
+            profile
         """
         plotargs = { key: kargs[key] for key in ['linewidth', 'color', 'linestyle'] if key in kargs }
         if y2 < y1:
@@ -220,6 +346,9 @@ class SPM_image:
         return Y, V/width
 
     def correct_median_diff(self, inline=True):
+        """
+        Correct the image with the median difference
+        """
         N = self.pixels
         # Difference of the pixel between two consecutive row
         N2 = np.vstack([N[1:, :], N[-1:, :]])-N
@@ -235,19 +364,30 @@ class SPM_image:
             return New
 
     def correct_slope(self, inline=True):
+        """
+        Correct the image by subtracting a fitted slope along the y-axis
+        """
         s = np.mean(self.pixels, axis=1)
         i = np.arange(len(s))
         fit = np.polyfit(i, s, 1)
         if inline:
-            self.pixels -= np.tile(np.polyval(fit,
-                                              i).reshape(len(i), 1), len(i))
+            self.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
         else:
             New = copy.deepcopy(self)
-            New.pixels -= np.tile(np.polyval(fit,
-                                             i).reshape(len(i), 1), len(i))
+            New.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
             return New
 
     def correct_plane(self, inline=True, mask=None):
+        """
+        Correct the image by subtracting a fitted 2D-plane on the data
+
+        Parameters
+        ----------
+        inline : bool
+            If True the data of the current image will be updated otherwise a new image is created
+        mask : None or 2D numpy array
+            If not None define on which pixels the data should be taken.
+        """
         x = np.arange(self.pixels.shape[1])
         y = np.arange(self.pixels.shape[0])
         X0, Y0 = np.meshgrid(x, y)
@@ -271,16 +411,23 @@ class SPM_image:
             return New
 
     def correct_lines(self, inline=True):
+        """
+        Subtract the average of each line for the image.
+
+        if inline is True the current data are updated otherwise a new image with the corrected data is returned
+        """
         if inline:
-            self.pixels -= np.tile(np.mean(self.pixels,
-                                           axis=1).T, (self.pixels.shape[0], 1)).T
+            self.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0], 1)).T
         else:
             New = copy.deepcopy(self)
-            New.pixels -= np.tile(np.mean(self.pixels, axis=1).T,
-                                  (self.pixels.shape[0], 1)).T
+            New.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0], 1)).T
             return New
 
     def dist_v2(self, pixel=False):
+        """
+        Return a 2D array with the distance between each pixel and the closest border.
+        Might be usefull for FFT filtering
+        """
         if pixel:
             dx = 1
             dy = 1
@@ -295,6 +442,17 @@ class SPM_image:
         return np.sqrt(X+Y)
     
     def inv_calc_flat(self, d, l=0.1):
+        """
+        Function used for inverse MFM calculation (inspired from http://qmfm.empa.ch/qmfm/)
+        The function is in its early devlopment stage as not used by the developed.
+
+        Parameters
+        ----------
+        d : float
+            Height distance in the input data
+        l : float
+            Tikhonov parameter for the deconvolution
+        """
         work_image = self.pixels
         ny, nx = self.pixels.shape
         dx = self.size['real']['x']/self.size['pixels']['x']
@@ -313,12 +471,67 @@ class SPM_image:
         return np.real(np.fft.ifft2(np.fft.fft2(work_image)*recon_tf))
 
     def get_extent(self):
+        """
+        Get the image extent in real data
+        """
         W = self.size['recorded']['real']['x']
         H = self.size['recorded']['real']['y']
         return (0, W, 0, H)
 
     def show(self, ax=None, sig=None, cmap=None, title=None,
              adaptive=False, dmin=0, dmax=0, pixels=False, flip=False, wrap=None, mul=1, symmetric=False, **kargs):
+        """
+        Function to display the image with a lot of parametrization
+
+        Parameters
+        ----------
+        ax : matplotlib axis or None
+            matplotlib axis if given otherwise current axis will be used (plt.gca())
+        sig : float
+            sigma values to adjust the contrast range around the mean ±sig times the standard-deviation
+        cmap : string
+            colormap name used. By default a gray map is used. If the zscale of the data are in 'meter' (i.e. topography data) the 'hot' colormap is used
+        title : string
+            The title of the plot. By default is the channel name
+        adaptive : bool
+            The color scale used is linear. If adaptive is True a non linear color scale is used in order that each color is used with the same amount.
+        dmin : float
+            minimum value adjustment used for the colorscale
+        dmax: float
+            maximum value adjustment used for the colorscale
+        pixels : bool
+            Display the image with x/y-labels with real unit. If pixels is True, the axes are in pixels
+        flip : bool
+            Flip the image upside-down
+        wrap : Nont or int
+            wrap the title to a width of wrap chars
+        symmetric : bool
+            If True will place the middle of the colorscale to the value 0.
+            This is specially usefull for diverging colormaps such as : BrBG, bwr, coolwarm, seismiv, spectral, etc.
+        level : float
+            level should be ≥0 and <50. Adjust the lower and upper colorscale to level% and (100-level)% of the data range.
+            e.g. if level=1, the colorscale will display 1-99% of the data range
+        vmin : float
+            Minimum value used for the colorscale
+        vmax : flaot
+            Maximum value used for the colorscale
+
+
+        Returns
+        -------
+        Return the matplotlib.imshow instance
+
+        Examples
+        --------
+        >>> topo = pySPM.SPM_image(...)
+        >>> fig, (ax, ax2) = plt.subplots(2, 3, figsize=(15, 10))
+        >>> topo.show(ax=ax[0], cmap='gray', title="color map=\"gray\"")
+        >>> topo.show(ax=ax[1], sig=2, title="standard deviation=2")
+        >>> topo.show(ax=ax[2], adaptive=True, title="Adaptive colormap")
+        >>> topo.show(ax=ax2[0], dmin=4e-8, cmap='gray', title="raise the lowest value for the colormap of +40nm")
+        >>> topo.show(ax=ax2[1], dmin=3e-8, dmax=-3e-8, cmap='gray',title="raise lower of +30nm and highest of -30nm")
+        >>> topo.show(ax=ax2[2], pixels=True, title="Set axis value in pixels");
+        """
         mpl.rc('axes', grid=False)
         
         if ax is None:
@@ -408,9 +621,17 @@ class SPM_image:
         return r
         
     def real2px(self, x, y):
+        """
+        Transform a real (x,y) value in pixels
+        Units should be the same as the one plotted by pySPM.SPM_image.show
+        """
         return self.real2pixels(x,y)
         
     def real2pixels(self, x, y):
+        """
+        Transform a real (x,y) value in pixels
+        Units should be the same as the one plotted by pySPM.SPM_image.show
+        """
         W = self.size['real']['x']
         fact = int(np.floor(np.log(W)/np.log(10)/3))*3
         px = np.digitize(x, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]))
@@ -418,6 +639,10 @@ class SPM_image:
         return px, py
         
     def px2real(self, x, y):
+        """
+        Transform  a (x,y) value from pixels to real
+        Units are the same as the one plotted by pySPM.SPM_image.show
+        """
         W = self.size['real']['x']
         fact = int(np.floor(np.log(W)/np.log(10)/3))*3
         rx = x*self.size['real']['x']/(10**fact)/self.pixels.shape[1]
@@ -494,8 +719,24 @@ class SPM_image:
     def get_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, color='w', axPixels=None, **kargs):
         """
         retrieve the profile of the image between pixel x1,y1 and x2,y2
-        ax: defines the matplotlib axis on which the position of the profile should be drawn (in not None)
-        width: the width of the profile (for averaging/statistics)
+
+        Parameters
+        ----------
+        x1, y1, x2, y2 : ints
+            coordinates for the profile
+        ax : matplotlib axis
+            defines the matplotlib axis on which the position of the profile should be drawn (in not None)
+        width : int
+            the width of the profile (for averaging/statistics) in pixels
+        color : string
+            color used to plot the profiles lines
+        axPixels : bool
+            If True the image plotted in the ax axis is displayed in pixels
+        
+        Returns
+        -------
+        x data : 1D numpy array
+        profile : 1D numpy array
         """
         if kargs.get('debug',False):
             print("get_profile input coordinates:", x1, x2, y1, y2)
@@ -525,6 +766,50 @@ class SPM_image:
         return xvalues, p
 
     def plot_profile(self, x1, y1, x2, y2, width=0, ax=None, pixels=True, img=None, imgColor='w', ztransf=lambda x: x, zunit=None, **kargs):
+        """
+        Retrieve and plot a profile from an image
+
+        Parameters
+        ----------
+        x1, y1, x2, y2 : int
+            coordinate of the profile in real size or in pixels (if pixels is True)
+        width : float
+            the width of the profiles in pixels for better statistics
+        ax : matplotlib axis
+            The axis in which the profile will be plotted
+        pixels : bool
+            If True the coordinates are given in pixels and not in real units
+        img : matplotlib axis
+            The axis in which the profile position will be drawn
+        imgColor : string
+            The color used to display the profile positions
+        ztransf : function
+            function to transform the profile data. This can be used to scale the data.
+            Most profiles are retrieved in 'm' and a 'nm' value can be used by using ztransf=lambda x: x*1e9
+        zunit : string
+            the zunit name used if ztransft is used
+        color : string
+            The color of the profile
+        col : string
+            can be used instead of color
+        stdplot : bool
+            If True display the ±nσ plots where n is given by the sig parameter
+        sig : int
+            The number of sigmas used in stdplot
+        label : string
+            The label used for plotting the profile (useful if you perform a ax.legend() afterwards)
+
+        Returns
+        -------
+        dictionary : {'plot': matplotlib_plot_instance, 'l': profile_xaxis, 'z': profile_yaxis}
+
+        Examples
+        --------
+        >>> topo = pySPM.SPM_image(...)
+        >>> fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        >>> topo.plot_profile(70, 100, 170, 200, ax=ax[1], img=ax[0], ztransf=lambda x:x*1e9, zunit='nm');
+        >>> topo.show(ax=ax[0], pixels=True);
+        """
         col = kargs.get('color',kargs.get('col','C0'))
         W = self.size['real']['x']
         fact = int(np.floor(np.log(W)/np.log(10)/3))*3
@@ -588,6 +873,22 @@ class SPM_image:
         return {'plot': Plot, 'l': xvalues, 'z': profile}
 
     def get_bin_threshold(self, percent, high=True, adaptive=False, binary=True, img=False):
+        """
+        Threshold the image into binary values
+        
+        Parameters
+        ----------
+        percent : float
+            The percentage where the thresholding is made
+        high : bool
+            If high a value of 1 is returned for values > percent
+        adaptive : bool
+            If True, performs an adaptive thresholding (see skimage.filters.threshold_adaptive)
+        binary : bool
+            If True return bool data (True/False) otherwise  numeric (0/1)
+        img : bool
+            If True return a SPM_image otherwise a numpy array
+        """
         if adaptive:
             if binary:
                 return self.pixels > threshold_local(self.pixels, percent)
@@ -652,6 +953,23 @@ class SPM_image:
                     "The output parameter should be either 'img' or 'spline'")
 
     def get_shadow_mask(self, angle, BIN=None, pb=False):
+        """
+        If an image is recorded with a beam incident with a certain angle, the topography will shadow the data.
+        This function generates the shadow mask for a given topography and a given incident angle.
+
+        Parameters
+        ----------
+        angle : float
+            The incidence angle in degrees
+        BIN : numpy array
+            Data. If given will move the recorded pixels at the correct x,y positions
+        pb : bool
+            display a progressbar ?
+
+        Note
+        ----
+        This function is old, might not be optimized or working properly
+        """
         if BIN is not None:
             BIN = BIN*1.0
         slope = np.tan(np.radians(angle))
@@ -716,7 +1034,10 @@ class SPM_image:
         return mask
 
     def adjust_position(self, fixed):
-        """ Shift the current pixels to match a fixed image """
+        """
+        Shift the current pixels to match a fixed image.
+        The shift is determined by position where the cross-correlation is maximized.
+        """
         adj = copy.deepcopy(self)
         cor = np.fft.fft2(fixed.pixels)
         cor = np.abs(np.fft.ifft2(np.conj(cor) * np.fft.fft2(self.pixels)))
@@ -728,6 +1049,16 @@ class SPM_image:
         return adj
 
     def align(self, tform, cut=True):
+        """
+        Apply an Affine transform on the data
+
+        Parameters
+        ----------
+        tform : skimage.transform
+            the affine transform to perform
+        cut : bool
+            If True cut the data
+        """
         New = copy.deepcopy(self)
         New.pixels = tf.warp(self.pixels, tform, preserve_range=True)
         if not cut:
@@ -746,13 +1077,33 @@ class SPM_image:
         return New, cut
 
     def get_fft(self):
+        """
+        return the FFT2 transform opf the image
+        """
         return np.fft.fftshift(np.fft.fft2(self.pixels))
 
-    def corr_fit2d(self, nx=2, ny=1):
+    def corr_fit2d(self, nx=2, ny=1, poly=False):
+        """
+        Subtract a fitted 2D-polynom of nx and ny order from the data
+
+        Parameters
+        ----------
+        nx : int
+            the polynom order for the x-axis
+        ny : int
+            the polynom order for the y-axis
+        poly : bool
+            if True the polynom is returned as output
+        """
         r, z = fit2d(self.pixels, nx, ny)
         self.pixels -= z
+        if poly:
+            return z
 
     def filter_lowpass(self, p, inline=True):
+        """
+        Execute a lowpass filter on the data
+        """
         F = self.get_fft()
         mask = self.getRmask() < p
         if inline:
@@ -763,6 +1114,9 @@ class SPM_image:
             return C
 
     def _resize_infos(self):
+        """
+        Internal to recalculate the real size when the image is cropped or cut
+        """
         self.size['real']['x'] *= self.pixels.shape[1]/self.size['pixels']['x']
         self.size['real']['y'] *= self.pixels.shape[0]/self.size['pixels']['y']
         self.size['pixels']['x'] = int(self.pixels.shape[1])
@@ -776,6 +1130,9 @@ class SPM_image:
             self.size['recorded']['pixels']['y'] = int(self.pixels.shape[0])
         
     def filter_scars_removal(self, thresh=.5, inline=True):
+        """
+        Filter function to remove scars from images.
+        """
         if not inline:
             C = copy.deepcopy(self)
         else:
@@ -790,6 +1147,22 @@ class SPM_image:
             return C
 
     def cut(self, c, inline=False, pixels=True, **kargs):
+        """
+        Clip/Crop the image
+
+        Parameters
+        ----------
+        c : list [llx,lly,urx,ury]
+            list of the lowe-left (ll) and upper-right (ur) coordinates
+        inline: bool
+            perform the transformation inline or produce a new SPM_image?
+        pixels : bool
+            Are the coordinates given in pixels?
+
+        Returns
+        -------
+        self if inplace, clipped SPM_image otherwises2 = pySPM.Nanoscan("%s/CyI5b_PCB_ns.xml"%(Path))
+        """
         if 'inplace' in kargs:
             inline=kargs['inplace']
         if kargs.get('debug',False):
@@ -811,9 +1184,16 @@ class SPM_image:
     def zoom(self, zoom_factor, inplace=False, order=3):
         """
         Resize the image to a new pixel size (but keep the real size) by pixel interpolation.
-        zoom > 1: up sampling
-        zoom < 1: down sampling
-        order: The spline order to use. (default: 3). Use 0 for binary or very sharp images.
+
+        Parameters
+        ----------
+        zoom_factor : float
+            > 1: up sampling
+            < 1: down sampling
+        order : int
+            The spline interpolation order to use. (default: 3). Use 0 for binary or very sharp images.
+        inplace : bool
+            create a new image?
         """
         from scipy.ndimage.interpolation import zoom
         if not inplace:        
@@ -828,7 +1208,20 @@ class SPM_image:
             self.size['pixels']['y'] = self.pixels.shape[0]
             return self
 
+# Note: The following functions are not part of the SPM_image class.
+# All following functions are performed on numpy arrays
+
 def cut(img, c, **kargs):
+    """
+    Clip / Crop a numpy array
+
+    Parameters
+    ----------
+    img : 2D numpy array
+        The input image array
+    c : list [llx, lly, urx, ury]
+        the lower-left (ll) and upper-right (ur) coordinates used for the clippings2 = pySPM.Nanoscan("%s/CyI5b_PCB_ns.xml"%(Path))
+    """
     if kargs.get('debug',False):
         print("cut in x", c[0], "->", c[2], " - in y", c[1], "->", c[3])
     if c[3] < c[1]:
@@ -841,6 +1234,29 @@ def cut(img, c, **kargs):
 
 
 def normalize(data, sig=None, vmin=None, vmax=None):
+    """
+    Normalize the input data. Minimum_value -> 0 and maximum_value -> 1
+
+    Parameters
+    ----------
+    data : numpy array
+        input data
+    sig : float or None
+        if not None:
+            mean(data)-sig*standard_deviation(data) -> 0
+            mean(data)+sig*standard_deviation(data) -> 1
+    vmin : float or None
+        if not None, define the lower bound i.e.  vmin -> 0
+    vmax : float or None
+        if not None, defines the upper bound i.e. vmax -> 0
+
+    Note
+    ----
+    All values below the lower bound will be = 0
+    and all values above the upper bound will be = 1
+
+
+    """
     if sig is None:
         mi = np.min(data)
         ma = np.max(data)
@@ -859,6 +1275,20 @@ def normalize(data, sig=None, vmin=None, vmax=None):
 
 
 def imshow_sig(img, sig=1, ax=None, **kargs):
+    """
+    Shortcut to plot a numpy array around it's mean with bounds ±sig sigmas
+
+    Parameters
+    ----------
+    img : 2D numpy array
+        input image to display
+    sig : float
+        The number of standard-deviation to plot
+    ax : matplotlib axis
+        matplotlib axis to use. If None, the current axis (plt.gca() will be used).
+    **kargs : additional parameters
+        will be passed to the imshow function of matplotls2 = pySPM.Nanoscan("%s/CyI5b_PCB_ns.xml"%(Path))ib
+    """
     if ax == None:
         fig, ax = plt.subplots(1, 1)
     std = np.std(img)
@@ -869,7 +1299,7 @@ def imshow_sig(img, sig=1, ax=None, **kargs):
 
 
 def adjust_position(fixed, to_adjust, shift=False):
-    """ Shift the current pixels to match a fixed image """
+    """ Shift the current pixels to match a fixed image by rolling the data"""
     adj = copy.deepcopy(to_adjust)
     cor = np.fft.fft2(fixed)
     cor = np.abs(np.fft.ifft2(np.conj(cor) * np.fft.fft2(to_adjust)))
@@ -884,6 +1314,18 @@ def adjust_position(fixed, to_adjust, shift=False):
 
 
 def tukeyfy(A, alpha, type='default'):
+    """
+    Apply a Tukey window on the current image
+
+    Parameters
+    ----------
+    A : 2D numpy array
+        input array
+    alpha : float
+        Size of the Tukey windows in percent of the image (≥0 and ≤1)
+    type : string
+        if not "default" perform a mean centering (data will blend down to its mean instead of 0)
+    """
     tuky = tukeywin(A.shape[0], alpha)
     tukx = tukeywin(A.shape[1], alpha)
     tuk = np.multiply(tukx[:, None].T, tuky[:, None])
@@ -931,6 +1373,20 @@ def tukeywin(window_length, alpha=0.5):
 
 
 def overlay(ax, mask, color, **kargs):
+    """
+    Plot an overlay on an existing axis
+
+    Parameters
+    ----------
+    ax : matplotlib axis
+        input axis
+    mask : 2D numpy array
+        Binary array where a mask should be plotted
+    color : string
+        The color of the mask to  plot
+    **kargs: additional parameters
+        passed to the imshow function of matploltib
+    """
     m = ma.masked_array(mask, ~mask)
     col = np.array(colors.colorConverter.to_rgba(color))
     I = col[:, None, None].T*m[:, :, None]
@@ -938,6 +1394,20 @@ def overlay(ax, mask, color, **kargs):
 
 
 def normP(x, p, trunk=True):
+    """
+    Normalize the input data accroding to its percentile value.
+
+    Parameters
+    ----------
+    x : 2D numpy array
+        input data
+    p : float
+        percentile to normalize the data.
+        lower bound = p percentile
+        upper bound = (100-p) percentile
+    trunk : bool
+        If True the data are truncated between 0 and 1
+    """
     thresh_high = np.percentile(x, 100-p)
     thresh_low = np.percentile(x, p)
     if thresh_low == thresh_high:
@@ -982,6 +1452,20 @@ def beam_profile1d(target, source, mu=1e-6, real=np.abs):
 
 
 def zoom_center(img, sx, sy=None):
+    """
+    Zoom by taking the sx × sy central pixels
+
+    Parameters
+    ----------
+    img : 2D numpy array
+        The input data
+    sx : int
+        The number of pixels along the x-axis to take
+
+    sy : int or None
+        The number of pixels alongs the y-axis to take.
+        If None take the same value as for sx
+    """
     if sy is None:
         sy = sx
     assert type(sx) is int
@@ -1003,16 +1487,47 @@ def real2px(x, y, size, ext):
 
 
 def gaussian(x, mu, sig, A=1):
+    """
+    Deprecated, please use pySPM.utils.Gauss
+    Will be removed in the next revision
+    """
+    from warnings import warn
+    warn("Function pySPM.SPM.gaussian is deprecated. Please use pySPM.utils.Gauss instead")
     return A*np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
 
-
 def stat(x):
-    print("Min: {mi:.3f}, Max: {ma:.3f}, Mean: {mean:.3f}, Std: {std:.3f}".format(
-        mi=np.min(x), ma=np.max(x),
-        mean=np.mean(x), std=np.std(x)))
+    """
+    Quick function to display the min/max, mean and standard-deviation of a given data.
+
+    Note
+    ----
+    Please use the more adavanced function pySPM.utils.stat_info which also provide information about the quartile and also plot the distribution
+    """
+    print("Min: {mi:.3f}, Max: {ma:.3f}, Mean: {mean:.3f}, Std: {std:.3f}".format(mi=np.min(x), ma=np.max(x), mean=np.mean(x), std=np.std(x)))
 
 
 def fit2d(Z0, dx=2, dy=1, mask=None):
+    """
+    Fit the input data with a 2D polynom of order dx × dy
+
+    Parameters
+    ----------
+    Z0 : 2D numpy array
+        input data
+    dx : int
+        order of the polynom for the x-axis
+    dy : int
+        order of the polynom for the y-xis
+    mask : 2D numpy array
+        Give a mask where True values only will be used to perform the fitting
+
+    Returns
+    -------
+    numpy array
+        fitting parameters
+    2D numpy array
+        result of the polynom
+    """
     x = np.arange(Z0.shape[1], dtype=np.float)
     y = np.arange(Z0.shape[0], dtype=np.float)
     X0, Y0 = np.meshgrid(x, y)
@@ -1039,6 +1554,18 @@ def fit2d(Z0, dx=2, dy=1, mask=None):
 
 
 def warp_and_cut(img, tform, cut=True):
+    """
+    Perform an Affine transform on the input data and cut them if cut=True
+
+    Parameters
+    ----------
+    img : 2D numpy array
+        input data
+    tform : skimage.transform
+        An Affine fransform to perform on the data
+    cut : bool
+        Should the data be cutted?
+    """
     New = tf.warp(img, tform, preserve_range=True)
     Cut = [0, 0] + list(img.shape)
     if tform.translation[0] >= 0:
@@ -1057,6 +1584,10 @@ def warp_and_cut(img, tform, cut=True):
 
 def get_profile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
         transx=lambda x: x, transy=lambda x: x, interp_order=3, **kargs):
+    """
+    Get a profile from an input matrix.
+    Low-level function. Doc will come laters2 = pySPM.Nanoscan("%s/CyI5b_PCB_ns.xml"%(Path))
+    """
     d = np.sqrt((x2-x1)**2+(y2-y1)**2)
     if N is None:
         N = int(d)+1
@@ -1102,6 +1633,9 @@ def get_profile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,
 
 
 def dist_v2(img, dx=1, dy=1):
+    """
+    Return a 2D array with the distance in pixel with the clothest corner of the array.
+    """
     x2 = np.arange(img.shape[1])
     x2 = (np.minimum(x2, img.shape[1]-x2) * dx)**2
     y2 = np.arange(img.shape[0])
@@ -1110,6 +1644,18 @@ def dist_v2(img, dx=1, dy=1):
     return np.sqrt(X+Y)
 
 def generate_k_matrices(A, dx, dy):
+    """
+    GENERATE_K_MATRICES k-Matrix generation (helper function).
+    generates k-matrices for the 2D-channel CHANNEL.
+   
+    K is a matrix of the same size as the pixel matrix A, containing the real-life frequency distance of each 
+    pixel position to the nearest corner of an matrix that is one pixel
+    wider/higher.
+    KX is of the same size as K and contains the real-life  difference in x-direction of each pixel position to the nearest corner 
+    of a matrix that is one pixel wider/higher.
+    Similarly, KY is of the  same size as K, containing the real-life difference in y-direction of  each pixel position to the nearest corner of an matrix that is one 
+    pixel wider/higher.
+    """
     ny, nx = A.shape
     dkx = 2*np.pi/(nx*dx)
     dky = 2*np.pi/(ny*dy)
@@ -1126,6 +1672,9 @@ def generate_k_matrices(A, dx, dy):
     return k, kx, ky
         
 def mfm_tf(nx, dx, ny, dy, tf_in, derivative=0, transform=0, z=0, A=0, theta=None, phi=None, d=None, delta_w=None):
+    """
+    Draft for the MFM tf function
+    """
     k, kx, ky = generate_k_matrices(tf_in, dx, dy)
     # Distance loss
     tf_out = np.exp(-z*k)
@@ -1148,6 +1697,9 @@ def mfm_tf(nx, dx, ny, dy, tf_in, derivative=0, transform=0, z=0, A=0, theta=Non
     return tf_out * tf_in
 
 def mfm_inv_calc_flat(img, z, tf_in, thickness=None, delta_w=None, amplitude=0, derivative=0, transform=0, mu=1e-8):
+    """
+    MFM inv calc function
+    """
     theta = np.radians(12)
     phi = np.radians(-90)
     ny, nx = img.shape
