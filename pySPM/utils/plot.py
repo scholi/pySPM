@@ -76,6 +76,37 @@ def Xdist(ax,left, right, y, color='r', linestyle=':', fmt="{dist:.1f}{unit}", x
     arr = dict(arrowstyle='<->',color=color)
     arr.update({k[4:]:kargs[k] for k in kargs if k.startswith('arr_')})
     ax.annotate("", (left, y), (right, y), arrowprops=arr)
+
+def Ydist(ax, down, up, x, color='r', linestyle=':', fmt="{dist:.2f}{unit}", ytransf=lambda y: y, rotation=90, va='center', ha='right', offset=(-2,0), **kargs):
+    """
+    Show the distance between to x-values
+    
+    ax: matplotlib axis
+    down: y-value of the bottom mark
+    up: y-value of the top mark
+    x: gorizontal position of the label
+    color: color of the lines / labels
+    linestyle: linestyle of the vertical lines
+    fmt: Format string to parse the distance
+    xtransf: a function can be passed to display the distance in an other unit that the x axis.
+        example: xtransf=lambda x: x*1e3 to display the distance in nm on an axis that uses micro-meters.
+    va: vertical alignment of the distance label
+    ha: horizontal alignment of the distance label
+    offset: (x,y) offset of the label in pixels
+    **kargs: additional arguments.
+        arguments starting with amn_ will be sent to the annotation
+        arguments starting with arr_ will be sent to the arrow
+        for example arr_color='r', ann_color='b' will display a red arrow with the distance in blue
+    """
+    
+    ax.axhline(down, color=color, linestyle=linestyle)
+    ax.axhline(up, color=color, linestyle=linestyle)
+    ann = dict(va=va, ha=ha, color=color)
+    ann.update({k[3:]:kargs[k] for k in kargs if k.startswith('an_')})
+    ax.annotate(fmt.format(dist=ytransf(up-down),unit=kargs.get('unit','')), (x,{'center':.5*(down+up),'top':up,'bottom':down}[ann['va']]), offset, textcoords='offset pixels', rotation=rotation, **ann)
+    arr = dict(arrowstyle='<->',color=color)
+    arr.update({k[4:]:kargs[k] for k in kargs if k.startswith('arr_')})
+    ax.annotate("", (x, down), (x, up), arrowprops=arr)
     
 def DualPlot(ax, col1='C0',col2='C1'):
     """

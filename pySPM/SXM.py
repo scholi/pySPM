@@ -45,6 +45,14 @@ class SXM:
                 'unit': 'm'
             })
 
+    def list_channels(self):
+        print("Channels")
+        print("========")
+        h = self.header['DATA_INFO'][0]
+        i = h.index('Name')
+        for z in self.header['DATA_INFO'][1:]:
+            print("  - "+z[i])
+
     def get_channel(self, name, direction='forward',corr=None):
         chID = 0
         zscale = ''

@@ -239,6 +239,8 @@ class SPM_image:
             If True perform the correction on the current object, otherwise return a new image
         col : string
             matrplotlib color used to plot the profiles (if ax is not None)
+        labels : bool
+            display a label number with each profile
         **kargs: arguments passed further to get_row_profile.
             axPixels: set to True if you axis "ax" have the data plotted in pixel instead of real distance
 
@@ -260,8 +262,11 @@ class SPM_image:
         """
         offset = np.zeros(self.pixels.shape[0])
         counts = np.zeros(self.pixels.shape[0])
-        for p in profiles:
-            y, D = self.get_row_profile(*p, width=width, ax=ax, col=col, **kargs)
+        for i, p in enumerate(profiles):
+            if kargs.get('labels', False):            
+                y, D = self.get_row_profile(*p, width=width, ax=ax, col=col, label=str(i), **kargs)
+            else:  
+                y, D = self.get_row_profile(*p, width=width, ax=ax, col=col, **kargs)
             counts[y] += 1
             offset[y[1:]] += np.diff(D)
         counts[counts == 0] = 1
@@ -271,7 +276,7 @@ class SPM_image:
         if inline:
             self.pixels = self.pixels - \
                 np.flipud(np.repeat(offset, self.pixels.shape[1], axis=1))
-            return True
+            return self
         else:
             C = copy.deepcopy(self)
             C.pixels = self.pixels - \
@@ -318,10 +323,15 @@ class SPM_image:
             d = np.sqrt((x2-x1)**2+(y2-y1)**2)
             dx = -width/2*(y2-y1)/d
             dy = width/2*(x2-x1)/d
-            if kargs.pop('axPixels', False):
+            if kargs.get('axPixels', False):
                 ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], col)
                 ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], col)
                 ax.plot((x1, x2), (y1, y2), col, **plotargs)
+                if kargs.get('label', False):
+                    ax.annotate(kargs.get('label'), (.5*(x1+x2),.5*(y1+y2)), color=col)
+                if alpha>0:
+                    import matplotlib.patches
+                    ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),width, d, -np.degrees(np.arctan2(x2-x1,y2-y1)), color=col, alpha=alpha))
             else:
                 h = self.pixels.shape[0]
                 pxs = self.size['real']['x'] / self.pixels.shape[1]
@@ -329,9 +339,14 @@ class SPM_image:
                 ax.plot([(x1-dx)*pxs, (x1+dx)*pxs], [(h-(y1-dy))*pys, (h-(y1+dy))*pys], col)
                 ax.plot([(x2-dx)*pxs, (x2+dx)*pxs], [(h-(y2-dy))*pys, (h-(y2+dy))*pys], col)                
                 ax.plot((x1*pxs, x2*pxs), ((h-y1)*pys, (h-y2)*pys), col, **plotargs)
-            if alpha>0:
-                import matplotlib.patches
-                ax.add_patch(matplotlib.patches.Rectangle((x1+dx,y1+dy),width, d, -np.degrees(np.arctan2(x2-x1,y2-y1)), color=col, alpha=alpha))
+                if kargs.get('label', False):
+                    ax.annotate(kargs.get('label'), (.5*(x1+x2)*pxs,.5*(2*h-y1-y2)*pys), color=col)
+                if alpha>0:
+                    import matplotlib.patches
+                    W = np.sqrt((2*dx*pxs)**2+(2*dy*pys)**2)
+                    L = np.sqrt(((x2-x1)*pxs)**2+((y2-y1)*pys)**2)
+                    ax.add_patch(matplotlib.patches.Rectangle(((x1+dx)*pxs,(y1+dy)*pys), W, L, -np.degrees(np.arctan2((x2-x1)*pxs,(y2-y1)*pys)), color=col, alpha=alpha))
+
         x = np.arange(self.pixels.shape[1])
         y = np.arange(self.pixels.shape[0])
         I = scipy.interpolate.interp2d(x, y, np.flipud(self.pixels))
@@ -372,6 +387,7 @@ class SPM_image:
         fit = np.polyfit(i, s, 1)
         if inline:
             self.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
+            return self
         else:
             New = copy.deepcopy(self)
             New.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
@@ -405,6 +421,7 @@ class SPM_image:
         if inline:
             self.pixels -= c[0] * \
                 np.ones(self.pixels.shape) + c[1] * X0 + c[2] * Y0
+            return self
         else:
             New = copy.deepcopy(self)
             New.pixels -= c[0]*np.ones(self.pixels.shape) + c[1] * X0 + c[2] * Y0
@@ -418,6 +435,7 @@ class SPM_image:
         """
         if inline:
             self.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0], 1)).T
+            return self
         else:
             New = copy.deepcopy(self)
             New.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0], 1)).T
@@ -519,7 +537,8 @@ class SPM_image:
 
         Returns
         -------
-        Return the matplotlib.imshow instance
+        matplotlib.image.AxesImage
+            matplolib axis instance returned by imshow
 
         Examples
         --------
@@ -627,15 +646,19 @@ class SPM_image:
         """
         return self.real2pixels(x,y)
         
-    def real2pixels(self, x, y):
+    def real2pixels(self, x, y, float=False):
         """
         Transform a real (x,y) value in pixels
         Units should be the same as the one plotted by pySPM.SPM_image.show
         """
         W = self.size['real']['x']
         fact = int(np.floor(np.log(W)/np.log(10)/3))*3
-        px = np.digitize(x, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]))
-        py = np.digitize(y, np.linspace(0,self.size['real']['y']/(10**fact),self.pixels.shape[0]))
+        if not float:
+            px = np.digitize(x, np.linspace(0,self.size['real']['x']/(10**fact),self.pixels.shape[1]), right=True)
+            py = np.digitize(y, np.linspace(0,self.size['real']['y']/(10**fact),self.pixels.shape[0]), right=False)
+        else:
+            px = x*(self.pixels.shape[1]-1)/(self.size['real']['x']/(10**fact))
+            py = y*(self.pixels.shape[0]-1)/(self.size['real']['y']/(10**fact))
         return px, py
         
     def px2real(self, x, y):
@@ -739,26 +762,36 @@ class SPM_image:
         profile : 1D numpy array
         """
         if kargs.get('debug',False):
-            print("get_profile input coordinates:", x1, x2, y1, y2)
+            print("get_profile input coordinates:", x1, y1, x2, y2)
         if axPixels is None:
             axPixels = pixels
+        W = self.size['real']['x']
+        fact = int(np.floor(np.log(W)/np.log(10)/3))*3
         if not pixels:
-            W = self.size['real']['x']
-            fact = int(np.floor(np.log(W)/np.log(10)/3))*3
             if kargs.get('debug', False):
                 print("Image range (real scale):", self.size['real']['x']/(10**fact), self.size['real']['y']/(10**fact))
-            x1, y1 = self.real2pixels(x1, y1)
-            x2, y2 = self.real2pixels(x2, y2)
+            x1, y1 = self.real2pixels(x1, y1, float=True)
+            x2, y2 = self.real2pixels(x2, y2, float=True)
             y1 = self.pixels.shape[0]-y1
             y2 = self.pixels.shape[0]-y2
             if kargs.get('debug', False):
                 print("Pixel coordinates:", x1, y1, x2, y2)
-            xvalues, p = get_profile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color,\
-                transx = lambda x: x*(self.size['real']['x']/(10**fact))/self.pixels.shape[1],\
-                transy = lambda x: (self.pixels.shape[0]-x)*(self.size['real']['y']/(10**fact))/self.pixels.shape[0],\
-                **kargs)
+            if not axPixels:
+                xvalues, p = get_profile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color,\
+                    transx = lambda x: x*(self.size['real']['x']/(10**fact))/self.pixels.shape[1],\
+                    transy = lambda x: (self.pixels.shape[0]-x)*(self.size['real']['y']/(10**fact))/self.pixels.shape[0],\
+                    **kargs)
+            else:
+                values, p = get_profile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color, **kargs)
         else:
-            values, p = get_profile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color, **kargs)
+            if axPixels:
+                values, p = get_profile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color, **kargs)
+            else:
+                values, p = get_profile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color,\
+                    transx = lambda x: x*(self.size['real']['x']/(10**fact))/self.pixels.shape[1],\
+                    transy = lambda x: (self.pixels.shape[0]-x)*(self.size['real']['y']/(10**fact))/self.pixels.shape[0],\
+                    **kargs)
+
         dx = (x2-x1)*self.size['real']['x']/self.size['pixels']['x']
         dy = (y2-y1)*self.size['real']['y']/self.size['pixels']['y']
         rd = np.sqrt(dx**2+dy**2)
@@ -1082,7 +1115,7 @@ class SPM_image:
         """
         return np.fft.fftshift(np.fft.fft2(self.pixels))
 
-    def corr_fit2d(self, nx=2, ny=1, poly=False):
+    def corr_fit2d(self, nx=2, ny=1, poly=False, inline=True, mask=None):
         """
         Subtract a fitted 2D-polynom of nx and ny order from the data
 
@@ -1094,11 +1127,35 @@ class SPM_image:
             the polynom order for the y-axis
         poly : bool
             if True the polynom is returned as output
+        inline : bool
+            create a new object?
+        mask : 2D numpy array
+            mask where the fitting should be performed
         """
-        r, z = fit2d(self.pixels, nx, ny)
-        self.pixels -= z
+        r, z = fit2d(self.pixels, nx, ny, mask=mask)
+        if inline:
+            self.pixels -= z
+        else:
+            N = copy.deepcopy(self)
+            N.pixels -= z
+            if poly:
+                return N, z
+            return N
         if poly:
             return z
+        return self
+
+    def zero_min(self, inline=True):
+        """
+        Shift the values so that the minimum becomes zero.
+        """
+        if inline:
+            self.pixels -= np.min(self.pixels)
+            return self
+        else:
+            N = copy.deepcopy(self)
+            N.pixels -= np.min(N.pixels)
+            return N
 
     def filter_lowpass(self, p, inline=True):
         """
@@ -1145,6 +1202,7 @@ class SPM_image:
             C.pixels[y, mask] = b[mask]
         if not inline:
             return C
+        return self
 
     def cut(self, c, inline=False, pixels=True, **kargs):
         """
@@ -1583,7 +1641,7 @@ def warp_and_cut(img, tform, cut=True):
 
 
 def get_profile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
-        transx=lambda x: x, transy=lambda x: x, interp_order=3, **kargs):
+        transx=lambda x: x, transy=lambda x: x, interp_order=1, **kargs):
     """
     Get a profile from an input matrix.
     Low-level function. Doc will come laters2 = pySPM.Nanoscan("%s/CyI5b_PCB_ns.xml"%(Path))

@@ -59,18 +59,13 @@ class Bruker:
             struct.unpack("<"+str(length)+{2:'h',4:'i',8:'q'}[bpp], self.file.read(byte_length)),
             dtype='float64').reshape((cols, rows))
 
-    def load_image(self, channel="Height Sensor", backward=False, corr=None):
-        warnings.warn(
-            "Deprecated. Please use get_image() instead.", DeprecationWarning)
-        return self.get_channel(channel, backward, corr=corr)
-
     def list_channels(self, encoding='latin1'):
         print("Channels")
         print("========")
         for x in [z[b'@2:Image Data'][0] for z in self.layers]:
             print("\t"+x.decode(encoding))
 
-    def get_channel(self, channel="Height Sensor", backward=False, corr=None, debug=False, encoding='latin1'):
+    def get_channel(self, channel="Height Sensor", backward=False, corr=None, debug=False, encoding='latin1', lazy=True):
         """
         Load the SPM image contained in a channel
         """
@@ -89,25 +84,27 @@ class Bruker:
                         print("Direction found")
                     var = self.layers[i][b'@2:Z scale'][0].decode(encoding)
                     if '[' in var:
-                        result = re.match(r'[A-Z]+\s+\[([^\]]+)\]\s+\([0-9\.]+ .*?\)\s+([0-9\.]+)\s+(.*?)$', var).groups()
+                        result = re.match(r'[A-Z]+\s+\[([^\]]+)\]\s+\(-?[0-9\.]+ .*?\)\s+(-?[0-9\.]+)\s+(.*?)$', var).groups()
                         if debug:
                             print(result)
                         scale = float(result[1])/65536.0
-                        result = self.scanners[0][b'@'+result[0].encode(encoding)][0].split()
+                        result2 = self.scanners[0][b'@'+result[0].encode(encoding)][0].split()
                         scale2 = float(result[1])
-                        if len(result)>2:
-                            zscale = result[2]
+                        if len(result2)>2:
+                            zscale = result2[2]
                         else:
-                            zscale = result[0]
+                            zscale = result2[0]
+                        if b'/V' in zscale:
+                            zscale = zscale.replace(b'/V',b'')
                         var = self.layers[i][b'@2:Z offset'][0].decode(encoding)
-                        result = re.match(r'[A-Z]+\s+\[[^\]]+\]\s+\([0-9\.]+ .*?\)\s+([0-9\.]+)\s+.*?$', var).groups()
+                        result = re.match(r'[A-Z]+\s+\[[^\]]+\]\s+\(-?[0-9\.]+ .*?\)\s+(-?[0-9\.]+)\s+.*?$', var).groups()
                         offset = float(result[0])
                     else:
-                        result = re.match(r'[A-Z]+ \([0-9\.]+ [^\)]+\)\s+([0-9\.]+) [\w]+', var).groups()
+                        result = re.match(r'[A-Z]+ \(-?[0-9\.]+ [^\)]+\)\s+(-?[0-9\.]+) [\w]+', var).groups()
                         scale = float(result[0])/65536.0
                         scale2 = 1
                         zscale = b'V'
-                        result = re.match(r'[A-Z]+ \([0-9\.]+ .*?\)\s+([0-9\.]+) .*?', self.layers[i][b'@2:Z offset'][0].decode(encoding)).groups()
+                        result = re.match(r'[A-Z]+ \(-?[0-9\.]+ .*?\)\s+(-?[0-9\.]+) .*?', self.layers[i][b'@2:Z offset'][0].decode(encoding)).groups()
                         offset = float(result[0])
                     data = self._get_raw_layer(i)*scale*scale2
 
@@ -119,11 +116,13 @@ class Bruker:
                         'y': float(scan_size[1]),
                         'unit': scan_size[2].decode(encoding)}
                     image = pySPM.SPM_image(
-                        channel=channel,
+                        channel=[channel,'Topography'][channel=='Height Sensor'],
                         BIN=data,
                         real=size,
                         _type='Bruker AFM',
                         zscale=zscale.decode(encoding),
                         corr=corr)
                     return image
+        if lazy:
+            return self.get_channel(channel=channel,backward=not backward, corr=corr, debug=debug, encoding=encoding, lazy=False)
         raise Exception("Channel {} not found".format(channel))

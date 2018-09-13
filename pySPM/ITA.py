@@ -547,6 +547,7 @@ class ITA(ITM):
         Returns
         -------
         2D numpy array
+            array data of the image
         """
         Z = np.zeros((self.sy, self.sx))
         if prog:

@@ -79,6 +79,9 @@ class Collection:
         
     def create_image(self, img, key=None):
         return SPM_image(img, _type=self.name, real=self.size, channel=key)
+
+    def __len__(self):
+        return len(self.channels)
         
     def __getitem__(self, key):
         if key not in self.channels:
@@ -89,7 +92,15 @@ class Collection:
         
     def __delitem__(self, key):
         del self.channels[key]
-        
+
+    def __iter__(self):
+        self.iterator = iter(self.channels)
+        return self
+
+    def __next__(self):
+        it = self.iterator.__next__()
+        return self.__getitem__(it)
+
     def __setitem__(self, key, value):
         self.add(value, key, force=True)
 

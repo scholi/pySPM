@@ -89,6 +89,17 @@ class Nanoscan():
         else:
             raise TypeError(
                 "Unknown or wrong data type. Expecting a valid Nanoscan xml")
+    
+    def list_channels(self):
+        """
+        Printout the list of stored channels
+        """
+        for d in ['forward','backward']:
+            print(d)
+            print("="*len(d))
+            for z in self.root.findall("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{}']/../spm:channel//spm:contents/spm:name/spm:v".format(d), self.namespaces):
+                print("  - "+z.text)
+            print()
 
     def get_channel(self, channel='Topography', backward=False, corr=None):
         try:
