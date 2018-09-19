@@ -138,6 +138,26 @@ class ITM:
             'peaks': self.get_masses(),
             'polarity': Get(values,"Instrument.Analyzer_Polarity_Switch")
             }
+
+    def show_summary(self):
+        from . import funit
+        s = self.get_summary()
+        print("""Analysis time: {AnalysisTime}
+        Delayed extraction: {ExtractionDelay}
+        LMIG's Lens source: {LMIG[Lens_Source]}
+        Sputter species: {SputterSpecies} @ {SputterEnergy}
+        Field of View: {Fov[value]:.2f} {Fov[unit]}
+        Pixel size: {pixels[x]} × {pixels[y]}
+        Polarity: {polarity}
+        Pixel Size: {pxs[value]:.2f} {pxs[unit]}""".format(Fov=funit(s['fov'],'m'), pxs=funit(s['fov']/s['pixels']['x'], 'm'), **s))
+        print("Peaks:")
+        for x in s['peaks']:
+            if x['assign']:
+                print("\t▸ {assign} ({lmass:.3f} - {umass:.3f}u)".format(**x))
+            elif x['desc']:
+                print("\t▸ {desc} ({lmass:.3f} - {umass:.3f}u)".format(**x))
+            else:
+                print("\t▸ {cmass:.2f}u ({lmass:.3f} - {umass:.3f}u)".format(**x))
         
     def getIntensity(self):
         """
