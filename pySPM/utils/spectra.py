@@ -22,7 +22,7 @@ def formulafy(x):
     import re
     return '$'+re.sub('([a-zA-Z])_?([0-9]+)',r'\1_{\2}',re.sub(r'\^([0-9]+)',r'^{\1}',re.sub('([+-])$',r'^\1',x)))+'$'
 
-def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True, debug=False, Aredux=1,label=None, include=[], exclude=[], polarity="+", colors='rgb', pretty=True, formula=True, **kargs):
+def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True, debug=False, Aredux=1, label=None, include=[], include_only=None, exclude=[], polarity="+", colors='rgb', pretty=True, formula=True, **kargs):
     """
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
@@ -43,8 +43,14 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     negative = False
     if polarity in ['-','Negative','negative','neg','Neg','NEG']:
         negative = True
-    E = get_peaklist(int(round(m0)), negative)
-    E = [x for x in E if x not in exclude] + include
+    if include_only is not None:
+        if type(include_only) is str:
+            E = [include_only]
+        else:
+            E = include_only
+    else:
+        E = get_peaklist(int(round(m0)), negative)
+        E = [x for x in E if x not in exclude] + include
     E = list(set(E))
     if formula:
         E_labels = [formulafy(x) for x in E]

@@ -16,6 +16,9 @@ This library is offered as it is and is still in development. Please note that r
 If you find bugs and issues, please report them to the developpe: https://github.com/scholi/pySPM/issues
 
 ## News
+### Toy dataset
+As the data are big and not necessary for the library another package [pySPM_data](https://github.com/scholi/pySPM_data) was created with several AFM and ToF-SIMS data.
+
 ### Structure reformatting
 A setup.py is prestent in order to install the package easily. => in order to use the library do ```pip install -e . ```
 
