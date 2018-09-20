@@ -52,11 +52,18 @@ This library requires the following packages
     
 ## Installation
 ### for regular users
+#### With pip (easiest)
+Just open a terminal (on Windows hit key `[WINDOWS]+R`, then type cmd, then
+`[ENTER]`)
 ```bash
-python setup.py install
-```
+pip install pySPM```
 
-### For developpers and hackers
+#### By manual installing
+Download the library (zip) or git file. Unzip it and run
+```bash
+python setup.py install```
+
+#### For developpers and hackers
 If you wish to adjust the library to your need, the best is to install it in editable mode as follow from the root pySPM directory:
 ```bash
 pip install -e .

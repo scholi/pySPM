@@ -15,9 +15,8 @@ setup(
     include_package_data=True,
     install_requires=['numpy','scipy','pandas','scikit-image','scikit-learn','matplotlib'],
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audiance :: Developers',
-        'Topic :: Scientific Data Processing :: Image processing',
+        'Development Status :: 4 - Beta',
+        'Topic :: Scientific/Engineering',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
