@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pySPM",
-    version='0.2.5',
+    version='0.2.6',
     description="library to handle SPM and ToF-SIMS data",
     long_description="library to handle SPM and ToF-SIMS data",
     url="https://github.com/scholi/pySPM",
@@ -17,6 +17,7 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
         'Topic :: Scientific/Engineering',
+        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
