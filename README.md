@@ -16,6 +16,19 @@ This library is offered as it is and is still in development. Please note that r
 If you find bugs and issues, please report them to the developpe: https://github.com/scholi/pySPM/issues
 
 ## News
+### pySPM is now availabe on pypi
+The installation for end-user is now very easy. If you have [pip](https://pypi.org/project/pip/), then you can install the library in a single line:
+
+```bash
+pip install pySPM
+```
+
+and to upgrade an old version:
+
+```bash
+pip install -U pySPM
+```
+
 ### Toy dataset
 As the data are big and not necessary for the library another package [pySPM_data](https://github.com/scholi/pySPM_data) was created with several AFM and ToF-SIMS data.
 
@@ -56,12 +69,14 @@ This library requires the following packages
 Just open a terminal (on Windows hit key `[WINDOWS]+R`, then type cmd, then
 `[ENTER]`)
 ```bash
-pip install pySPM```
+pip install pySPM
+```
 
 #### By manual installing
 Download the library (zip) or git file. Unzip it and run
 ```bash
-python setup.py install```
+python setup.py install
+```
 
 #### For developpers and hackers
 If you wish to adjust the library to your need, the best is to install it in editable mode as follow from the root pySPM directory:
