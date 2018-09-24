@@ -1,12 +1,20 @@
 from setuptools import setup, find_packages
+import re
 
 def description():
     with open('description.rst') as f:
         return f.read()
 
+def find_version():
+    with open("pySPM/__init__.py",'r') as fp:
+        src = fp.read()
+        version_match = re.search(r"^__version__\s*=\s*['\"]([^'\"]*)['\"]", src, re.M)
+        if version_match:
+            return version_match.group(1)
+        raise RuntimeError("Unable to find vesrion string.")
 setup(
     name="pySPM",
-    version='0.2.6',
+    version=find_version(),
     description="library to handle SPM and ToF-SIMS data",
     long_description=description(),
     url="https://github.com/scholi/pySPM",

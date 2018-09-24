@@ -10,9 +10,12 @@ Welcome to pySPM's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   installation
+   tutorial
+
 Indices and tables
 ==================
-
+* :ref:`api`
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`

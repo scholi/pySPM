@@ -4,3 +4,7 @@
 build/
 dist/
 pySPM.egg-info/
+tags
+_build
+.cache
+*.swp
