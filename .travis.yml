@@ -5,7 +5,7 @@ python:
     - '2.7'
 install:
     - pip install -r requirements.txt
-    - pip install "pySPM_data>=0.0"
+    - pip install git+https://github.com/scholi/pySPM_data.git
 before_deploy:
     - python setup.py sdist
     - python setup.py bdist_wheel
