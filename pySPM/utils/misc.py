@@ -24,7 +24,7 @@ def smiley(width, height=None, ratio=.9, eye=.15, thick=.1, eye_sep=.35, eye_hei
     Y, X = np.mgrid[-height//2:height//2, -width//2:width//2]
     R = np.sqrt(X**2+Y**2)/(size/2)
     smiley = (R<ratio)*(R>((ratio-thick)))
-    smiley += np.sqrt((X-eye_sep*size/2)**2+(Y+eye_height*size/2)**2)<eye*size/2
-    smiley += np.sqrt((X+eye_sep*size/2)**2+(Y+eye_height*size/2)**2)<eye*size/2
-    smiley += (R<mouth_rad)*(R>(mouth_rad-mouth_thick))*(Y>0)
+    smiley += np.sqrt((X-eye_sep*ratio*size/2)**2+(Y+eye_height*ratio*size/2)**2)<ratio*eye*size/2
+    smiley += np.sqrt((X+eye_sep*ratio*size/2)**2+(Y+eye_height*ratio*size/2)**2)<ratio*eye*size/2
+    smiley += (R<ratio*mouth_rad)*(R>(ratio*mouth_rad-ratio*mouth_thick))*(Y>0)
     return smiley*1.0

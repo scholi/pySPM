@@ -1,1 +1,10 @@
 language: python
+python:
+    - '3.5'
+    - '3.6'
+    - '2.7'
+install: pip install .
+before_deploy:
+    - python setup.py sdist
+    - python setup.py bdist_wheel
+script: pytest

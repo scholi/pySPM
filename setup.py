@@ -1,10 +1,14 @@
 from setuptools import setup, find_packages
 
+def description():
+    with open('description.rst') as f:
+        return f.read()
+
 setup(
     name="pySPM",
     version='0.2.6',
     description="library to handle SPM and ToF-SIMS data",
-    long_description="library to handle SPM and ToF-SIMS data",
+    long_description=description(),
     url="https://github.com/scholi/pySPM",
     author = "Olivier Scholder",
     author_email = "o.scholder@gmail.com",
