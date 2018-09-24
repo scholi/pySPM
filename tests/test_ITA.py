@@ -17,9 +17,7 @@ def test_SI_image():
 def test_getAddedChannel():
     TOF = pySPM.ITA(get_data("BigSmiley.ita"))
     img1 = TOF.getAddedImageByMass(197)
-    assert type(img1) is pySPM.SPM_image
     img2, CH = TOF.getAddedImageByName('Au')
-    assert type(img2) is pySPM.SPM_image
     assert len(CH) == 1
     assert CH[0]['assign'] == 'Au-'
     assert np.all(img1.pixels == img2.pixels)
