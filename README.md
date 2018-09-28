@@ -1,5 +1,5 @@
 [![Downloads](https://pepy.tech/badge/pyspm)](https://pepy.tech/project/pyspm)
-![](https://travis-ci.org/scholi/pySPM.svg?branch=master)
+[![Build](https://travis-ci.org/scholi/pySPM.svg?branch=master)](https://travis-ci.org/scholi/pySPM)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 # pySPM
