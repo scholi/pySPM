@@ -634,6 +634,12 @@ class SPM_image:
                 ax.set_ylim((0, self.pixels.shape[0]))
             else:
                 ax.set_ylim((self.pixels.shape[0], 0))
+        else:
+            ax.set_xlim((0,W))
+            if flip:
+                ax.set_ylim((H,0))
+            else:
+                ax.set_ylim((0,H))
 
         if not pixels:
             if isunit != 6:
