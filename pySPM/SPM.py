@@ -555,6 +555,7 @@ class SPM_image:
         
         if ax is None:
             ax = plt.gca()
+        ax.src = self
         if title == None:
             title = u"{0} - {1}".format(self.type, self.channel)
         if wrap is not None:
@@ -612,18 +613,27 @@ class SPM_image:
             vmax = abs(max(vmin,vmax))
             vmin = -vmax
         if not flip:
+            ax.flipped = False
             if pixels:
-                r = ax.imshow(np.flipud(img), cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
+                ax.isPixel = True
+                r = ax.imshow(np.flipud(img), extent=[0,img.shape[1],img.shape[0],0], cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
             else:
+                ax.isPixel = False
                 r = ax.imshow(np.flipud(img), extent=[0, W, 0, H], cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
         else:
+            ax.flipped = True
             if pixels:
-                r = ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
+                ax.isPixel = True
+                r = ax.imshow(np.flipud(img), extent=[0,img.shape[1],img.shape[0],0], cmap=cmap, vmin=vmin, vmax=vmax, **kargs)
             else:
-                r = ax.imshow(img, cmap=cmap, extent=[0, W, 0, H], vmin=vmin, vmax=vmax, **kargs)
+                ax.isPixel = False
+                r = ax.imshow(np.flipud(img), cmap=cmap, extent=[0, W, 0, H], vmin=vmin, vmax=vmax, **kargs)
         if pixels:
             ax.set_xlim((0, self.pixels.shape[1]))
-            ax.set_ylim((self.pixels.shape[0], 0))
+            if flip:
+                ax.set_ylim((0, self.pixels.shape[0]))
+            else:
+                ax.set_ylim((self.pixels.shape[0], 0))
 
         if not pixels:
             if isunit != 6:
@@ -763,6 +773,9 @@ class SPM_image:
         """
         if kargs.get('debug',False):
             print("get_profile input coordinates:", x1, y1, x2, y2)
+        if ax is not None and axPixels is None:
+            if hasattr(ax, 'isPixel'):
+                axPixels = ax.isPixel
         if axPixels is None:
             axPixels = pixels
         W = self.size['real']['x']
