@@ -14,6 +14,10 @@ class ITAX:
         self.size = {'pixels':dict(x=self.meas_options['raster_resolution'], y=self.meas_options['raster_resolution']), 'real':dict(x=self.meas_options['raster_fov'], y=self.meas_options['raster_fov'], unit='m')}
 
     def getSnapshots(self):
+        """
+        Retrieve teh RGB images of the camera which are captured
+        Return a list of array for all the snapshots
+        """
         snapshots = []
         for x in self.root.goto('CommonDataObjects/Attachments'):
             for y in x.getList():
@@ -30,6 +34,9 @@ class ITAX:
         return snapshots
     
     def showSnapshots(self):
+        """
+        Retrieve and plot all recorded snapshots (camera images)
+        """
         from .utils import sp
         s = self.getSnapshots()
         ax = sp(len(s))
@@ -42,6 +49,9 @@ class ITAX:
         return sf, k0
 
     def getSpectrum(self, sf=None, k0=None, time=False, **kargs):
+        """
+        Retrieve the spectrum in a similar way as for ITA file
+        """
         slen = self.root.goto("CommonDataObjects/DataViewCollection/*/sizeSpectrum").getLong()
         raw = self.root.goto("CommonDataObjects/DataViewCollection/*/dataSource/simsDataCache/spectrum/correctedData").value
         spectrum = np.array(struct.unpack("<"+str(slen)+"d", raw))
@@ -56,6 +66,9 @@ class ITAX:
         return m, spectrum
     
     def getProfile(self, name):
+        """
+        retrieve the depth profile for a given channel name
+        """
         SN = None
         for x in self.root.goto("CommonDataObjects/MeasurementOptions/*/massintervals"):
             if x.name == 'mi':
