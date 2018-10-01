@@ -286,7 +286,7 @@ class Block:
                 if (lazy and i==idx) or (not lazy and l['id'] == idx):
                     return l['bidx']
                 i+=1
-        raise MissingBlock(self,name,idx)
+        raise MissingBlock(self, name, idx)
 
     def goto(self, path, lazy=False):
         """
@@ -309,6 +309,10 @@ class Block:
                 i = p.index('[')
                 idx = int(p[i+1:-1])
                 p = p[:i]
+            if p == '*':
+                child = s.getList()[0]
+                p = child['name']
+                idx = child['id']
             s = s.gotoItem(p, idx, lazy=lazy)
         return s
 
@@ -407,6 +411,14 @@ class Block:
             if x['name'] == key:
                 r.append(x['id'])
         return r
+
+    def decompress(self):
+        import zlib
+        return zlib.decompress(self.value)
+
+    def getData(self, L, fmt="I"):
+        raw = self.decompress()
+        return struct.unpack("<"+str(L)+fmt, raw)
         
     def modify_block_and_export(self, path, new_data, output, debug=False, prog=False, lazy=False):
         assert not os.path.exists(output) # Avoid to erase an existing file. Erase it outside the library if needed.

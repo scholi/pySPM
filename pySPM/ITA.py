@@ -19,6 +19,7 @@ from .collection import Collection
 from .SPM import SPM_image
 from .Block import MissingBlock
 from .utils import in_ipynb
+import warnings
 
 class ITA(ITM):
     def __init__(self, filename):
@@ -61,21 +62,22 @@ class ITA(ITM):
             except:
                 raise TypeError(
                     "Invalid file format. Maybe the file is corrupted?")
-
-        self.Width = self.root.goto('Meta/SI Image[0]/res_x').getLong()
-        self.Height = self.root.goto('Meta/SI Image[0]/res_y').getLong()
-
         try:
+            Width = self.root.goto('Meta/SI Image[0]/res_x').getLong()
+            Height = self.root.goto('Meta/SI Image[0]/res_y').getLong()
             RAW = zlib.decompress(self.root.goto(
                 'Meta/SI Image[0]/intensdata').value)
-            data = struct.unpack("<{0}I".format(self.Width*self.Height), RAW)
-            self.img = np.array(data).reshape((self.Height, self.Width))
+            data = struct.unpack("<{0}I".format(Width*Height), RAW)
+            self.img = np.array(data).reshape((Height, Width))
         except:
             import warnings
             warnings.warn("No SI image found. Skipping it.")
             self.img = None
+        try:
+            self.fov = self.root.goto('Meta/SI Image[0]/fieldofview').getDouble()
+        except MissingBlock:
+            self.fov = self.getValue("Registration.Raster.FieldOfView")['float']
 
-        self.fov = self.root.goto('Meta/SI Image[0]/fieldofview').getDouble()
 
     def getChannelsByName(self, name, strict=False):
         """
@@ -565,9 +567,7 @@ class ITA(ITM):
         im_root =  self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image['+str(channel)+']')
         for scan in scans:
             c = im_root.goto('ImageArray.Long['+str(scan)+']')
-            D = zlib.decompress(c.value)
-            V = np.array(struct.unpack('<'+str(self.sx*self.sy)+'I', D),
-                            dtype=np.float).reshape((self.sy, self.sx))
+            V = np.array(c.getData(self.sx*self.sy), dtype=np.float).reshape((self.sy, self.sx))
             if Shifts:
                 r = [int(z) for z in Shifts[scan]]
                 V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)
@@ -604,9 +604,7 @@ class ITA(ITM):
         assert scan >= 0 and scan < self.Nscan
         c = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans'
                            '/Image['+str(channel)+']/ImageArray.Long['+str(scan)+']')
-        D = zlib.decompress(c.value)
-        V = np.array(struct.unpack('<'+str(self.sx*self.sy)+'I', D),
-                     dtype=np.float).reshape((self.sy, self.sx))
+        V = np.array(c.getData(self.sx*self.sy), dtype=np.float).reshape((self.sy, self.sx))
         if not Shifts is None:
             r = [int(z) for z in Shifts[scan]]
             V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)
