@@ -1,6 +1,7 @@
 [![Downloads](https://pepy.tech/badge/pyspm)](https://pepy.tech/project/pyspm)
 [![Build](https://travis-ci.org/scholi/pySPM.svg?branch=master)](https://travis-ci.org/scholi/pySPM)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.998575.svg)](https://doi.org/10.5281/zenodo.998575)
 
 # pySPM
 pySPM is a python library (python3, but should be compatible with python2) in order to read, handle and plot Scanning Probe Microscopy (SPM) images as well as ToF-SIMS data.
@@ -94,4 +95,4 @@ The documentation is still in its early stage
 
 ## Citing
 If you use this library for your work, please think about citing it.
-[![DOI](https://zenodo.org/badge/64209401.svg)](https://zenodo.org/badge/latestdoi/64209401)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.998575.svg)](https://doi.org/10.5281/zenodo.998575)
