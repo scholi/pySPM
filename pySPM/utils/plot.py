@@ -223,6 +223,13 @@ def __overlap(ax, obj, objs, debug=False):
                 return o
     return False
 
+def color_frame(ax, color, sx = 0.01, sy=None, lw = 5, **kargs):
+    if sy is None:
+        sy = sx
+    import matplotlib as mpl
+    fig = plt.gcf()
+    fig.patches.append(mpl.patches.Rectangle((-sx,-sy), 1+2*sx,1+2*sy, transform=ax.transAxes, ec=color, fill=False, lw=lw, zorder=0, **kargs))
+
 def __get_yextend_of_curve(ax, bbox, curve):
     tri = ax.transData.inverted()
     rd = bbox.transformed(tri) # bbox in data coordinates

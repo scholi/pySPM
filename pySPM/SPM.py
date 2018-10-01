@@ -900,7 +900,7 @@ class SPM_image:
         else:
             profile = ztransf(np.mean(p, axis=1))
             s = np.std(p)
-            if kargs.get('stdplot', True):
+            if kargs.get('stdplot', False):
                 for ns in range(1, kargs.get('sig', 2)+1):
                     ax.fill_between(xvalues, profile-ns*s, profile+ns*s, color=col, alpha=.2, label=[lab+' ($\\sigma,\ldots {}\\sigma$)'.format(kargs.get('sig',2)),None][ns>1])
         
