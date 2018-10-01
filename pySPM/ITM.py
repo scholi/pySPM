@@ -2,7 +2,7 @@
 
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
-from pySPM import Block
+from . import Block
 import numpy as np
 import struct
 import os.path
@@ -56,15 +56,20 @@ class ITM:
         self.Type = self.f.read(8)
         assert self.Type == b'ITStrF01'
         self.root = Block.Block(self.f)
-        d = self.root.goto('Meta/SI Image').dictList()
-        self.size = {
-            'pixels': {
-                'x': d['res_x']['long'],
-                'y': d['res_y']['long']},
-            'real': {
-                'x': d['fieldofview']['float'],
-                'y': d['fieldofview']['float']*d['res_y']['long']/d['res_x']['long'],
-                'unit': 'm'}}
+        try:
+            d = self.root.goto('Meta/SI Image').dictList()
+            self.size = {
+                'pixels': {
+                    'x': d['res_x']['long'],
+                    'y': d['res_y']['long']},
+                'real': {
+                    'x': d['fieldofview']['float'],
+                    'y': d['fieldofview']['float']*d['res_y']['long']/d['res_x']['long'],
+                    'unit': 'm'}}
+        except Block.MissingBlock:
+            s = self.getValue('Registration.Raster.Resolution')['int']
+            fov = self.getValue("Registration.Raster.FieldOfView")['float']
+            self.size = {'pixels':dict(x=s,y=s),'real':dict(x=fov,y=fov,unit='m')}
         try:
             self.size['Scans'] = \
                 self.root.goto(

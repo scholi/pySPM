@@ -12,12 +12,13 @@ from .Bruker import Bruker
 from .collection import Collection
 from .ITM import ITM
 from .ITS import ITS
+from .ITAX import ITAX
 from .ITA import ITA, ITA_collection
 from .SXM import SXM
 from .utils import constants as const
 
-__all__ = ["ITA","ITS", "ITM", "PCA", "Block", "SPM", "Bruker", "nanoscan", "utils", "SXM"]
-__version__ = '0.2.7'
+__all__ = ["ITA","ITAX","ITS", "ITM", "PCA", "Block", "SPM", "Bruker", "nanoscan", "utils", "SXM"]
+__version__ = '0.2.8'
 __author__ = 'Olivier Scholder'
 __copyright__ = "Copyright 2018, O. Scholder, Zürich, Switzerland"
 __email__ = "o.scholder@gmail.com"

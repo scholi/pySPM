@@ -91,7 +91,12 @@ class Block:
         self.List = None
         self.iterP = 0
         
-    def BreadthFirstSearch(self, callback=None, filter=lambda x: True, func=lambda x: x):
+    def DepthFirstSearch(self, callback=None, filter=lambda x: True, func=lambda x: x):
+        """
+        Perform a depth first search on the blocks.
+        pass each block where filter(block) is true to a callback
+        Also apply a function func to the result and create a list for the result
+        """
         res = []
         if filter(self):
             res += [func(self)]
@@ -99,7 +104,7 @@ class Block:
                 callback(self)
             if self.Type[0] in [1,3]:
                 for x in self:
-                    res += x.BreadthFirstSearch(callback=callback, filter=filter, func=func)
+                    res += x.DepthFirstSearch(callback=callback, filter=filter, func=func)
         return res
     
     def getName(self):
@@ -133,7 +138,12 @@ class Block:
         length, nums, NextBlock = struct.unpack('<II25xQ', self.f.read(41))
         self.f.seek(NextBlock)
         return Block(self.f, parent=self.parent)
-            
+    
+    def getNthChild(self, n=0):
+        L = self.getList()
+        assert len(L)>n
+        return self.gotoItem(L[n]['name'],L[n]['id'])
+        
     def createList(self, limit=None, debug=False):
         """
         Generate a list (self.List) containing all the children (sub-blocks) of the current Block
@@ -281,12 +291,14 @@ class Block:
         if type(name) is bytes:
             name = name.decode('ascii')
         i=0
+        if name is '*':
+            return self.getList()[idx]['bidx']
         for l in self.getList():
             if l['name'] == name:
                 if (lazy and i==idx) or (not lazy and l['id'] == idx):
                     return l['bidx']
                 i+=1
-        raise MissingBlock(self,name,idx)
+        raise MissingBlock(self, name, idx)
 
     def goto(self, path, lazy=False):
         """
@@ -302,13 +314,18 @@ class Block:
         """
         if path == '':
             return self
-        s = self
+        self.f.seek(self.offset)
+        s = Block(self.f)
         for p in path.split('/'):
             idx = 0
             if '[' in p and p[-1] == ']':
                 i = p.index('[')
                 idx = int(p[i+1:-1])
                 p = p[:i]
+            if p is '*':
+                e = s.getList()[idx]
+                p = e['name']
+                idx = e['id']
             s = s.gotoItem(p, idx, lazy=lazy)
         return s
 
@@ -407,6 +424,14 @@ class Block:
             if x['name'] == key:
                 r.append(x['id'])
         return r
+
+    def decompress(self):
+        import zlib
+        return zlib.decompress(self.value)
+
+    def getData(self, L, fmt="I"):
+        raw = self.decompress()
+        return struct.unpack("<"+str(L)+fmt, raw)
         
     def modify_block_and_export(self, path, new_data, output, debug=False, prog=False, lazy=False):
         assert not os.path.exists(output) # Avoid to erase an existing file. Erase it outside the library if needed.
