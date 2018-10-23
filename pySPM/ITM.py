@@ -66,7 +66,7 @@ class ITM:
                     'x': d['fieldofview']['float'],
                     'y': d['fieldofview']['float']*d['res_y']['long']/d['res_x']['long'],
                     'unit': 'm'}}
-        except Block.MissingBlock:
+        except:
             s = self.getValue('Registration.Raster.Resolution')['int']
             fov = self.getValue("Registration.Raster.FieldOfView")['float']
             self.size = {'pixels':dict(x=s,y=s),'real':dict(x=fov,y=fov,unit='m')}
