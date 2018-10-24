@@ -266,7 +266,7 @@ class ITA(ITM):
         for s in scans:
             node = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/Images/{SN}/ScanData/EDROff/{scan}".format(SN=SN, scan=s))
             dat = node.decompress()
-            data = struct.unpack("<{}f".format(len(dat)//4), dat)
+            data = struct.unpack("<{}I".format(len(dat)//4), dat)
             Z += np.array(data, dtype=np.float).reshape((self.sy, self.sx))
         if raw:
             return Z
@@ -583,7 +583,7 @@ class ITA(ITM):
         """
         node = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/Images/{SN}/SumImage/EDROff".format(SN=SN))
         dat = node.decompress()
-        data = struct.unpack("<{}f".format(len(dat)//4), dat)
+        data = struct.unpack("<{}I".format(len(dat)//4), dat)
         img = np.array(data, dtype=np.float).reshape((self.sy, self.sx))
         if raw:
             return img
