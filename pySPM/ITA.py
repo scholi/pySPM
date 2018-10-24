@@ -78,6 +78,23 @@ class ITA(ITM):
         except MissingBlock:
             self.fov = self.getValue("Registration.Raster.FieldOfView")['float']
 
+    def get_channel_SN(self, channel):
+        """
+        New ITA fileformat assign a serial number (SN) in the form of a UUID for each channel.
+        The SN corresponding to a given channel name can be retrieved by this function.
+
+        Parameters
+        ----------
+        channel : string
+            The channel name assigned to a given peak
+        """
+        for x in  self.root.goto("MassIntervalList"):
+            if x.name == 'mi':
+                l = x.dictList()
+                if l['assign']['utf16'] == channel:
+                    return l['SN']['utf16']
+
+        raise Exception("Channel name \"{channel}\" not found".format(channel=channel))
 
     def getChannelsByName(self, name, strict=False):
         """
@@ -229,7 +246,33 @@ class ITA(ITM):
             ID = ch['id']['long']
             Z += self.fastGetImage(ID, scans, Shifts)
         return Z
-       
+
+    def getSumImageBySN(self, SN, scans=None, prog=False, raw=False, **kargs):
+        """
+        Retrieve the image for the sum of several scans for a given channel SN.
+        """
+        if scans is None:
+            scans = range(self.Nscan)
+        if type(scans) == int:
+            scans = [scans]
+        if prog:
+            try:
+                from tqdm import tqdm_notebook as tqdm
+            except:
+                from tqdm import tqdm
+            scans= tqdm(scans)
+
+        Z = np.zeros((self.sy, self.sx))
+        for s in scans:
+            node = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/Images/{SN}/ScanData/EDROff/{scan}".format(SN=SN, scan=s))
+            dat = node.decompress()
+            data = struct.unpack("<{}f".format(len(dat)//4), dat)
+            Z += np.array(data, dtype=np.float).reshape((self.sy, self.sx))
+        if raw:
+            return Z
+        channel = self.getChannelBySN(SN)
+        return self.image(np.flipud(Z), channel=channel)
+
     def getSumImageByName(self, names, scans=None, strict=False, prog=False, raw=False, **kargs):
         """
         Retrieve the image for the sum of several scans and channels selected by their channel name.
@@ -515,6 +558,38 @@ class ITA(ITM):
         if raw:
             return Z, channels
         return self.image(np.flipud(Z), channel=",".join(channels))
+
+    def getChannelBySN(self, SN):
+        for node in self.root.goto("MassIntervalList"):
+            if node.name == "mi":
+                l = node.dictList()
+                if l['SN']['utf16']==SN:
+                    name = l['assign']['utf16']
+                    if not name:
+                        name = l['desc']['utf16']
+                    if not name:
+                        name = '{:.2f}u'.format(l['cmass']['float'])
+                    return name
+
+    def getAddedImageBySN(self, SN, raw=False):
+        """
+        New ITA fileformat save images with their respective serial number (SN).
+        This function return the image for a given SN.
+
+        Parameters
+        ----------
+
+        SN: Serial Number of the channel
+        """
+        node = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/Images/{SN}/SumImage/EDROff".format(SN=SN))
+        dat = node.decompress()
+        data = struct.unpack("<{}f".format(len(dat)//4), dat)
+        img = np.array(data, dtype=np.float).reshape((self.sy, self.sx))
+        if raw:
+            return img
+        channel = self.getChannelBySN(SN)
+        return self.image(np.flipud(img), channel=channel)
+
 
     def getAddedImage(self, channel, **kargs):
         """
