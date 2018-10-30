@@ -62,17 +62,9 @@ class ITA(ITM):
             except:
                 raise TypeError(
                     "Invalid file format. Maybe the file is corrupted?")
-        try:
-            Width = self.root.goto('Meta/SI Image[0]/res_x').getLong()
-            Height = self.root.goto('Meta/SI Image[0]/res_y').getLong()
-            RAW = zlib.decompress(self.root.goto(
-                'Meta/SI Image[0]/intensdata').value)
-            data = struct.unpack("<{0}I".format(Width*Height), RAW)
-            self.img = np.array(data).reshape((Height, Width))
-        except:
-            import warnings
-            warnings.warn("No SI image found. Skipping it.")
-            self.img = None
+        
+        self.img = self.getIntensity()
+        
         try:
             self.fov = self.root.goto('Meta/SI Image[0]/fieldofview').getDouble()
         except MissingBlock:
@@ -91,7 +83,7 @@ class ITA(ITM):
         for x in  self.root.goto("MassIntervalList"):
             if x.name == 'mi':
                 l = x.dictList()
-                if l['assign']['utf16'] == channel:
+                if l['assign']['utf16'] == channel or l['desc']['utf16'] == channel:
                     return l['SN']['utf16']
 
         raise Exception("Channel name \"{channel}\" not found".format(channel=channel))
@@ -494,32 +486,6 @@ class ITA(ITM):
             return Z, channels
         channels_name = [["{:.2f}u".format(m['cmass']['float']),m['assign']['utf16']][m['assign']['utf16']!=''] for m in channels]
         return self.image(np.flipud(Z), channel="Masses: "+",".join(channels_name))
-
-    def image(self, I, channel="Unknown", zscale="Counts"):
-        """
-        Create a pySPM.SPM.SPM_image for a given numpy array with the same real size information as the tof-sims data.
-
-        Parameters
-        ----------
-        I : numpy 2D array
-            A given array
-        channel : string
-            A channel name describing the image. It will be printed as title when the SPM_image will be displayed.
-        zscale : string
-            The unit of the zscale. By default it's "Counts"
-
-        Returns
-        -------
-        pySPM.SPM.SPM_image
-            A SPM_image created with the data of a given array.
-
-        Example
-        -------
-        >>> A = pySPM.ITA("myfile.ita")
-        >>> Au,_ = A.getAddedImageByName("Au") # retrieve the gold channel (total counts)
-        >>> Au_tofcorr = A.image(-np.log(1-np.fmin(.999, Au.pixels(A.Nscan))), "Au", zscale="yield") # Create a new image with the tof-corrected data
-        """
-        return SPM_image(I, real=self.size['real'], _type="TOF", zscale=zscale, channel=channel)
 
     def getAddedImageByMass(self, masses, raw=False, **kargs):
         """

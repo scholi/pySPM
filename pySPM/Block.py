@@ -429,8 +429,9 @@ class Block:
         import zlib
         return zlib.decompress(self.value)
 
-    def getData(self, L, fmt="I"):
+    def getData(self, fmt="I"):
         raw = self.decompress()
+        L = len(raw)//struct.calcsize(fmt)
         return struct.unpack("<"+str(L)+fmt, raw)
         
     def modify_block_and_export(self, path, new_data, output, debug=False, prog=False, lazy=False):

@@ -117,34 +117,39 @@ class ITM:
         for m in self.getPeakList(name):
             print("{id[long]}: ({desc[utf16]}) [{assign[utf16]}] {lmass[float]:.2f}u - {umass[float]:.2f}u (center: {cmass[float]:.2f}u)".format(**m))
         
-    def get_summary(self):
+    def get_summary(self, numeric=False):
         """
         Retrieve a summary of the important data concerning the measurement
         """
-        values = self.getValues(start=False,names=["Instrument.SputterGun.Energy","Instrument.SputterGun.Species",
-            "Instrument.LMIG.Extractor","Instrument.LMIG.Lens_Source","Instrument.Analyzer.ExtractionDelay",
-            "Analysis.AcquisitionTime","Analysis.SputterTime","Analysis.TotalScans","Analysis.TotalTime","Instrument.Analyzer_Polarity_Switch"])
-        def Get(v,k):
-            return v.get(k,['Unknown'])[0]
+        def Get(k, default='Unknown'):
+            try:
+                return self.getValue(k)['string']
+            except:
+                return default
             
         return {
             'pixels': self.size['pixels'],
             'fov': self.root.goto('Meta/SI Image[0]/fieldofview').getDouble(),
             'LMIG': {
-                'Extractor': Get(values,"Instrument.LMIG.Extractor"),
-                'Lens_Source': Get(values,"Instrument.LMIG.Lens_Source")},
-            'ExtractionDelay': Get(values,"Instrument.Analyzer.ExtractionDelay"),
-            'SputterSpecies': values.get('Instrument.SputterGun.Species',['Off'])[0],
-            'SputterEnergy': values.get('Instrument.SputterGun.Energy',['Off'])[0],
-            'AnalysisTime': Get(values,"Analysis.AcquisitionTime"),
-            'SputterTime': Get(values,"Analysis.SputterTime"),
-            'Scans': values.get("Analysis.TotalScans",[self.Nscan])[0],
-            'TotalTime':  Get(values, "Analysis.TotalTime"),
+                'Extractor': Get("Instrument.LMIG.Extractor"),
+                'Lens_Source': Get("Instrument.LMIG.Lens_Source")},
+            'ExtractionDelay': Get("Instrument.Analyzer.ExtractionDelay"),
+            'SputterSpecies': Get('Instrument.SputterGun.Species','Off'),
+            'SputterEnergy': Get('Instrument.SputterGun.Energy','Off'),
+            'AnalysisTime': Get("Analysis.AcquisitionTime"),
+            'SputterTime': Get("Analysis.SputterTime"),
+            'Scans':  Get("Analysis.TotalScans",self.Nscan),
+            'TotalTime':  Get( "Analysis.TotalTime"),
             'peaks': self.get_masses(),
-            'polarity': Get(values,"Instrument.Analyzer_Polarity_Switch")
+            'polarity': Get("Instrument.Analyzer_Polarity_Switch"),
+            'CycleTime': Get( "Measurement.CycleTime"),
+            'UpperMass': Get( "Measurement.UpperMass"),
+            'LMIGDropouts': Get( "Measurement.LMIGDropouts"),
+            'ShotsPerPixel' : Get( "Registration.Raster.ShotsPerPixel"),
+            'RasterMode': Get("Registration.Raster.Mode")
             }
 
-    def show_summary(self):
+    def show_summary(self, fig=None, plot=True, **kargs):
         from . import funit
         s = self.get_summary()
         print("""Analysis time: {AnalysisTime}
@@ -154,7 +159,10 @@ class ITM:
         Field of View: {Fov[value]:.2f} {Fov[unit]}
         Pixel size: {pixels[x]} × {pixels[y]}
         Polarity: {polarity}
-        Pixel Size: {pxs[value]:.2f} {pxs[unit]}""".format(Fov=funit(s['fov'],'m'), pxs=funit(s['fov']/s['pixels']['x'], 'm'), **s))
+        Pixel Size: {pxs[value]:.2f} {pxs[unit]}
+        Shots per pixel: {ShotsPerPixel}
+        Raster mode: {RasterMode}
+        Cycle time: {CycleTime} (Upper mass: {UpperMass})""".format(Fov=funit(s['fov'],'m'), pxs=funit(s['fov']/s['pixels']['x'], 'm'), **s))
         print("Peaks:")
         for x in s['peaks']:
             if x['assign']:
@@ -163,14 +171,76 @@ class ITM:
                 print("\t▸ {desc} ({lmass:.3f} - {umass:.3f}u)".format(**x))
             else:
                 print("\t▸ {cmass:.2f}u ({lmass:.3f} - {umass:.3f}u)".format(**x))
+        if plot:
+            import matplotlib.pyplot as plt
+            import matplotlib as mpl
+            if fig is None:
+                fig = plt.figure(figsize=kargs.get("figsize",(21,10)))
+            
+            SI = self.getIntensity()
+            Snapshot = self.getSnapshot()
+            N = (SI is not None)+(Snapshot is not None)+1
+            gs = mpl.gridspec.GridSpec(2, N)
+            ax = plt.subplot(gs[0, 0])
+            if SI is not None:
+                desc = self.root.goto('Meta/SI Image/description').getString()
+                SI.show(ax=ax, **{k:kargs[k] for k in kargs if k not in ['high', 'low']})
+                #ax.set_title(desc)
+                ax = plt.subplot(gs[0,1])
+            if Snapshot is not None:
+                desc = self.root.goto('Meta/Video Snapshot/description').getString()
+                ax.imshow(Snapshot)
+                ax.set_title(desc)
+                ax = plt.subplot(gs[0, N-1])
+            self.showStage(ax=ax, markers=True)
+            ax = plt.subplot(gs[1,:])
+            self.showSpectrum(low=kargs.get('low',0), high=kargs.get('high', None), ax=ax)
+            
+    def image(self, I, channel="Unknown", zscale="Counts"):
+        """
+        Create a pySPM.SPM.SPM_image for a given numpy array with the same real size information as the tof-sims data.
+
+        Parameters
+        ----------
+        I : numpy 2D array
+            A given array
+        channel : string
+            A channel name describing the image. It will be printed as title when the SPM_image will be displayed.
+        zscale : string
+            The unit of the zscale. By default it's "Counts"
+
+        Returns
+        -------
+        pySPM.SPM.SPM_image
+            A SPM_image created with the data of a given array.
+
+        Example
+        -------
+        >>> A = pySPM.ITA("myfile.ita")
+        >>> Au,_ = A.getAddedImageByName("Au") # retrieve the gold channel (total counts)
+        >>> Au_tofcorr = A.image(-np.log(1-np.fmin(.999, Au.pixels(A.Nscan))), "Au", zscale="yield") # Create a new image with the tof-corrected data
+        """
+        from .SPM import SPM_image
+        return SPM_image(I, real=self.size['real'], _type="TOF", zscale=zscale, channel=channel)     
         
     def getIntensity(self):
         """
         Retieve the total Ion image
         """
-        X, Y = self.size['pixels']['x'], self.size['pixels']['y']
-        return np.array(struct.unpack('<'+str(X*Y)+'I',
-                                      zlib.decompress(self.root.goto('Meta/SI Image/intensdata').value))).reshape((Y, X))
+        try:
+            X, Y = self.size['pixels']['x'], self.size['pixels']['y']
+            img = self.image(np.array(self.root.goto('Meta/SI Image/intensdata').getData("f")).reshape((Y, X)), channel="SI count")
+        except Exception as e:
+            try:
+                img = self.getAddedImage(0).pixels
+            except:
+                try:
+                    img = self.getAddedImageBySN(self.get_channel_SN("total"))
+                except:
+                    import warnings
+                    warn.warnings("SI image cannot be retrieved")
+                    return None
+        return img
 
     def get_LMIG_info(self):
         rs = self.getValues(start=True)
@@ -182,9 +252,9 @@ class ITM:
     def getValue(self, name, end=True):
         return self.root.goto('prop{}/{name}'.format(['start','end'][end],name=name)).getKeyValue()
     
-    def getValues(self, pb=False, start=True,end=True,names=[], startsWith="", nest=False, hidePrefix=True):
+    def getValues(self, pb=False, start=False,end=True,names=[], startsWith="", nest=False, hidePrefix=True, numeric=False):
         """
-        Beta function: Retieve a list of the values
+        Beta function: Retrieve a list of the values
         """
         Vals = {}
         startEnd = []
@@ -203,6 +273,10 @@ class ITM:
                 r = Node.getKeyValue()
                 del Node
                 S = Vals
+                if numeric:
+                    value = r['float']
+                else:
+                    value = r['string']
                 if r['key'] in names or ( names==[] and r['key'].startswith(startsWith) ):
                     if hidePrefix:
                         key_name = r['key'][len(startsWith):]
@@ -214,12 +288,12 @@ class ITM:
                             if k not in S:
                                 S[k] = {}
                             S = S[k]
-                        S['value @'+['end', 'start'][start]] = r['string']
+                        S['value @'+['end', 'start'][start]] = value
                     else:
                         if key_name in Vals:
-                            Vals[key_name].append(r['string'])
+                            Vals[key_name].append(value)
                         else:
-                            Vals[key_name] = [r['string']]
+                            Vals[key_name] = [value]
                             
         return Vals
 
@@ -682,12 +756,14 @@ class ITM:
                 print(
                     "{id}: ({desc}) [{assign}] {lmass:.2f}u - {umass:.2f}u (center: {cmass:.2f}u)".format(**m))
 
-    def showStage(self, ax=None, markers=False):
+    def showStage(self, ax=None, markers=False, plist=False):
         """
         Display an image of the stage used
         ax: maplotlib axis to be ploted in. If None the current one (or new) will be used
         markers: If True will display on the map the Position List items.
         """
+        import pickle
+        import matplotlib as mpl
         W = self.root.goto('SampleHolderInfo/bitmap/res_x').getLong()
         H = self.root.goto('SampleHolderInfo/bitmap/res_y').getLong()
 
@@ -697,7 +773,7 @@ class ITM:
 
         Dat = zlib.decompress(self.root.goto(
             'SampleHolderInfo/bitmap/imagedata').value)
-        I = 255*np.array(struct.unpack("<"+str(W*H*3)+"B", Dat)
+        I = np.array(struct.unpack("<"+str(W*H*3)+"B", Dat)
                          ).reshape((H, W, 3))
         ax.imshow(I)
         if markers:
@@ -708,18 +784,34 @@ class ITM:
                 sx = 23
                 sy = 23
                 return (913+sx*xy[0], 1145+sy*xy[1])
-
-            for x in self.root.goto('SampleHolderInfo/positionlist'):
-                if x.name == 'shpos':
-                    y = pickle.loads(x.goto('pickle').value)
-                    pos = toXY((y['stage_x'], y['stage_y']), W, H)
-                    if pos[0] >= 0 and pos[0] < W and pos[1] >= 0 and pos[1] < H:
-                        ax.annotate(y['name'], xy=pos, xytext=(-15, -25), textcoords='offset points',
-                                    arrowprops=dict(arrowstyle='->', facecolor='black'))
-                pos = toXY((X, Y), W, H)
-                ax.plot(pos[0], pos[1], 'xr')
+            if plist:
+                for x in self.root.goto('SampleHolderInfo/positionlist'):
+                    if x.name == 'shpos':
+                        y = pickle.loads(x.goto('pickle').value)
+                        pos = toXY((y['stage_x'], y['stage_y']), W, H)
+                        if pos[0] >= 0 and pos[0] < W and pos[1] >= 0 and pos[1] < H:
+                            ax.annotate(y['name'], xy=pos, xytext=(-15, -25), textcoords='offset points',
+                                        arrowprops=dict(arrowstyle='->', facecolor='black'))
+            pos = toXY((X, Y), W, H)
+            ax.plot(pos[0], pos[1], 'xr')
+            ll = toXY((X-self.fov*5e2, Y-self.fov*5e3), W, H)
+            ur = toXY((X+self.fov*5e2, Y+self.fov*5e3), W, H)
+            ax.add_patch(mpl.patches.Rectangle(ll, ur[0]-ll[0], ur[1]-ll[1], ec='lime', fill=False))
         ax.set_xlim((0, W))
         ax.set_ylim((0, H))
+
+    def getSnapshot(self):
+        """
+        Return the video snapshot
+        """
+        try:
+            dl = self.root.goto('Meta/Video Snapshot').dictList()
+            sx = dl['res_x']['long']
+            sy = dl['res_y']['long']
+            img = np.array(self.root.goto('Meta/Video Snapshot/imagedata').getData('B')).reshape((sy, sx, 3))
+            return  img
+        except Exception as e:
+            return None
 
     def showPeaks(self):
         for p in self.peaks:

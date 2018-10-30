@@ -1,23 +1,39 @@
-[![Downloads](https://pepy.tech/badge/pyspm)](https://pepy.tech/project/pyspm)
-![](https://travis-ci.org/scholi/pySPM.svg?branch=master)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+|Downloads| |image1| |License|
 
-# pySPM
-pySPM is a python library (python3, but should be compatible with python2) in order to read, handle and plot Scanning Probe Microscopy (SPM) images as well as ToF-SIMS data.
+pySPM
+=====
 
-For now it support the following formats:
-* Nanoscan .xml file format
-* Bruker
-* Iontof ToF-SIMS fileformats:
-	* ITA
-	* ITM
-	* ITS
-* Nanonis SXM file
+pySPM is a python library (python3, but should be compatible with
+python2) in order to read, handle and plot Scanning Probe Microscopy
+(SPM) images as well as ToF-SIMS data.
 
-## Important
-This library is offered as it is and is still in development. Please note that reading the raw data was done by reverse engineering and guessing and not with a manual as the file format is proprietary. It seems to work well with the data used by the developer of this library, but there is **NO GUARANTY** that this library will work correctly with your own specific data.
+For now it support the following formats: \* Nanoscan .xml file format
+\* Bruker \* Iontof ToF-SIMS fileformats: \* ITA \* ITM \* ITS \*
+Nanonis SXM file
 
-If you find bugs and issues, please report them to the developer: https://github.com/scholi/pySPM/issues
+Important
+---------
 
-## More information
-Please visit the [github page](https://github.com/scholi/pySPM) of the project for additional information.
+This library is offered as it is and is still in development. Please
+note that reading the raw data was done by reverse engineering and
+guessing and not with a manual as the file format is proprietary. It
+seems to work well with the data used by the developer of this library,
+but there is **NO GUARANTY** that this library will work correctly with
+your own specific data.
+
+If you find bugs and issues, please report them to the developer:
+https://github.com/scholi/pySPM/issues
+
+More information
+----------------
+
+Please visit the `github page`_ of the project for additional
+information.
+
+.. _github page: https://github.com/scholi/pySPM
+
+.. |Downloads| image:: https://pepy.tech/badge/pyspm
+   :target: https://pepy.tech/project/pyspm
+.. |image1| image:: https://travis-ci.org/scholi/pySPM.svg?branch=master
+.. |License| image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg
+   :target: https://opensource.org/licenses/Apache-2.0
