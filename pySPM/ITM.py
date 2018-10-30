@@ -116,6 +116,19 @@ class ITM:
     def showPeakList(self, name):
         for m in self.getPeakList(name):
             print("{id[long]}: ({desc[utf16]}) [{assign[utf16]}] {lmass[float]:.2f}u - {umass[float]:.2f}u (center: {cmass[float]:.2f}u)".format(**m))
+    
+    def getPropertyTrend(self, name):
+        """
+        Sometimes values might be saved in ITA files under PropertyTrend.
+        You can recover them here
+        """
+        for x in self.root.goto("PropertyTrends"):
+            if (x.name=='PropertyTrend' and x.goto("Trend.Name").getString() == name) or x.name == name:
+                N = x.goto('Trend.Data.NumberEntries').getLong()
+                data = x.goto("Trend.Data").value
+                dat = np.array([struct.unpack('<4d',data[32*i:32*(i+1)])[2:4] for i in range(N)])
+                return dat
+        return None
         
     def get_summary(self, numeric=False):
         """
@@ -152,7 +165,8 @@ class ITM:
     def show_summary(self, fig=None, plot=True, **kargs):
         from . import funit
         s = self.get_summary()
-        print("""Analysis time: {AnalysisTime}
+        print("""
+        Analysis time: {AnalysisTime}
         Delayed extraction: {ExtractionDelay}
         LMIG's Lens source: {LMIG[Lens_Source]}
         Sputter species: {SputterSpecies} @ {SputterEnergy}
@@ -179,22 +193,53 @@ class ITM:
             
             SI = self.getIntensity()
             Snapshot = self.getSnapshot()
-            N = (SI is not None)+(Snapshot is not None)+1
+            EC = self.getPropertyTrend("Instrument.LMIG.Emission_Current")
+            Supp = self.getPropertyTrend("Instrument.LMIG.Suppressor")
+            Press = self.getPropertyTrend("Instrument.VCU.Pressure.Main")
+            N = (SI is not None)+(Snapshot is not None)+1+(EC is not None or Supp is not None or Press is not None)
             gs = mpl.gridspec.GridSpec(2, N)
-            ax = plt.subplot(gs[0, 0])
+            
+            index = 0
             if SI is not None:
+                ax = plt.subplot(gs[0, index])
                 desc = self.root.goto('Meta/SI Image/description').getString()
                 SI.show(ax=ax, **{k:kargs[k] for k in kargs if k not in ['high', 'low']})
-                #ax.set_title(desc)
-                ax = plt.subplot(gs[0,1])
+                index += 1
             if Snapshot is not None:
+                ax = plt.subplot(gs[0, index])
                 desc = self.root.goto('Meta/Video Snapshot/description').getString()
                 ax.imshow(Snapshot)
                 ax.set_title(desc)
-                ax = plt.subplot(gs[0, N-1])
-            self.showStage(ax=ax, markers=True)
-            ax = plt.subplot(gs[1,:])
-            self.showSpectrum(low=kargs.get('low',0), high=kargs.get('high', None), ax=ax)
+                index += 1
+            axStage = plt.subplot(gs[0, index+1])
+            axSpectra = plt.subplot(gs[1,:])
+            if EC is not None or Supp is not None or Press is not None:
+                ax = plt.subplot(gs[0, index])
+                from mpl_toolkits.axes_grid1 import make_axes_locatable
+                divider = make_axes_locatable(ax)
+                from .utils import  s2hms
+                if Press is not None:
+                   t, tunit = s2hms(Press[:,0])
+                   ax.plot(t, Press[:,1]*1e6, 'C2')
+                   ax.set_xlabel("Time [{}]".format(tunit))
+                   ax.set_ylabel("Pressure ($\cdot 10^{-8}$) [mbar]")
+                if EC is not None:
+                   axc = divider.append_axes("bottom", size=1.2, sharex=ax)
+                   t, tunit = s2hms(EC[:,0])
+                   axc.plot(t, EC[:,1]*1e6, 'C0')
+                   axc.set_xlabel("Time [{}]".format(tunit))
+                   axc.set_ylabel("Emission Current [$\mu$A]")
+
+                if Supp is not None:
+                   axb = divider.append_axes("bottom", size=1.2, sharex=ax)
+                   t, tunit = s2hms(Supp[:,0])
+                   axb.plot(t, Supp[:,1], 'C1')
+                   axb.set_xlabel("Time [{}]".format(tunit))
+                   axb.set_ylabel("LMIG Suppressor [V]")
+                index += 1
+            
+            self.showStage(ax=axStage, markers=True)
+            self.showSpectrum(low=kargs.get('low',0), high=kargs.get('high', None), ax=axSpectra)
             
     def image(self, I, channel="Unknown", zscale="Counts"):
         """

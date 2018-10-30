@@ -15,6 +15,15 @@ from . import fit
 from .save import *
 from .restoration import *
 
+def s2hms(s):
+    """Convert seconds to hour, minutes or seconds"""
+    M = np.max(s)
+    if M>120*60:
+        return s/(60*60), 'h'
+    if M>300:
+        return s/60, 'min'
+    return s, 's'
+
 def fitSpectrum(t, m, error=False):
     """
     fit and return the sf and k0 parameters for given known times t and masses m
