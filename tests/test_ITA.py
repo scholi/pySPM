@@ -10,8 +10,8 @@ def test_ITA_loading():
 
 def test_SI_image():
     TOF = pySPM.ITA(data)
-    assert TOF.img.shape[0] == TOF.size['pixels']['y']
-    assert TOF.img.shape[1] == TOF.size['pixels']['x']
+    assert TOF.img.pixels.shape[0] == TOF.size['pixels']['y']
+    assert TOF.img.pixels.shape[1] == TOF.size['pixels']['x']
 
 def test_getAddedChannel():
     TOF = pySPM.ITA(data)
