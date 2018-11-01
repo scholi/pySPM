@@ -12,6 +12,7 @@ _units = {
     'J':{'kg':1,'m':2,'s':-2,'A':0,'K':0,'cd':0,'mol':0},
     'W':{'kg':1,'m':2,'s':-3,'A':0,'K':0,'cd':0,'mol':0},
     'Pa':{'kg':1,'m':-1,'s':-2,'A':0,'K':0,'cd':0,'mol':0},
+    'Ω':{'kg':1,'m':2,'s':-3,'A':-2,'K':0,'cd':0,'mol':0}
     }
 
 _units_scale_conversion = {
@@ -108,6 +109,9 @@ def u_parse(s):
         result = unit('kg',10**(_unit_scale[s[0]]-3))
     elif s == 'g':
         result = unit('kg',1e-3)
+    elif s in _units_scale_conversion:
+        u = _units_scale_conversion[s]
+        result = unit(u[1], u[0])
     return result
 
 def op_exec(s):
@@ -124,9 +128,6 @@ def op_exec(s):
         i = s.index('*')
         s = s[:i-1]+[s[i-1]*s[i+1]]+s[i+2:]
     return s[0]  
-
-u = 'kg/(m*s)^2*(K/(J/C))'
-parse(u)
 
 class unit(object):
     def __init__(self, u, value=1):

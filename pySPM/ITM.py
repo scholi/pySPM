@@ -134,9 +134,24 @@ class ITM:
         """
         Retrieve a summary of the important data concerning the measurement
         """
-        def Get(k, default='Unknown'):
+        from .utils import time2hms, funit
+        def Get(k, default='Unknown', numeric=numeric):
             try:
-                return self.getValue(k)['string']
+                v = self.getValue(k)
+                if len(v['string'].split())==1:
+                    return v['string']
+                unit = v['string'].split()[-1]
+                if unit[0] in 'afpnumkMGE':
+                    unit = unit[1:]
+                if not numeric:
+                    if unit == 's' and v['float']>60:
+                        return time2hms(v['float'])
+                    r = funit(v['float'], unit)
+                    if int(r['value'])==r['value']:
+                        return "{value:.0f} {unit}".format(**r)
+                    return "{value:.2f} {unit}".format(**r)
+                
+                return v['string']
             except:
                 return default
             
@@ -164,7 +179,7 @@ class ITM:
 
     def show_summary(self, fig=None, plot=True, **kargs):
         from . import funit
-        s = self.get_summary()
+        s = self.get_summary(numeric=False)
         print("""
         Analysis time: {AnalysisTime}
         Delayed extraction: {ExtractionDelay}
@@ -217,18 +232,25 @@ class ITM:
                 ax = plt.subplot(gs[0, index])
                 from mpl_toolkits.axes_grid1 import make_axes_locatable
                 divider = make_axes_locatable(ax)
+                index2 = 0
                 from .utils import  s2hms
                 if Press is not None:
                    t, tunit = s2hms(Press[:,0])
                    ax.plot(t, Press[:,1]*1e6, 'C2')
                    ax.set_xlabel("Time [{}]".format(tunit))
                    ax.set_ylabel("Pressure ($\cdot 10^{-8}$) [mbar]")
+                   index2 += 1
+                   if index2%2 == 0:
+                    ax.yaxis.set_label_position("right")
                 if EC is not None:
                    axc = divider.append_axes("bottom", size=1.2, sharex=ax)
                    t, tunit = s2hms(EC[:,0])
                    axc.plot(t, EC[:,1]*1e6, 'C0')
                    axc.set_xlabel("Time [{}]".format(tunit))
                    axc.set_ylabel("Emission Current [$\mu$A]")
+                   index2 += 1
+                   if index2%2 == 0:
+                    axc.yaxis.set_label_position("right")
 
                 if Supp is not None:
                    axb = divider.append_axes("bottom", size=1.2, sharex=ax)
@@ -236,6 +258,9 @@ class ITM:
                    axb.plot(t, Supp[:,1], 'C1')
                    axb.set_xlabel("Time [{}]".format(tunit))
                    axb.set_ylabel("LMIG Suppressor [V]")
+                   index2 += 1
+                   if index2%2 == 0:
+                    axb.yaxis.set_label_position("right")
                 index += 1
             
             self.showStage(ax=axStage, markers=True)
@@ -274,7 +299,7 @@ class ITM:
         """
         try:
             X, Y = self.size['pixels']['x'], self.size['pixels']['y']
-            img = self.image(np.array(self.root.goto('Meta/SI Image/intensdata').getData("f")).reshape((Y, X)), channel="SI count")
+            img = self.image(np.flipud(np.array(self.root.goto('Meta/SI Image/intensdata').getData("f")).reshape((Y, X))), channel="SI count")
         except Exception as e:
             try:
                 img = self.getAddedImage(0).pixels
@@ -562,17 +587,25 @@ class ITM:
         ax.plot(M, S)
         self.get_masses()
         if showPeaks:
+            ymax = ax.get_ylim()[1]
+            labels = []
+            pos = []
+            index = 0
             for P in [x for x in self.peaks if self.peaks[x]['desc']['utf16'] not in ['total','sum of rest']]:
                 p = self.peaks[P]
                 c = p['cmass']['float']
                 mask = (m >= p['lmass']['float'])*(m <= p['umass']['float'])
                 if c >= low and c <= high:
                     i = np.argmin(abs(m-c))
-                    ax.axvline(m[i], color='red')
-                    ax.fill_between(m[mask], *ax.get_ylim(), color='red', alpha=.2)
-                    ax.annotate(p['assign']['utf16'], (m[i], ax.get_ylim()[
-                                1]), (2, -10), va='top', textcoords='offset points')
-
+                    pos.append(m[i])
+                    #ax.fill_between(m[mask], 0, ymax, color=['red','green','blue'][index%3], alpha=.2)
+                    index += 1
+                    labels.append(p['assign']['utf16'])
+            from .utils import put_Xlabels
+            put_Xlabels(ax, pos, labels);
+            ax.set_xlabel("Mass [u]")
+            ax.set_ylabel("Total counts [-]");
+            
     def get_masses(self, mass_list=None):
         """
         retrieve the peak list as a dictionnary
@@ -844,6 +877,8 @@ class ITM:
             ax.add_patch(mpl.patches.Rectangle(ll, ur[0]-ll[0], ur[1]-ll[1], ec='lime', fill=False))
         ax.set_xlim((0, W))
         ax.set_ylim((0, H))
+        ax.set_xticks([])
+        ax.set_yticks([])
 
     def getSnapshot(self):
         """
@@ -912,3 +947,6 @@ class ITM:
         if len(res) == 1:
             return res[0]
         return res
+    
+    def __del__(self):
+        self.f.close()

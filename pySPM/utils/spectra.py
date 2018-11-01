@@ -6,7 +6,7 @@
 Helper functions to handle spectras.
 """
 
-from.misc import dec_debug, do_debug
+from .misc import dec_debug, do_debug
 
 def get_substance_peaks(substance, negative=True):
     import os
@@ -22,7 +22,9 @@ def formulafy(x):
     import re
     return '$'+re.sub('([a-zA-Z])_?([0-9]+)',r'\1_{\2}',re.sub(r'\^([0-9]+)',r'^{\1}',re.sub('([+-])$',r'^\1',x)))+'$'
 
-def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True, debug=False, Aredux=1, label=None, include=[], include_only=None, exclude=[], polarity="+", colors='rgb', pretty=True, formula=True, **kargs):
+def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True,
+    debug=False, Aredux=1, label=None, include=None, include_only=None, exclude=[],
+    polarity="+", colors='rgb', pretty=True, formula=True, auto_scale=True, fakefit=False, **kargs):
     """
     given masses m and Spectrum D, zoom around m0 with Δm=delta.
     Will perform a peak-fitting if dofit is True
@@ -32,16 +34,28 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     import numpy as np
     import copy
     import matplotlib.pyplot as plt
+
+    if include is None:
+        include = []
+        
+    if type(include) is str:
+        include = [include]
+        
+    assert type(include) is list
+
+    if type(m0) is str:
+        include.append(m0)
+        m0 = get_mass(m0)
+
     if do_debug(debug):
         import time
         t0 = time.time()
-    if type(include) is str:
-        include=[include]
+    
     if type(exclude) is str:
        exclude = [exclude]
     mask = (m>=m0-delta)*(m<=m0+delta)
     negative = False
-    if polarity in ['-','Negative','negative','neg','Neg','NEG']:
+    if polarity in ['-', 'Negative', 'negative', 'neg', 'Neg', 'NEG']:
         negative = True
     if include_only is not None:
         if type(include_only) is str:
@@ -57,16 +71,16 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
     else:
         E_labels = E
     if do_debug(debug):
-        print("Elements:",", ".join(E))
+        print("Elements:", ", ".join(E))
     mp = m[mask][np.argmax(D[mask])] # mass of max peak
     dm = dm0
     if dm is None:
-        dm=0
+        dm = 0
     if len(E)>0:
         i = np.argmin(abs(np.array([get_mass(x+'+') for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the closest to max_peak
         if dm0 is None:
             dm = mp-get_mass(E[i]+'+')
-    p0 = [1,dm]+[0,0]*len(E) # delta m is estimnated from the deviation of the highest peak
+    p0 = [kargs.get('asym0',1), dm]+[0, 0]*len(E) # delta m is estimated from the deviation of the highest peak
     m0s = [get_mass(x+'+') for x in E]
     Et = copy.deepcopy(E) # copy element list
     if do_debug(debug):
@@ -81,10 +95,10 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
         idx = E.index(Et[i])
         j = np.argmin(abs(mt-ms[i]-dm))
         if do_debug(debug):
-            print("Max element:",Et[i],mp,ms[i],Dt[j], idx)
+            print("Max element:", Et[i], mp, ms[i], Dt[j], idx)
         p0[2+2*idx] = kargs.get('sig0',0.002)
         p0[3+2*idx] = Aredux*Dt[j]
-        Dt -= LG(mt,ms[i],p0[2+2*idx] , Amp=p0[3+2*idx], lg=0)
+        Dt -= LG(mt, ms[i], p0[2+2*idx], Amp=p0[3+2*idx], asym=p0[0], lg=0)
         Dt[Dt<0] = 0
         del Et[i]
     
@@ -104,6 +118,7 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
         print("setup time: ",t1-t0)
     if dofit:
         try:
+            assert not fakefit
             popt, pcov = curve_fit(fit, m[mask], D[mask], p0=p0,
                     bounds=(
                         [1/kargs.get('asym_max', 10),-0.015]+[0,0]*((len(p0)-1)//2),
@@ -113,10 +128,11 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
         except:
             p0[1] = 0
             try:
+                assert not fakefit
                 popt, pcov = curve_fit(fit, m[mask], D[mask], p0=p0,
-                        bounds=(
-                        [1/kargs.get('asym_max', 10),-0.015]+[0,0]*((len(p0)-1)//2),
-                        [kargs.get('asym_max', 10), 0.015]+[kargs.get('sig_max', 0.01),np.inf]*((len(p0)-1)//2))
+                    bounds=(
+                        [1/kargs.get('asym_max', 4),-0.015]+[0,0]*((len(p0)-1)//2),
+                        [kargs.get('asym_max', 4), 0.015]+[kargs.get('sig_max', 0.01),np.inf]*((len(p0)-1)//2))
                         )
                 fit_type = 1
             except Exception as e:
@@ -195,7 +211,9 @@ def showPeak(m,D,m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True
                 col = colors[i%len(colors)]
                 ax.axvline(mi, color=col, alpha=.5)
                 ax.annotate(Ei, (mi,y), (5,0), rotation=90, va='bottom', ha='left', textcoords='offset pixels')
-
+        if auto_scale:
+            plt.tight_layout()
+            
     if do_debug(debug):
         print(popt)
     if (dofit or do_debug(debug)) and ax is not None:

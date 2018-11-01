@@ -346,7 +346,7 @@ class ITA(ITM):
             Shifts = [(z[0]-avSx, z[1]-avSy) for z in Shifts]
         return Shifts
 
-    def getXsectionByMass(self, x1, y1, x2, y2, masses, N=None, prog=False, ax=None, col='w-', **kargs):
+    def getXsectionByMass(self, x1, y1, x2, y2, masses, N=None, prog=False, ax=None, flip=False, col='w-', **kargs):
         """
         Retrieves a Cross-Section for a given mass along the profile determined by coordinates (x1,y1) and (x2,y2).
         The output is a 2D image where the x-axis correspond to the position along the profile and the y-axis the scan number.
@@ -369,6 +369,8 @@ class ITA(ITM):
             if not None, the axis representing the 2D image can be given in order to display the profile's position
         col : string (matplotlib color format)
             The color of the profile used in case ax is given
+        flip : bool
+            Flip the y-coordinates?
         **kargs : arguments
             All supplementary arguments are passed to the pySPM.ITA.getSumImageByMass
 
@@ -377,10 +379,8 @@ class ITA(ITM):
         np.ndarray
             2D numpy array containing the sum of all channels. The values are the count number
         """
-        if True:
-            y1 = self.sy-1-y1
-            y2 = self.sy-1-y2
-            
+        y1 = self.sy-1-y1
+        y2 = self.sy-1-y2           
         if N is None:
             N = int(np.sqrt((x2-x1)**2+(y2-y1)**2))+1
         x = np.linspace(x1, x2, N)
@@ -388,7 +388,8 @@ class ITA(ITM):
         out = np.zeros((self.Nscan, N))
         Y = range(self.Nscan)
         if ax is not None:
-            ax.plot([x1, x2], [y1, y2], col)
+            if not flip:
+                ax.plot([x1, x2], [self.sy-1-y1, self.sy-1-y2], col)
         if prog:
             try:
                 from tqdm import tqdm_notebook as tqdm
@@ -608,7 +609,7 @@ class ITA(ITM):
         im_root =  self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image['+str(channel)+']')
         for scan in scans:
             c = im_root.goto('ImageArray.Long['+str(scan)+']')
-            V = np.array(c.getData(self.sx*self.sy), dtype=np.float).reshape((self.sy, self.sx))
+            V = np.array(c.getData('I'), dtype=np.float).reshape((self.sy, self.sx))
             if Shifts:
                 r = [int(z) for z in Shifts[scan]]
                 V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)
@@ -682,8 +683,8 @@ class ITA(ITM):
         if self.getValue('Instrument.Analyzer_Polarity_Switch')['string'] == 'Negative':
             polarity = '-'
         from . import utils
-        m, D = self.getSpectrum(sf=sf,k0=k0)
-        return utils.showPeak(m,D,m0,delta,polarity=polarity, **kargs)
+        m, D = self.getSpectrum(sf=sf, k0=k0)
+        return utils.showPeak(m, D, m0, delta, polarity=polarity, **kargs)
 
 class ITA_collection(Collection):
     """

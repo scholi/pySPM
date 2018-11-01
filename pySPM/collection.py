@@ -170,7 +170,7 @@ class Collection:
             for ch in channel_names]
         layers = [np.stack([data[i]*colors[i][j] for j in range(3)], axis=2)
                   for i in range(len(channel_names))]
-        overlay = np.sum(layers, axis=0)
+        overlay = np.clip(np.sum(layers, axis=0), 0, 1)
         o = self.create_image(overlay, key="overlay")
         ch = [self.create_image(x, key=self[channel_names[i]].channel) for i,x in enumerate(layers)]
         if 'ax' in kargs:

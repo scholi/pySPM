@@ -15,6 +15,60 @@ from . import fit
 from .save import *
 from .restoration import *
 
+def funit(value, unit=None):
+    """
+    Convert a value and unit to proper value
+    e.g. 0.01m will be converted to 10mm
+    e.g. 1000A will be converted to 1kA
+    etc.
+
+    Parameters
+    ----------
+    value : int, float or dictionary with 'value' and 'unit' key
+        numerical value to work with
+    unit : string or None
+        name of the unit
+
+    Returns
+    -------
+    dictionary with formated 'value' and 'unit'.
+    The value will be: ≥1 and <1000
+
+    Examples
+    --------
+    >>> funit(0.01,'m')
+    {'value': 10.0, 'unit': 'mm'}
+    >>> funit(1, 'cm')
+    {'value': 1.0, 'unit': 'cm'}
+    >>> funit({'value':2340, 'unit': 'um'})
+    {'value': 2.34, 'unit': 'mm'}
+    """
+    if unit == None:
+        unit = value['unit']
+        value = value['value']
+    import math
+    if value == 0:
+        return {'value': value, 'unit': unit}
+    shift = int(math.floor(math.log10(value)/3.0))  # base10 exponent
+    mag = u'afpnum1kMGTPE'
+    index_mag = mag.index('1')
+    # Test if unit has a scale factor (n,m,k,M,G, etc.)
+    if len(unit) > 1 and unit[0] in mag and unit[1:] and index_mag:
+        index_mag = mag.index(unit[0])
+        unit = unit[1:]
+    value /= 10**(3*shift)
+    index_mag += shift
+    if index_mag < 0:
+        value *= 10**(index_mag*3)
+        index_mag = 0
+    elif index_mag >= len(mag):
+        value *= 10**((index_mag-len(mag)+1)*3)
+        index_mag = len(mag)-1
+    unit_prefix = mag[index_mag]
+    if unit_prefix == '1':
+        unit_prefix = ''
+    return {'value': value, 'unit': u'{mag}{unit}'.format(mag=unit_prefix, unit=unit)}
+    
 def s2hms(s):
     """Convert seconds to hour, minutes or seconds"""
     M = np.max(s)
@@ -24,6 +78,15 @@ def s2hms(s):
         return s/60, 'min'
     return s, 's'
 
+def time2hms(s, string=True):
+    h = int(s//3600)
+    s -= h*3600
+    m = int(s//60)
+    s -= m*60
+    if string:
+        return "{:02d}:{:02d}:{:02.2f}".format(h,m,s)
+    return (h,m,s)
+    
 def fitSpectrum(t, m, error=False):
     """
     fit and return the sf and k0 parameters for given known times t and masses m

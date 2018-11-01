@@ -18,7 +18,7 @@ import skimage.filters
 import scipy.interpolate
 from skimage import transform as tf
 import copy
-from .utils import CDF
+from .utils import CDF, funit
 import sys
 
 try:
@@ -37,59 +37,6 @@ try:
 except:
     # For compatibility with old versions of skimage
     from skimage.filters import threshold_adaptive as threshold_local
-
-
-def funit(value, unit=None):
-    """
-    Convert a value and unit to proper value
-    e.g. 0.01m will be converted to 10mm
-    e.g. 1000A will be converted to 1kA
-    etc.
-
-    Parameters
-    ----------
-    value : int, float or dictionary with 'value' and 'unit' key
-        numerical value to work with
-    unit : string or None
-        name of the unit
-
-    Returns
-    -------
-    dictionary with formated 'value' and 'unit'.
-    The value will be: ≥1 and <1000
-
-    Examples
-    --------
-    >>> funit(0.01,'m')
-    {'value': 10.0, 'unit': 'mm'}
-    >>> funit(1, 'cm')
-    {'value': 1.0, 'unit': 'cm'}
-    >>> funit({'value':2340, 'unit': 'um'})
-    {'value': 2.34, 'unit': 'mm'}
-    """
-    if unit == None:
-        unit = value['unit']
-        value = value['value']
-    import math
-    shift = int(math.floor(math.log10(value)/3.0))  # base10 exponent
-    mag = u'afpnum1kMGTPE'
-    index_mag = mag.index('1')
-    # Test if unit has a scale factor (n,m,k,M,G, etc.)
-    if len(unit) > 1 and unit[0] in mag and unit[1:] and index_mag:
-        index_mag = mag.index(unit[0])
-        unit = unit[1:]
-    value /= 10**(3*shift)
-    index_mag += shift
-    if index_mag < 0:
-        value *= 10**(index_mag*3)
-        index_mag = 0
-    elif index_mag >= len(mag):
-        value *= 10**((index_mag-len(mag)+1)*3)
-        index_mag = len(mag)-1
-    unit_prefix = mag[index_mag]
-    if unit_prefix == '1':
-        unit_prefix = ''
-    return {'value': value, 'unit': u'{mag}{unit}'.format(mag=unit_prefix, unit=unit)}
    
 class SPM_image:
     """
@@ -691,7 +638,7 @@ class SPM_image:
     def circular_profile(self, x0, y0, Ra=1, Rn=0, width=1, N=20, A=0, B=360,\
         cmap='jet', axImg=None, axPolar=None, axProfile=None, plotProfileEvery=1,\
         xtransf=lambda x: x*1e9, ytransf=lambda x:x*1e9,\
-        ToFcorr=False, fit=lambda x, *p: p[3]+p[2]*CDF(x, *p[:2]), p0=None,errors=False,bounds=(-np.inf,np.inf), **kargs):
+        ToFcorr=False, fit=lambda x, *p: p[3]+p[2]*CDF(x, *p[:2]), p0=None, errors=False, bounds=(-np.inf, np.inf), fakefit=False, **kargs):
         """
         Create radial profiles from point x0,y0 with length Ra (outer radius) and Rn (negative Radius).
         Start from angle A° to angle B° with N profiles.
@@ -718,23 +665,34 @@ class SPM_image:
                 x0+Ra*np.cos(a),
                 y0-Ra*np.sin(a),
                 ax=axImg, width=width, color=scalarMap.to_rgba(i), **kargs)
-            profile = np.mean(p, axis=1)
+            if width==0:
+                profile = p
+            else:
+                profile = np.mean(p, axis=1)
             if ToFcorr:
                 profile = -np.log(1.001-profile/ToFcorr)
             if p0 is None:
-                p0 = [l[len(l)//2], 100e-9, np.max(profile)-np.min(profile),np.min(profile) ]
+                AC = np.mean(profile[:len(l)//2])
+                AE = np.mean(profile[len(l)//2:])
+                if AC<AE:
+                    p0 = [l[len(l)//2], 5*(l[1]-l[0]), np.max(profile)-np.min(profile), np.min(profile) ]
+                else:
+                    p0 = [l[len(l)//2], 5*(l[1]-l[0]), -np.max(profile)+np.min(profile), np.max(profile) ]
             else:
                 for j,p in enumerate(p0):
                     if callable(p):
                         p0[j] = p(l,profile)
             if kargs.get('debug',False):
                 print("calculate fit parameters are", p0)
-            popt, pcov = scipy.optimize.curve_fit(fit, l , profile, p0)
-            res.append(popt)
-            cov.append([np.sqrt(abs(pcov[i,i])) for i in range(len(popt))])
+            if not fakefit:
+                p0, pcov = scipy.optimize.curve_fit(fit, l , profile, p0)
+            else:
+                pcov = np.zeros((len(p0),len(p0)))
+            res.append(p0)
+            cov.append([np.sqrt(abs(pcov[i,i])) for i in range(len(p0))])
             if axProfile and i%plotProfileEvery == 0:
-                axProfile.plot(xtransf(l-popt[0]), profile, color=scalarMap.to_rgba(i), linestyle=':')
-                axProfile.plot(xtransf(l-popt[0]), fit(l,*popt), color=scalarMap.to_rgba(i))
+                axProfile.plot(xtransf(l-p0[0]), profile, color=scalarMap.to_rgba(i), linestyle=':')
+                axProfile.plot(xtransf(l-p0[0]), fit(l,*p0), color=scalarMap.to_rgba(i))
         # close loop
         if A%360 == B%360:
             angles.append(angles[0])
@@ -747,11 +705,11 @@ class SPM_image:
         cov = np.array(cov)
         fact = 2*np.sqrt(2*np.log(2))
         if axPolar:
-            axPolar.plot(angles, ytransf(res[:,1]), color=kargs.get('sig_color','C0'))
-            axPolar.plot(angles, ytransf(fact*res[:,1]), color=kargs.get('fwhm_color','C1'))
+            axPolar.plot(angles, ytransf(res[:,1]), color=kargs.get('sig_color','C0'), label="$\\sigma$")
+            axPolar.plot(angles, ytransf(fact*res[:,1]), color=kargs.get('fwhm_color','C1'), label="FWHM")
             if errors:
                 axPolar.fill_between(angles, ytransf(res[:,1]-cov[:,1]),ytransf(res[:,1]+cov[:,1]), color=kargs.get('sig_color','C0'), alpha=kargs.get('fillalpha',.5))
-                axPolar.fill_between(angles, fact*ytransf(res[:,1]-cov[:,1]),ytransf(res[:,1]+cov[:,1]), color=kargs.get('fwhm_color','C1'), alpha=kargs.get('fillalpha',.5))
+                axPolar.fill_between(angles, fact*ytransf(res[:, 1]-cov[:, 1]), ytransf(res[:, 1]+cov[:, 1]), color=kargs.get('fwhm_color', 'C1'), alpha=kargs.get('fillalpha',.5))
             
         return angles, res, cov
         

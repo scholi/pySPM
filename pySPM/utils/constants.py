@@ -16,3 +16,6 @@ kb = 1.38064852e-23 # J/K
 
 # gas constant
 R = 8.3144598 # J/K
+
+# factor between the sigma and FWHM for Gaussian
+gfact = 2.3548200450309493
