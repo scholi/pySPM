@@ -212,7 +212,16 @@ def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=Tr
                 ax.axvline(mi, color=col, alpha=.5)
                 ax.annotate(Ei, (mi,y), (5,0), rotation=90, va='bottom', ha='left', textcoords='offset pixels')
         if auto_scale:
-            plt.tight_layout()
+            fig = plt.gcf()
+            renderer = fig.canvas.get_renderer()
+            ymax = ax.get_ylim()[1]
+            for child in ax.get_children():
+                bbox = child.get_window_extent(renderer)
+                bbox_data = bbox.transformed(ax.transData.inverted())
+                if ymax<bbox_data.ymax:
+                    ymax = bbox_data.ymax
+            ax.set_ylim((0, ymax))
+            ax.autoscale_view()    
             
     if do_debug(debug):
         print(popt)
