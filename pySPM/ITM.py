@@ -299,7 +299,7 @@ class ITM:
         """
         try:
             X, Y = self.size['pixels']['x'], self.size['pixels']['y']
-            img = self.image(np.flipud(np.array(self.root.goto('Meta/SI Image/intensdata').getData("f")).reshape((Y, X))), channel="SI count")
+            img = self.image(np.flipud(np.array(self.root.goto('Meta/SI Image/intensdata').getData("f"), dtype=np.float32).reshape((Y, X))), channel="SI count")
         except Exception as e:
             try:
                 img = self.getAddedImage(0).pixels
@@ -851,8 +851,7 @@ class ITM:
 
         Dat = zlib.decompress(self.root.goto(
             'SampleHolderInfo/bitmap/imagedata').value)
-        I = np.array(struct.unpack("<"+str(W*H*3)+"B", Dat)
-                         ).reshape((H, W, 3))
+        I = np.array(struct.unpack("<"+str(W*H*3)+"B", Dat), dtype=np.uint8).reshape((H, W, 3))
         ax.imshow(I)
         if markers:
             X = self.root.goto('Meta/SI Image[0]/stageposition_x').getDouble()

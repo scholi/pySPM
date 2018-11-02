@@ -797,7 +797,7 @@ class ITA_collection(Collection):
             channels = self.channels.keys()
         self.PCA = PCA.ITA_PCA(self, channels)
 
-    def showPCA(self, num=None, **kargs):
+    def showPCA(self, num=None, loadings=True, **kargs):
         """
         Run PCA if not already done and display the PCA images.
 
@@ -816,9 +816,9 @@ class ITA_collection(Collection):
         """
         if self.PCA is None:
             self.runPCA()
-        self.PCA.showPCA(num=num, **kargs)
+        self.PCA.showPCA(num=num, loadings=loadings, **kargs)
 
-    def loadings(self, num=None):
+    def loadings(self, num=None, ax=None):
         """
         Return a pandas DataFrame with the num first loadings
 
@@ -839,8 +839,15 @@ class ITA_collection(Collection):
         if self.PCA is None:
             self.runPCA()
         if num is None:
-            return self.PCA.loadings()
-        return self.PCA.loadings()[:num]
+            L = self.PCA.loadings()
+        else:
+            L = self.PCA.loadings()[:num]
+        if ax is not None:
+            if ax is True:
+                self.PCA.hinton(matrix=L)
+            else:
+                self.PCA.hinton(matrix=L, ax=ax)
+        return L
 
     def StitchCorrection(self, channel, stitches, gauss=0, debug=False):
         """

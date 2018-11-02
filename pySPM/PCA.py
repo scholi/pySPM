@@ -173,7 +173,7 @@ class ITA_PCA(PCA):
         mul = self.col.get_multivariate(channels)
         PCA.__init__(self, mul)
 
-    def showPCA(self, num=None, ax=None, pn=False, cmap=None, symmetric=True, **kargs):
+    def showPCA(self, num=None, ax=None, pn=False, cmap=None, symmetric=True, loadings=True, **kargs):
         c = self.getPCAcol(num, pn)
         if cmap is None:
             if pn:
@@ -181,8 +181,22 @@ class ITA_PCA(PCA):
                 symmetric = False
             else:
                 cmap = 'bwr'
+        L = self.loadings()[:num]
+        if loadings:
+                N = len(c)
+                ncols = kargs.get('ncols', 4)
+                width = kargs.get('width', 21)
+                Ny = (N-1)//ncols+2
+                Nx = min(ncols, N)
+                from matplotlib.gridspec import GridSpec
+                import matplotlib.pyplot as pl
+                fig = plt.figure(figsize=(width, (Ny-1)*width/Nx+width*N/len(L.columns)))
+                gs = GridSpec(Ny, Nx, height_ratios=[width/Nx for i in range(Ny-1)]+[width*N/len(L.columns)])
+                ax = [plt.subplot(gs[i,j]) for i in range(Ny-1) for j in range(Nx)]
+                axh = plt.subplot(gs[-1,:])
+                self.hinton(matrix=L, ax=axh)
         c.show(ax=ax, cmap=cmap, symmetric=symmetric, **kargs)
-
+        return L
 
     def getPCAcol(self, num=None, pn=False):
         if num is None:

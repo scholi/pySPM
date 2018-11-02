@@ -132,9 +132,9 @@ class Collection:
                 fig, ax = plt.subplots(Ny, Nx,
                                        figsize=(width, ((channels_number-1)//ncols+1)*width/Nx))
         if type(ax) is not list:
-            ax = np.array(ax)
+            ax = np.array(ax).ravel()
         for i, x in enumerate(channels):
-            self[x].show(ax=ax.ravel()[i], cmap=cmap, **kargs)
+            self[x].show(ax=ax[i], cmap=cmap, **kargs)
         plt.tight_layout()
 
     def get_multivariate(self, channels=None):
