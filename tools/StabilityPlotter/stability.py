@@ -1,8 +1,8 @@
+#!python
 import sys
 import os
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QMainWindow, \
     QAction, qApp, QFileDialog, QComboBox
-#from minITM import ITM
 from pySPM import ITM
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -78,5 +78,5 @@ class Plotter(QMainWindow):
 
 app = QApplication(sys.argv)
 a = Plotter()
-a.open()  #r"Z:\Olivier\180328_Xue")
+a.open()
 sys.exit(app.exec_())

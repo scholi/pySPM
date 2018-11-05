@@ -25,6 +25,7 @@ setup(
     packages=find_packages(exclude=['contrib','docs','tests']),
     package_data={'pySPM':['data/elements.db','data/test.sxm']},
     include_package_data=True,
+    scripts=['tools/StabilityPlotter/stability.py'],
     install_requires=['numpy','scipy','pandas','scikit-image','scikit-learn','matplotlib'],
     classifiers=[
         'Development Status :: 4 - Beta',
