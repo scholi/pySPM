@@ -2,7 +2,8 @@ import sys
 import os
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QMainWindow, \
     QAction, qApp, QFileDialog, QComboBox
-from minITM import ITM
+#from minITM import ITM
+from pySPM import ITM
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -26,31 +27,7 @@ class Plotter(QMainWindow):
             
             filename = os.path.join(self.cwd, self.fileDrop.currentText())
             I = ITM(filename)
-            print(I.Nscan)
-            t,MeasData,s = I.get_meas_data()
-            
-            ax.plot(t, MeasData*1e6)
-            ax.set_xlabel("Time [s]");
-            ax.set_ylabel("Emission Current [$\\mu$A]")
-            if scans:
-                assert type(scans) is int
-                lim = ax.get_ylim()
-                axs = ax.twiny()
-                axs.set_xticks(.5*s[:-1:scans]+.5*s[1::scans])
-                axs.set_xticklabels([str(i+1) for i in range(0,I.Nscan,scans)])
-                colors = [i%2 for i in range(0,I.Nscan,scans)]
-                for i,tick in enumerate(axs.xaxis.get_ticklabels()):
-                    tick.set_color(["black","green"][colors[i]])
-                axs.set_xlim(ax.get_xlim())
-                for i in range(1,I.Nscan-1,2):
-                    ax.fill_between([s[i],s[i+1]],*lim,color='green',alpha=.1)
-                axs.set_xlabel("Scan number")
-                axs.set_xlim(ax.get_xlim())
-                axs.set_ylim(*lim)
-            axb = DualPlot(ax)
-            t, MeasData,_ = I.get_meas_data("Instrument.LMIG.Suppressor")
-            axb.plot(t, MeasData, 'C1')
-            axb.set_ylabel("Suppressor Voltage [V]")
+            I.show_stability(ax)
             del I
             self.canvas.draw()
             
