@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.dates import strpdate2num
-import pandas as p
+import pandas as pd
 import sys
 from pySPM.tools.fpanel import Fpanel
 
