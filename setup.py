@@ -26,7 +26,8 @@ setup(
     package_data={'pySPM':['data/elements.db','data/test.sxm']},
     include_package_data=True,
     entry_points = {
-        'console_scripts' : ['stability=pySPM.tools.stability:main','timer=pySPM.tools.tof_timer:main', 'plotter=pySPM.tools.emission_current_plotter:main']
+        'console_scripts' : [],
+        'gui_scripts':['stability=pySPM.tools.stability:main','timer=pySPM.tools.tof_timer:main', 'plotter=pySPM.tools.emission_current_plotter:main']
     },
     install_requires=['numpy','scipy','pandas','scikit-image','scikit-learn','matplotlib'],
     classifiers=[
