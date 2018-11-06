@@ -29,9 +29,10 @@ def plotLog(filename, watch=False, **kargs):
             a.grid()
         plt.minorticks_off()
 
-        mypause(3)
-        if not watch:
-            break
+        if watch:
+            mypause(3)
+        else:
+            plt.show()
                 
 def mypause(interval):
     backend = plt.rcParams['backend']
@@ -47,6 +48,7 @@ def mypause(interval):
 def main():
     if len(sys.argv)>1:
         filename = sys.argv[1]
+        print("Plot file \"{}\"".format(filename))
         plotLog(filename, watch=False)
     else:
         F = Fpanel()

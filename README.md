@@ -23,6 +23,21 @@ This library is offered as it is and is still in development. Please note that r
 If you find bugs and issues, please report them to the developpe: https://github.com/scholi/pySPM/issues
 
 ## News
+### New tools
+The library comes with three scripts to make your life easier. Those scripts are located in your python folder in the Scripts directory. You can also run them from the command line.
+#### stability
+Allows you to select a measurement folder and display the Emission Current and Suppressor voltage in function of the time/scan number.
+This allows you to verifiy the stability of your source during your measurements.
+![stability_screenshot](../master/doc/images/Capture_stability.png)
+
+#### plotter
+Allows you to plot the parameter logged by your logfile. If SurfaceLab is running this script will detect which logfile is beeing saved and will display the values live (the plot is refreshed every 3s in order add the new data). You can also provide as first argument the logfile path (or in windows you can drag&drop the logfile over the plotter app).
+![plotter_screenshot](../master/doc/images/Capture_plotter.png)
+
+#### timer
+If you are using SurfaceLab, this app will display a small progressbar of your measurement and will calculate the remaining time in function of the elapsed time, the total number of scans and the elapsed number of scan.
+![timer_screenshot](../master/doc/images/Capture_timer.png)
+
 ### pySPM is now availabe on pypi
 The installation for end-user is now very easy. If you have [pip](https://pypi.org/project/pip/), then you can install the library in a single line:
 
