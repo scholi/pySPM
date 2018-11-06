@@ -20,7 +20,7 @@ def get_substance_peaks(substance, negative=True):
         
 def formulafy(x):
     import re
-    return '$'+re.sub('([a-zA-Z])_?([0-9]+)',r'\1_{\2}',re.sub(r'\^([0-9]+)',r'^{\1}',re.sub('([+-])$',r'^\1',x)))+'$'
+    return '$'+re.sub('([a-zA-Z])_?([0-9]+)',r'\1_{\2}',re.sub(r'\^([0-9]+)',r'^{\1}',re.sub('([\\+-]+)$',r'^{\1}',x)))+'$'
 
 def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True,
     debug=False, Aredux=1, label=None, include=None, include_only=None, exclude=[],
@@ -66,6 +66,8 @@ def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=Tr
         E = get_peaklist(int(round(m0)), negative)
         E = [x for x in E if x not in exclude] + include
     E = list(set(E))
+    if negative:
+        E = [x+['-','']['-' in x] for x in E]
     if formula:
         E_labels = [formulafy(x) for x in E]
     else:
@@ -77,11 +79,11 @@ def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=Tr
     if dm is None:
         dm = 0
     if len(E)>0:
-        i = np.argmin(abs(np.array([get_mass(x+'+') for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the closest to max_peak
+        i = np.argmin(abs(np.array([get_mass(x) for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the closest to max_peak
         if dm0 is None:
-            dm = mp-get_mass(E[i]+'+')
+            dm = mp-get_mass(E[i])
     p0 = [kargs.get('asym0',1), dm]+[0, 0]*len(E) # delta m is estimated from the deviation of the highest peak
-    m0s = [get_mass(x+'+') for x in E]
+    m0s = [get_mass(x) for x in E]
     Et = copy.deepcopy(E) # copy element list
     if do_debug(debug):
         print(" ; ".join(E))
@@ -90,7 +92,7 @@ def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=Tr
     
     while len(Et)>0:
         mp = mt[np.argmax(Dt)] # mass of max peak
-        ms = [get_mass(x+'+') for x in Et]
+        ms = [get_mass(x) for x in Et]
         i = np.argmin(abs(ms-mp))
         idx = E.index(Et[i])
         j = np.argmin(abs(mt-ms[i]-dm))

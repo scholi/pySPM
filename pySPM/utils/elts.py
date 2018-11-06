@@ -19,7 +19,7 @@ def get_peaklist(nominal_mass, negative=False):
     c.execute("SELECT Formula from fragments where NominalMass={nm} and (Polarity is NULL or Polarity=={pol})".format(nm=nominal_mass,pol=[1,-1][negative]))
     return [str(x[0]) for x in c.fetchall()]
 
-def get_mass(elt):
+def get_mass(elt, mz=True):
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -38,6 +38,10 @@ def get_mass(elt):
             raise Exception("Cannot fetch mass of {}".format(x))
         m += n*res[0]
     m -= me*elt.count('+')
+    m += me*elt.count('-')
+    Z = max(1, abs(elt.count('+')-elt.count('-')))
+    if mz:
+        return m/Z
     return m
     
 def get_main_isotope(elt):
