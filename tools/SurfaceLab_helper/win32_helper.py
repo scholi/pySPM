@@ -3,6 +3,15 @@ import win32gui, win32api, win32con, ctypes
 import struct
 import array
 import os, sys
+from win32gui import FindWindow, FindWindowEx, SendMessage, PyGetString
+from win32con import WM_GETTEXT, WM_GETTEXTLENGTH
+
+def getText(hwnd):
+    buffer_len = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0) + 1
+    buffer = array.array('b', b'\x00\x00' * buffer_len)
+    text_len = SendMessage(hwnd, WM_GETTEXT, buffer_len, buffer)
+    text = PyGetString(buffer.buffer_info()[0], buffer_len - 1)
+    return text
 
 WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
 user32 = ctypes.windll.user32

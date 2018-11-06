@@ -16,7 +16,14 @@ def plotLog(filename, watch=False, **kargs):
         df = pd.read_csv(filename, skiprows=1, delimiter='\t', parse_dates=[0], na_values="<undefined>", names=names)
         #df = df.dropna()
         ax2 = df.plot("Time", subplots=True, ax=ax, sharex=True)
+        dt = df.iloc[-1,0]-df.iloc[0,0]
         for a in ax2:
+            if dt.seconds < 15*60:
+                a.xaxis.set_major_locator(mpl.dates.MinuteLocator(interval=1))
+            elif dt.seconds < 3*60*60:
+                a.xaxis.set_major_locator(mpl.dates.MinuteLocator(interval=5))
+            else:
+                a.xaxis.set_major_locator(mpl.dates.MinuteLocator(interval=15))
             a.xaxis.set_major_formatter(mpl.dates.DateFormatter('%H:%M'))
             a.grid()
         plt.minorticks_off()
