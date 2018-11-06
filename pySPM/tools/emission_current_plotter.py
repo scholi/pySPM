@@ -50,7 +50,8 @@ def main():
         plotLog(filename, watch=False)
     else:
         F = Fpanel()
-        F.plotLog(watch=True)
+        logfile = F.getLogFile()
+        plotLog(logfile, watch=True)
 
 if __name__ == '__main__':
     main()

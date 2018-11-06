@@ -86,9 +86,3 @@ class Fpanel:
             x = (bbox[0]+bbox[2])//2
             y = (bbox[1]+bbox[3])//2
             click(x, y)
-
-    def plotLog(self, filename=None, watch=False):
-        if filename is None:
-            filename = self.getLogFile()
-        if filename is not None:
-            plotLog(filename, watch=watch)
