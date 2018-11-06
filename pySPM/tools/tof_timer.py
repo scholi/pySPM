@@ -19,9 +19,9 @@ class GUI_Timer(QMainWindow):
         if len(A)>0:
             B = findWindow(C="Edit", parent=A[0])
             if len(B)>0:
-                AnalTime = int(B[2].text.replace(",",""))
-                TotScans = int(R[1].text.replace(",",""))
-                Scans = int(R[0].text.replace(",",""))
+                AnalTime = int(getText(B[2]).replace(",",""))
+                TotScans = int(getText(R[1]).replace(",",""))
+                Scans = int(getText(R[0]).replace(",",""))
                 self.ui.label_2.setText("Scans: {} / {}".format(Scans, TotScans));
                 self.ui.label_3.setText("Analysis Time: {} s".format(AnalTime));
                 self.ui.progressBar.setValue(Scans);
