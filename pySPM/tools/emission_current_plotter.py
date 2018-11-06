@@ -1,10 +1,11 @@
 import psutil
-
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.dates import strpdate2num
-import pandas as pd
+import pandas as p
+import sys
+from pySPM.tools.fpanel import Fpanel
 
 def plotLog(filename, watch=False, **kargs):
     fig, ax = plt.subplots(1,1)
@@ -43,10 +44,13 @@ def mypause(interval):
             canvas.start_event_loop(interval)
             return
 
-if __name__ == '__main__':
-    if len(sys.args)>0:
+def main():
+    if len(sys.argv)>1:
         filename = sys.argv[1]
-        plotLog(filename, watch=False, debug=options.debug)
+        plotLog(filename, watch=False)
     else:
         F = Fpanel()
         F.plotLog(watch=True)
+
+if __name__ == '__main__':
+    main()

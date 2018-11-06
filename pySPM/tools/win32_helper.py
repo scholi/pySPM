@@ -3,6 +3,7 @@ import win32gui, win32api, win32con, ctypes
 import struct
 import array
 import os, sys
+import psutil
 from win32gui import FindWindow, FindWindowEx, SendMessage, PyGetString
 from win32con import WM_GETTEXT, WM_GETTEXTLENGTH
 

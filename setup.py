@@ -25,7 +25,9 @@ setup(
     packages=find_packages(exclude=['contrib','docs','tests']),
     package_data={'pySPM':['data/elements.db','data/test.sxm']},
     include_package_data=True,
-    scripts=['tools/StabilityPlotter/stability.py','tools/SurfaceLab_helper/tof_timer.py','tools/SurfaceLab_helper/emission_current_plotter.py'],
+    entry_points = {
+        'console_scripts' : ['stability=pySPM.tools.stability:main','timer=pySPM.tools.tof_timer:main', 'plotter=pySPM.tools.emission_current_plotter:main']
+    },
     install_requires=['numpy','scipy','pandas','scikit-image','scikit-learn','matplotlib'],
     classifiers=[
         'Development Status :: 4 - Beta',

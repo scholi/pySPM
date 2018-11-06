@@ -1,11 +1,14 @@
-from win32_helper import *
+from .win32_helper import *
 import psutil
 
 class Fpanel:
     def __init__(self):
         self.PID = getPID('fpanel5.exe')
-        self.proc = psutil.Process(self.PID)
-        self.hwnd = findWindow("Fpanel")[0]
+        if self.PID is not None:
+            self.proc = psutil.Process(self.PID)
+            self.hwnd = findWindow("Fpanel")[0]
+        else:
+            raise Exception("Fpanel is not running")
         
     def isInstrumentPanelOpen(self):
         try:

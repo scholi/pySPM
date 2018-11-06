@@ -19,7 +19,6 @@ def DualPlot(ax, col1='C0', col2='C1'):
     return axb
     
 class Plotter(QMainWindow):
-
     def plot(self, ev=None, scans=3):
         if self.cwd is not None:
             self.figure.clf()
@@ -76,7 +75,11 @@ class Plotter(QMainWindow):
         
         self.show()
 
-app = QApplication(sys.argv)
-a = Plotter()
-a.open()
-sys.exit(app.exec_())
+def main():
+    app = QApplication(sys.argv)
+    a = Plotter()
+    a.open()
+    sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    main()

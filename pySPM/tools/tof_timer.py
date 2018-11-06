@@ -1,5 +1,5 @@
-from win32_helper import *
-from timer_display import Ui_ToF_Timer
+from pySPM.tools.win32_helper import *
+from pySPM.tools.timer_display import Ui_ToF_Timer
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt5.QtCore import QTimer
 import sys
@@ -39,8 +39,11 @@ class GUI_Timer(QMainWindow):
         else:
             self.ui.label.setText("Remaining time: Unknown");
 
-if __name__ == '__main__':
+def main():
     app = QApplication(sys.argv)
     window = GUI_Timer()
     window.show()
     sys.exit(app.exec_())
+    
+if __name__ == '__main__':
+    main()

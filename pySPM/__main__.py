@@ -9,13 +9,15 @@ if len(sys.argv)>1:
 commands = {}
 
 def run_script(func):
-    __requires__ = 'pySPM'
-    __import__('pkg_resources').run_script('pySPM', func)
+    import importlib
+    mod = importlib.import_module("pySPM.tools."+func)
+    sys.argv = [sys.argv[0]]+[x for x in sys.argv[2:]]
+    mod.main()
     
 cmds =  {
-    'stability': dict(doc="Run a stability plotter tool in a GUI", script='stability.py'),
-    'plotter':   dict(doc="Display a live graphical display of all the logged parameters (usually the emission current)", alias=['emission_current_plotter','parameters_plotter'], script = 'emission_current_plotter.py'),
-    'timer': dict(doc="Display informations about the current measurement time. In particular this function estimate the remaining time from the measurement proportion and the elapsed time.", alias=['tof_timer','measurement_timer'], script='tof_timer.py')
+    'stability': dict(doc="Run a stability plotter tool in a GUI", script='stability'),
+    'plotter':   dict(doc="Display a live graphical display of all the logged parameters (usually the emission current)", alias=['emission_current_plotter','parameters_plotter'], script = 'emission_current_plotter'),
+    'timer': dict(doc="Display informations about the current measurement time. In particular this function estimate the remaining time from the measurement proportion and the elapsed time.", alias=['tof_timer','measurement_timer'], script='tof_timer')
     }
 
 for c in cmds:
