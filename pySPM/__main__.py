@@ -10,7 +10,6 @@ commands = {}
 
 def run_script(func):
     import importlib
-    import pySPM.tools
     mod = importlib.import_module("pySPM.tools."+func)
     sys.argv = [sys.argv[0]]+[x for x in sys.argv[2:]]
     mod.main()
