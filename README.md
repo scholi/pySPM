@@ -18,25 +18,39 @@ For now it support the following formats:
 * Nanonis SXM file
 
 ## Important
-This library is offered as it is and is still in development. Please note that reading the raw data was done by reverse engineering and guessing and not with a manual as the file format is proprietary. It seems to work well with the data used by the developper of this library, but there is **NO GUARANTY** that this library will work correctly with your own specific data.
+This library is offered as it is and is still in development. Please note that reading the raw data was done by reverse engineering and guessing and not with a manual as the file format is proprietary. It seems to work well with the data used by the developer of this library, but there is **NO GUARANTY** that this library will work correctly with your own specific data.
 
-If you find bugs and issues, please report them to the developpe: https://github.com/scholi/pySPM/issues
+If you find bugs and issues, please report them to the developer: https://github.com/scholi/pySPM/issues
 
 ## News
 ### New tools
 The library comes with three scripts to make your life easier. Those scripts are located in your python folder in the Scripts directory. You can also run them from the command line.
 #### stability
 Allows you to select a measurement folder and display the Emission Current and Suppressor voltage in function of the time/scan number.
-This allows you to verifiy the stability of your source during your measurements.
+This allows you to verify the stability of your source during your measurements.
 ![stability_screenshot](../master/doc/images/Capture_stability.png)
+
+see the [wiki](wiki/stability) for more info
 
 #### plotter
 Allows you to plot the parameter logged by your logfile. If SurfaceLab is running this script will detect which logfile is beeing saved and will display the values live (the plot is refreshed every 3s in order add the new data). You can also provide as first argument the logfile path (or in windows you can drag&drop the logfile over the plotter app).
 ![plotter_screenshot](../master/doc/images/Capture_plotter.png)
 
+see the [wiki](wiki/plotter) for more info
+
 #### timer
 If you are using SurfaceLab, this app will display a small progressbar of your measurement and will calculate the remaining time in function of the elapsed time, the total number of scans and the elapsed number of scan.
 ![timer_screenshot](../master/doc/images/Capture_timer.png)
+
+see the [wiki](wiki/timer) for more info
+
+#### spectra
+This tool can display spectra, visualize rapidly peaks assignment and perform fast mass calibration.
+You can give an ITA filename as argument or if none a GUI filedialog will ask you for one. You will then see your spectrum.
+You can navigate with the scroll of the mouse to zoom in & out. You can use the keyboard <kbd>+</kbd> and <kbd>-</kbd> to shift your spectra by ±1 Dalton. You can use left-mouse-button and drag to shift your spectra. You can perform very quick mass calibration by Right-Mouse-Click on one measurement peak (hold the mouse) the move to the element mark you want to assign your peak and release the mouse. The mass calibration values should then be updated on the left table and the mass calibration performed live so that you can see immediately the changes.
+![spectra_screenshot](../master/doc/images/Capture_spectra.png)
+
+see the [wiki](wiki/spectra) for more info
 
 ### pySPM is now availabe on pypi
 The installation for end-user is now very easy. If you have [pip](https://pypi.org/project/pip/), then you can install the library in a single line:
@@ -55,7 +69,7 @@ pip install -U pySPM
 As the data are big and not necessary for the library another package [pySPM_data](https://github.com/scholi/pySPM_data) was created with several AFM and ToF-SIMS data.
 
 ### Structure reformatting
-A setup.py is prestent in order to install the package easily. => in order to use the library do ```pip install -e . ```
+A setup.py is present in order to install the package easily. => in order to use the library do ```pip install -e . ```
 
 ### Nice Spectra Plotting
 ```python
@@ -69,7 +83,7 @@ TOF.showSpectrumAround(pySPM.utils.get_mass('C2H3NO'), pretty=True, formula=True
 ![Spectra](../master/doc/Spectra.png)
 
 ### Python 2.7 compatible
-The library is now compatibe with Python 3 and Python 2.7
+The library is now compatible with Python 3 and Python 2.7
 
 ## Dependencies
 This library requires the following packages
@@ -100,7 +114,7 @@ Download the library (zip) or git file. Unzip it and run
 python setup.py install
 ```
 
-#### For developpers and hackers
+#### For developers and hackers
 If you wish to adjust the library to your need, the best is to install it in editable mode as follow from the root pySPM directory:
 ```bash
 pip install -e .
