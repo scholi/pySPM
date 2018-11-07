@@ -411,9 +411,9 @@ class ITM:
             html = kargs['html']
             del kargs['html']
         if gui:
-            from pySPM import GUI
+            from pySPM.tools import values_display
             Vals = self.getValues(pb, nest=True, **kargs)
-            GUI.ShowValues(Vals)
+            values_display.ShowValues(Vals)
         else:
             Vals = self.getValues(pb, **kargs)
             Table = [["Parameter Name", "Value @start", "Value @end"]]

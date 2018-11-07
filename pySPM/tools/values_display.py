@@ -13,7 +13,6 @@ from PyQt5.QtWidgets import QWidget, QApplication, QTreeView, QVBoxLayout
 
 
 class GUI_values(QWidget):
-
     def __init__(self, data):
         QWidget.__init__(self)
         self.treeView = QTreeView()
