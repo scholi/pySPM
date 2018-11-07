@@ -433,10 +433,16 @@ class Block:
         raw = self.decompress()
         L = len(raw)//struct.calcsize(fmt)
         return struct.unpack("<"+str(L)+fmt, raw)
-        
+    
+    def rewrite(self, content):
+        assert(len(content)) == self.head['length1']
+        # set pointer at beginning of data
+        self.f.seek(self.offset+25+self.head['name_length'])
+        self.f.write(content)
+            
     def modify_block_and_export(self, path, new_data, output, debug=False, prog=False, lazy=False):
         assert not os.path.exists(output) # Avoid to erase an existing file. Erase it outside the library if needed.
-        out = open(output,'wb')
+        out = open(output, 'wb')
         out.write(b'ITStrF01')
         block = self.goto(path, lazy=lazy)
         block_offset = block.offset

@@ -52,7 +52,7 @@ class ITM:
         if not os.path.exists(filename):
             print("ERROR: File \"{}\" not found".format(filename))
             raise FileNotFoundError
-        self.f = open(self.filename, 'rb')
+        self.f = open(self.filename, 'r+b')
         self.Type = self.f.read(8)
         assert self.Type == b'ITStrF01'
         self.root = Block.Block(self.f)
@@ -428,16 +428,23 @@ class ITM:
                 
     def get_mass_cal(self, alt=False):
         try:
-            assert not alt
-            V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
-            sf = V.goto('sf',lazy=True).getDouble()
-            k0 = V.goto('k0',lazy=True).getDouble()
+            if alt:
+                V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
+                sf = V.goto('sf',lazy=True).getDouble()
+                k0 = V.goto('k0',lazy=True).getDouble()
+            else:
+                sf = self.root.goto('MassScale/sf').getDouble()
+                k0 = self.root.goto('MassScale/k0').getDouble()
         except:
             import warnings
             warnings.warn("Failed to get sf,k0, find alternative")
-            sf = self.root.goto('MassScale/sf').getDouble()
-            k0 = self.root.goto('MassScale/k0').getDouble()
-            
+            if alt:
+                sf = self.root.goto('MassScale/sf').getDouble()
+                k0 = self.root.goto('MassScale/k0').getDouble()
+            else:
+                V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
+                sf = V.goto('sf',lazy=True).getDouble()
+                k0 = V.goto('k0',lazy=True).getDouble()
         return sf, k0
 
     def channel2mass(self, channels, sf=None, k0=None, binning=1):
@@ -949,3 +956,15 @@ class ITM:
     
     def __del__(self):
         self.f.close()
+
+    def setK0(self, k0):
+        import struct
+        b = self.root.goto("MassScale/k0")
+        buffer = struct.pack("<d", k0)
+        b.rewrite(buffer);
+
+    def setSF(self, sf):
+        import struct
+        b = self.root.goto("MassScale/sf")
+        buffer = struct.pack("<d", sf)
+        b.rewrite(buffer);

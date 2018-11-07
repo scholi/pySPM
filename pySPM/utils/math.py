@@ -8,6 +8,9 @@ Provides some useful mathematical functions which are not present in numpy.
 """
 
 import numpy as np
+
+def closest_arg(array, value):
+    return np.argmin(np.abs(array-value))
     
 def strictly_positify(x):
     """

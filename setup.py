@@ -27,7 +27,8 @@ setup(
     include_package_data=True,
     entry_points = {
         'console_scripts' : [],
-        'gui_scripts':['stability=pySPM.tools.stability:main','timer=pySPM.tools.tof_timer:main', 'plotter=pySPM.tools.emission_current_plotter:main']
+        'gui_scripts':['stability=pySPM.tools.stability:main','timer=pySPM.tools.tof_timer:main', 'plotter=pySPM.tools.emission_current_plotter:main',
+        'spectra=pySPM.tools.spectra:main']
     },
     install_requires=['numpy','scipy','pandas','scikit-image','scikit-learn','matplotlib'],
     classifiers=[

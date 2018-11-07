@@ -106,7 +106,7 @@ def fitSpectrum(t, m, error=False):
         D = np.sqrt(np.diag(xvar)) # error vector
         Dsf = D[0]/x[0]**2
         Dk0 = np.sqrt((D[1]/x[0])**2+(x[1]*D[0]/x[0]**2)**2)
-        res.append(Dsf, Dk0)
+        res += [Dsf, Dk0]
     return res
 
 def chunks(l, n):
@@ -114,8 +114,14 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
-def mass2time(m, sf, k0):
-    return sf*np.sqrt(m)+k0
+def mass2time(m, sf, k0):    
+    r = m*0+k0
+    if not hasattr(r, '__setitem__'):
+        if m<0:
+            return r
+        return sf*np.sqrt(m)+k0
+    r[m>=0] = sf*np.sqrt(m[m>=0])+k0
+    return r
 
 def time2mass(t, sf, k0):
     return ((t-k0)/sf)**2
