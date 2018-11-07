@@ -1,12 +1,6 @@
-import matplotlib
-matplotlib.use('QT5Agg')
-
 from PyQt5.QtWidgets import QMainWindow, QShortcut, QApplication, QFileDialog, QSizePolicy, QTableWidgetItem
 from PyQt5.QtCore import Qt, QSettings, QDir, QFileInfo
 from pySPM.tools.spectraviewer import Ui_SpectraViewer
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import pySPM
 import sys
 import numpy as np
@@ -23,15 +17,8 @@ class SpectraViewer(QMainWindow):
         self.dsf = 0
         self.dk0 = 0
         self.ita = None
-        self.fig = Figure(figsize=(8,6), dpi=DPI)
-        self.canvas = FigureCanvas(self.fig)
-        self.canvas.setParent(self.ui.fig)
-        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.ui.fig.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.ui.fig.updateGeometry()
-        self.canvas.updateGeometry()
-
-        self.toolbar = NavigationToolbar(self.canvas, self.ui.fig)
+        self.fig = self.ui.mpl.canvas.fig
+        self.canvas = self.ui.mpl.canvas
         self.ax = self.fig.add_subplot(111)
         self.nextMass = QShortcut(Qt.Key_Plus, self)
         self.prevMass = QShortcut(Qt.Key_Minus, self)
