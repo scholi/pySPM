@@ -89,9 +89,13 @@ class SpectraViewer(QMainWindow):
         P.sort(key=lambda x: x[0])
         y = self.ax.get_ylim()[1]
         for i, (mi, Ei) in enumerate(P):
+            dmi = 2*np.sqrt(mi)*np.sqrt((self.dk0**2/(self.sf**2))+mi*(self.dsf**2/(self.sf**2)))
             col = colors[i%len(colors)]
             self.lab_lines.append(self.ax.axvline(mi, color=col, alpha=.5))
             self.labels.append(self.ax.annotate(Ei, (mi, y), (5, 0), rotation=90, va='top', ha='left', textcoords='offset pixels'))
+            if dmi>0:
+                self.lab_lines.append(self.ax.axvline(mi+dmi, color=col, alpha=.5, ls=':'))
+                self.lab_lines.append(self.ax.axvline(mi-dmi, color=col, alpha=.5, ls=':'))
 
     def yAxisScaleChanged(self):
         r = self.ax.get_xlim()

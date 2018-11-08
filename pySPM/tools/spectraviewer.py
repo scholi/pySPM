@@ -103,4 +103,4 @@ class Ui_SpectraViewer(object):
         self.lab_m0.setText(_translate("SpectraViewer", "Center Mass:"))
         self.show_mass.setText(_translate("SpectraViewer", "Show masses"))
 
-from mplwidget import MplWidget
+from .mplwidget import MplWidget
