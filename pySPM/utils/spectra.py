@@ -234,3 +234,27 @@ def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=Tr
         print("labeling time: ",t3-t2)
     return res
 
+
+def plot_isotopes(elt, Amp=None, ax=None, sig=0.02, asym=1, lg=.2, limit=5):
+    """
+    plot the isotopes of a given element on a spectral profile plot
+    """
+    from . import get_isotopes, LG
+    import matplotlib.pyplot as plt
+    import numpy as np
+    if ax is None:
+        ax = plt.gca()
+    isos = get_isotopes(elt)
+    main_iso = max(isos, key=lambda x: x[2])
+    L = ax.lines[0]
+    m, y = L.get_xdata(), L.get_ydata()
+    if Amp is None:
+        i = np.argmin(np.abs(m-main_iso[1]))
+        Amp = np.max(y[i-10:i+10])/main_iso[2]
+    isos = [x for x in isos if x[2]*Amp>=limit]
+    r = ax.get_xlim()
+    s = m*0
+    for iso in isos:
+        s += LG(m, iso[1], sig, Amp=Amp*iso[2], lg=lg, asym=asym)
+    ax.plot(m, s, 'C1');
+    
