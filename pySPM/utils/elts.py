@@ -19,6 +19,26 @@ def get_peaklist(nominal_mass, negative=False):
     c.execute("SELECT Formula from fragments where NominalMass={nm} and (Polarity is NULL or Polarity=={pol})".format(nm=nominal_mass,pol=[1,-1][negative]))
     return [str(x[0]) for x in c.fetchall()]
 
+def get_properties(elt):
+    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT * from properties where Element='{}'".format(elt))
+    res = c.fetchone()
+    r = {}
+    if res:
+        for idx, col in enumerate(c.description):
+            r[col[0]] = res[idx]
+    else:
+        res = c.execute("SELECT mass,abund,symbol,Z from elements where symbol='{}'".format(elt))
+        if res:
+            row = res.fetchall()
+            r['Element'] = row[0][2]
+            r['Z'] = row[0][3]
+            r['mass'] = sum([x[0]*x[1] for x in row])
+    return r
+    
+    
 def get_mass(elt, mz=True):
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)

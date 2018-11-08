@@ -235,7 +235,7 @@ def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=Tr
     return res
 
 
-def plot_isotopes(elt, Amp=None, ax=None, sig=0.02, asym=1, lg=.2, limit=5):
+def plot_isotopes(elt, Amp=None, ax=None, sig=0.005, asym=1, lg=0, limit=5, color='C1', **kargs):
     """
     plot the isotopes of a given element on a spectral profile plot
     """
@@ -256,5 +256,5 @@ def plot_isotopes(elt, Amp=None, ax=None, sig=0.02, asym=1, lg=.2, limit=5):
     s = m*0
     for iso in isos:
         s += LG(m, iso[1], sig, Amp=Amp*iso[2], lg=lg, asym=asym)
-    ax.plot(m, s, 'C1');
+    ax.plot(m, s, color, **kargs);
     

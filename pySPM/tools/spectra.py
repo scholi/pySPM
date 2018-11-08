@@ -254,9 +254,8 @@ class SpectraViewer(QMainWindow):
         else:
             self.ui.pushButton_2.setText("»")
     
-def main():
-    filename = None
-    if len(sys.argv)>1:
+def main(filename=None):
+    if filename is None and len(sys.argv)>1:
         filename = sys.argv[1]
     print("Loading file \"{}\"".format(filename))
     app = QApplication(sys.argv)
