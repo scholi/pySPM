@@ -90,7 +90,72 @@ class Block:
         self.value = self.f.read(self.head['length1'])
         self.List = None
         self.iterP = 0
+
+    def add_child(self, blk):
+        """
+        Add a new child to a given block. /!\ will overwrite the ITA file.
+        """
+        import os
+        assert self.Type[0] in [1,3]
         
+        # Check the available size of the block
+        header_length = 41+33*self.head['N']
+        children_names_length = 0
+        last_id = None
+        lowest_index = struct.unpack("<I", self.value[:4])[0]
+        names = []
+        for i in range(self.head['N']):
+            S = dict(zip(['index', 'slen', 'id', 'blen', 'bidx'], struct.unpack('<xIII4xQQ', self.value[41+33*i:41+33*i+33])))
+            Bname = self.value[S['index']:S['index']+S['slen']].decode('ascii')
+            if Bname == blk.name:
+                last_id = S['id']
+        if last_id is None:
+            id = 0
+        else:
+            id = last_id + 1
+        children_names_length = self.head['length1']-lowest_index
+        free_space = lowest_index-header_length
+        assert free_space >= 33+len(blk.name)
+        
+        self.f.seek(self.offset+25+len(self.name)+header_length)
+        index = lowest_index-len(blk.name)
+        self.f.write(struct.pack("<B4I2Q", 0, index, len(blk.name), id, 0, blk.head['length1'], blk.offset))
+        self.f.seek(self.offset+25+len(self.name)+index)
+        self.f.write(blk.name.encode('utf8'))
+        self.f.seek(self.offset+13)
+        self.head['N'] += 1
+        self.f.write(struct.pack("<I", self.head['N']))
+        self.f.seek(self.offset+25+len(self.name))
+        self.f.write(struct.pack("<I", struct.unpack("<I", self.value[:4])[0]-len(blk.name)))
+        self.List = None
+        
+        # reload value
+        self.f.seek(self.offset+25+len(self.name))
+        self.value = self.f.read(self.head['length1'])
+        
+        self.f.flush()
+        os.fsync(self.f)
+        
+    def create_dir(self, name, children=[], size=41+(33+20)*50):
+        value = struct.pack("<2IB6IQ{}x".format(size-41), size,0,  0,  0,0,0,0,0,0, 0)
+        blk = self.create_block(name, value, _type=1)
+        for x in children:
+            blk.add_child(x)
+        self.add_child(blk)
+        
+    def create_block(self, name, value, id=0, _type=0):
+        if type(name) is str:
+            name = name.encode('utf8')
+        self.f.seek(0, 2) # goto end of file
+        offset = self.f.tell()
+        size = len(value)
+        slen = len(name)
+        self.f.write(struct.pack("<B6I", _type, 25, slen, id, 0, size, size))
+        self.f.write(name)
+        self.f.write(value)
+        self.f.seek(offset)
+        return Block(self.f)
+   
     def DepthFirstSearch(self, callback=None, filter=lambda x: True, func=lambda x: x):
         """
         Perform a depth first search on the blocks.
