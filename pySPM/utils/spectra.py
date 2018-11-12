@@ -22,6 +22,10 @@ def formulafy(x):
     import re
     return '$'+re.sub('([a-zA-Z])_?([0-9]+)',r'\1_{\2}',re.sub(r'\^([0-9]+)',r'^{\1}',re.sub('([\\+-]+)$',r'^{\1}',x)))+'$'
 
+def get_dm(m, sf, k0, dsf, dk0):
+    import numpy as np
+    return 2*np.sqrt(m)*np.sqrt((dk0**2/(sf**2))+m*(dsf**2/(sf**2)))
+    
 def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True,
     debug=False, Aredux=1, label=None, include=None, include_only=None, exclude=[],
     polarity="+", colors='rgb', pretty=True, formula=True, auto_scale=True, fakefit=False, **kargs):
@@ -66,6 +70,8 @@ def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=Tr
         E = get_peaklist(int(round(m0)), negative)
         E = [x for x in E if x not in exclude] + include
     E = list(set(E))
+    m0s = [get_mass(x) for x in E]
+    E = [x for x,y in zip(E,m0s) if y>=m0-delta and y<=m0+delta]
     if negative:
         E = [x+['-','']['-' in x] for x in E]
     if formula:
@@ -82,8 +88,8 @@ def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=Tr
         i = np.argmin(abs(np.array([get_mass(x) for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the closest to max_peak
         if dm0 is None:
             dm = mp-get_mass(E[i])
-    p0 = [kargs.get('asym0',1), dm]+[0, 0]*len(E) # delta m is estimated from the deviation of the highest peak
     m0s = [get_mass(x) for x in E]
+    p0 = [kargs.get('asym0',1), dm]+[0, 0]*len(E) # delta m is estimated from the deviation of the highest peak
     Et = copy.deepcopy(E) # copy element list
     if do_debug(debug):
         print(" ; ".join(E))
@@ -205,6 +211,17 @@ def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=Tr
                 ax.plot(m[mask], Y, '--', color=col);
         elif pretty:
             put_Xlabels(ax, m0s, E_labels, color=colors, debug=dec_debug(debug), **kargs)
+            
+        if 'dsf' in kargs and 'dk0' in kargs and 'sf' in kargs and 'k0' in kargs:
+            sf, dsf, k0, dk0 = [kargs[x] for x in 'sf,dsf,k0,dk0'.split(',')]
+            P = list(zip(m0s, E))
+            P.sort(key=lambda x: x[0])
+            for i,(mi,Ei) in enumerate(P):
+                col = colors[i%len(colors)]
+                dmi = get_dm(mi, sf, k0, dsf, dk0)
+                ax.axvline(mi-dmi, color=col, alpha=.5, linestyle=':')
+                ax.axvline(mi+dmi, color=col, alpha=.5, linestyle=':')
+            
         if not pretty:
             P = list(zip(m0s, E))
             P.sort(key=lambda x: x[0])
@@ -246,7 +263,6 @@ def plot_isotopes(elt, Amp=None, ax=None, sig=0.005, asym=1, lg=0, limit=1, colo
     if ax is None:
         ax = plt.gca()
     main_isotope = re.sub('^([0-9]+)', '', elt)
-    print(main_isotope)
     L = ax.lines[0]
     m, y = L.get_xdata(), L.get_ydata()
     if Amp is None:
@@ -260,4 +276,5 @@ def plot_isotopes(elt, Amp=None, ax=None, sig=0.005, asym=1, lg=0, limit=1, colo
         if showElts:
             ax.annotate(iso[0], (iso[1], Amp*iso[2]), (0,5), textcoords='offset pixels', ha='center')
     ax.plot(m, s, color, **kargs);
+    return m,s
     

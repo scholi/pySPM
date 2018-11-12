@@ -104,8 +104,8 @@ def fitSpectrum(t, m, error=False):
         epsvar = np.var(mresid, ddof=2)
         xvar = np.linalg.inv(X) * epsvar # correlation matrix
         D = np.sqrt(np.diag(xvar)) # error vector
-        Dsf = D[0]/x[0]**2
-        Dk0 = np.sqrt((D[1]/x[0])**2+(x[1]*D[0]/x[0]**2)**2)
+        Dsf = np.abs(D[0]/x[0]**2)
+        Dk0 = np.sqrt((D[1]/x[0])**2+(x[1]*Dsf)**2)
         res += [Dsf, Dk0]
     return res
 

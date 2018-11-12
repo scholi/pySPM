@@ -367,9 +367,9 @@ class ITM:
                             
         return Vals
 
-    def autoMassCal(self, t=None, S=None, pos=True, debug=False, Range=5000, FittingPeaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None):
+    def autoMassCal(self, t=None, S=None, pos=True, debug=False, error=False, Range=5000, FittingPeaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None):
         """
-        perform an auto callibration for positive spectrum. (in test, might be unreliable)
+        perform an auto calibration for spectrum. (in test, might be unreliable)
         """
         from .utils import get_mass, time2mass, fitSpectrum, mass2time
         from scipy.optimize import curve_fit
@@ -387,22 +387,22 @@ class ITM:
         if sf is None or k0 is None:
             sf=1e5
             for i in range(3):
-                k0 = tH-sf*np.sqrt(get_mass('H+'))
+                k0 = tH-sf*np.sqrt(get_mass('H'))
                 m = time2mass(t, sf=sf, k0=k0)
                 mP = time2mass(times, sf=sf, k0=k0)
                 t0 = times[np.argmin(np.abs(mP-12))]
                 t1 = times[np.argmin(np.abs(mP-12))+1]
                 sf = np.sqrt((t1-k0)**2 - (t0-k0)**2)
-                k0 = tH-sf*np.sqrt(get_mass('H+'))
+                k0 = tH-sf*np.sqrt(get_mass('H'))
         ts = []
-        for x in [mass2time(get_mass(x+'+'), sf=sf, k0=k0) for x in FittingPeaks]:
+        for x in [mass2time(get_mass(x), sf=sf, k0=k0) for x in FittingPeaks]:
             mask = (t>=(x-Range))*(t<=(x+Range))
             t_peak = t[mask][np.argmax(S[mask])]
             ts.append(t_peak)
-        ms = [get_mass(x+'+') for x in FittingPeaks]
+        ms = [get_mass(x) for x in FittingPeaks]
         if debug:
             return fitSpectrum(ts, ms, error=True), ts, ms
-        return fitSpectrum(ts, ms)
+        return fitSpectrum(ts, ms, error=error)
     
     def showValues(self, pb=False, gui=False, **kargs):
         from .utils import html_table, aa_table

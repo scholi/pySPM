@@ -16,7 +16,10 @@ def get_peaklist(nominal_mass, negative=False):
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT Formula from fragments where NominalMass={nm} and (Polarity is NULL or Polarity=={pol})".format(nm=nominal_mass,pol=[1,-1][negative]))
+    if type(nominal_mass) in [float, int]:
+        c.execute("SELECT Formula from fragments where NominalMass={nm} and (Polarity is NULL or Polarity=={pol})".format(nm=nominal_mass,pol=[1,-1][negative]))
+    elif type(nominal_mass) in [tuple, list]:
+        c.execute("SELECT Formula from fragments where NominalMass>={nm[0]} and NominalMass<={nm[1]} and (Polarity is NULL or Polarity=={pol})".format(nmL=nominal_mass,pol=[1,-1][negative]))
     return [str(x[0]) for x in c.fetchall()]
 
 def get_properties(elt):

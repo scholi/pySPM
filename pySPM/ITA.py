@@ -684,7 +684,7 @@ class ITA(ITM):
             polarity = '-'
         from . import utils
         m, D = self.getSpectrum(sf=sf, k0=k0)
-        return utils.showPeak(m, D, m0, delta, polarity=polarity, **kargs)
+        return utils.showPeak(m, D, m0, delta, polarity=polarity, sf=sf, k0=k0, **kargs)
 
 class ITA_collection(Collection):
     """
