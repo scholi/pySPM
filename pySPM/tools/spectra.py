@@ -5,6 +5,7 @@ import pySPM
 import sys
 import numpy as np
 import os
+import struct
 
 DPI = 100.0
 class SpectraViewer(QMainWindow):
@@ -160,7 +161,24 @@ class SpectraViewer(QMainWindow):
         self.spec = self.ax.plot(self.mass, self.S)[0]
         SatLevel = self.ita.size['pixels']['x']*self.ita.size['pixels']['y']*self.ita.Nscan
         self.sat_level = self.ax.axhline(SatLevel, color='r')
-        self.plotSpectra()
+        if 'pySPM' in self.ita.root.goto("MassScale"):
+            self.MassCal = []
+            N = self.ita.root.goto("MassScale/pySPM/N").getLong()
+            for i in range(N):
+                elt = self.ita.root.goto("MassScale/pySPM/"+str(i)+"/elt").value.decode('utf8')
+                mass = self.ita.root.goto("MassScale/pySPM/"+str(i)+"/mass").getDouble()
+                time = self.ita.root.goto("MassScale/pySPM/"+str(i)+"/time").getDouble()
+                self.MassCal.append(dict(elt=elt, mass=mass, time=time))
+        else:
+            self.MassCal = []
+            for x in self.ita.root.goto("MassScale/calib"):
+                if x.name == 'assign':
+                    self.MassCal.append({'elt':x.getString()})
+                if x.name == 'mcp':
+                    mcp = struct.unpack("<10d", x.value)
+                    self.MassCal[-1]['time'] = mcp[0]
+                    self.MassCal[-1]['mass']  =  mcp[1]
+        self.DoMassCal()                    
         
     def get_mass(self, formula):
         if self.ita is not None and not (formula.endsWith('+') or formula.endsWith('-')):
@@ -206,8 +224,10 @@ class SpectraViewer(QMainWindow):
     def onMouseRelease(self, event):
         if event.button == 3:
             x = event.xdata
-            NM = np.round(x, 0);
-            frags = pySPM.utils.get_peaklist(NM, self.ita.polarity=='Negative')
+            r = self.ax.get_xlim()        
+            frags = []
+            for nm in range(int(np.round(r[0],0)), int(np.round(r[1],0))+1):
+                frags += pySPM.utils.get_peaklist(nm, self.ita.polarity=='Negative')
             masses = np.array([pySPM.utils.get_mass(x) for x in frags])
             dm = masses-x
             i = np.argmin(np.abs(dm))
@@ -218,6 +238,17 @@ class SpectraViewer(QMainWindow):
         self.action = None
         self.refresh()
 
+    def save_mass_cal(self):
+        root = self.ita.root.goto("MassScale")
+        for i, mcp in enumerate(self.MassCal):
+            for key in mcp:
+                if key in ['elt']:
+                    data = mcp[key].encode('utf8') + b'\x00'*(256-len(mcp[key]))
+                    root.edit_block("pySPM/"+str(i), key, data)
+                else:
+                    root.edit_block("pySPM/"+str(i), key, struct.pack("<d", mcp[key]))
+        root.edit_block("pySPM", "N", struct.pack("<I", len(self.MassCal)))
+        
     def DoMassCal(self):
         ts = [x['time'] for x in self.MassCal]
         ms = [x['mass'] for x in self.MassCal]
@@ -243,6 +274,7 @@ class SpectraViewer(QMainWindow):
             delta = "{:.6f}".format(m-self.MassCal[i]['mass'])
             self.ui.tableMassCal.setItem(i, 3, QTableWidgetItem(delta)) 
         self.mass = pySPM.utils.time2mass(self.t, self.sf, self.k0)
+        self.save_mass_cal()
         self.plotSpectra()
     
     def toggleMassCal(self):
@@ -253,6 +285,10 @@ class SpectraViewer(QMainWindow):
             self.ui.pushButton_2.setText("«")
         else:
             self.ui.pushButton_2.setText("»")
+            
+    def closeEvent(self, event):
+        print("Closing spectra tool...")
+        del self.ita
     
 def main(filename=None):
     if filename is None and len(sys.argv)>1:

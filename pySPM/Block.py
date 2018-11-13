@@ -136,13 +136,46 @@ class Block:
         self.f.flush()
         os.fsync(self.f)
         
-    def create_dir(self, name, children=[], size=41+(33+20)*50):
+    def create_dir(self, name, children=[], size=41+(33+20)*50, assign=True):
         value = struct.pack("<2IB6IQ{}x".format(size-41), size,0,  0,  0,0,0,0,0,0, 0)
         blk = self.create_block(name, value, _type=1)
         for x in children:
             blk.add_child(x)
-        self.add_child(blk)
+        if assign:
+            self.add_child(blk)
+        return blk
         
+    
+    def edit_block(self, path, name, value, id=0):
+        """
+        This function will go to a given path and create all necessary "folder" (block of type 1).
+        It will then either create a new child with a given name and value if it does not exists and if so it will edit it.
+        Please note that for safety the new value should be of the exact same length than the existing one.
+        If this is not the case, you should consider using the modify_block_and_export() method.
+        """
+        self.f.seek(self.offset)
+        parent = Block(self.f)
+        if path != '':
+            for p in path.split('/'):
+                idx = 0
+                if '[' in p and p[-1] == ']':
+                    i = p.index('[')
+                    idx = int(p[i+1:-1])
+                    p = p[:i]
+                if p is '*':
+                    e = parent.getList()[idx]
+                    p = e['name']
+                    idx = e['id']
+                try:
+                    parent = parent.gotoItem(p, idx)
+                except MissingBlock:
+                    parent = parent.create_dir(p, children=[])
+        if name in parent:
+            child = parent.gotoItem(name, id)
+            child.rewrite(value)
+        else:
+            parent.add_child(parent.create_block(name, value, id=id))
+    
     def create_block(self, name, value, id=0, _type=0):
         if type(name) is str:
             name = name.encode('utf8')
@@ -154,6 +187,8 @@ class Block:
         self.f.write(name)
         self.f.write(value)
         self.f.seek(offset)
+        self.f.flush()
+        os.fsync(self.f)
         return Block(self.f)
    
     def DepthFirstSearch(self, callback=None, filter=lambda x: True, func=lambda x: x):
@@ -446,6 +481,9 @@ class Block:
         SVal = self.value[offset+26+L:offset+26+L+L2].decode('utf16', 'ignore')
         return {'key':Key, 'float':float_value, 'int':int_value,'string':SVal}
 
+    def __contains__(self, name):
+        return name in [x['name'] for x in self.getList()]
+        
     def show(self, maxlevel=3, level=0, All=False, out=sys.stdout, digraph=False, parent=None, ex=None):
         """
         Display the children of the current Block (recursively if maxlevel > 1)
@@ -494,8 +532,11 @@ class Block:
         import zlib
         return zlib.decompress(self.value)
 
-    def getData(self, fmt="I"):
-        raw = self.decompress()
+    def getData(self, fmt="I", decompress=True):
+        if decompress:
+            raw = self.decompress()
+        else:
+            raw = self.value
         L = len(raw)//struct.calcsize(fmt)
         return struct.unpack("<"+str(L)+fmt, raw)
     
@@ -504,6 +545,8 @@ class Block:
         # set pointer at beginning of data
         self.f.seek(self.offset+25+self.head['name_length'])
         self.f.write(content)
+        self.f.flush()
+        os.fsync(self.f)
             
     def modify_block_and_export(self, path, new_data, output, debug=False, prog=False, lazy=False):
         assert not os.path.exists(output) # Avoid to erase an existing file. Erase it outside the library if needed.
