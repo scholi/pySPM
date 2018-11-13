@@ -81,9 +81,12 @@ class ITM:
         self.MeasData = {}
         self.rawlist = None
         try:
-            self.Nscan = self.root.goto('propend/Measurement.ScanNumber').getKeyValue()['int']
+            self.Nscan = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/NumberOfScans").getLong()
         except:
-            self.Nscan = None
+            try:
+                self.Nscan = self.root.goto('propend/Measurement.ScanNumber').getKeyValue()['int']
+            except:
+                self.Nscan = None
             
         try:
             R = [z for z in self.root.goto('MassIntervalList').getList() if z[
@@ -191,7 +194,8 @@ class ITM:
         Pixel Size: {pxs[value]:.2f} {pxs[unit]}
         Shots per pixel: {ShotsPerPixel}
         Raster mode: {RasterMode}
-        Cycle time: {CycleTime} (Upper mass: {UpperMass})""".format(Fov=funit(s['fov'],'m'), pxs=funit(s['fov']/s['pixels']['x'], 'm'), **s))
+        Number of scans: {Nscan}
+        Cycle time: {CycleTime} (Upper mass: {UpperMass})""".format(Nscan=self.Nscan, Fov=funit(s['fov'],'m'), pxs=funit(s['fov']/s['pixels']['x'], 'm'), **s))
         print("Peaks:")
         for x in s['peaks']:
             if x['assign']:
