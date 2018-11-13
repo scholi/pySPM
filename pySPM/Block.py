@@ -103,23 +103,13 @@ class Block:
         children_names_length = 0
         last_id = None
         lowest_index = struct.unpack("<I", self.value[:4])[0]
-        names = []
-        for i in range(self.head['N']):
-            S = dict(zip(['index', 'slen', 'id', 'blen', 'bidx'], struct.unpack('<xIII4xQQ', self.value[41+33*i:41+33*i+33])))
-            Bname = self.value[S['index']:S['index']+S['slen']].decode('ascii')
-            if Bname == blk.name:
-                last_id = S['id']
-        if last_id is None:
-            id = 0
-        else:
-            id = last_id + 1
         children_names_length = self.head['length1']-lowest_index
         free_space = lowest_index-header_length
         assert free_space >= 33+len(blk.name)
         
         self.f.seek(self.offset+25+len(self.name)+header_length)
         index = lowest_index-len(blk.name)
-        self.f.write(struct.pack("<B4I2Q", 0, index, len(blk.name), id, 0, blk.head['length1'], blk.offset))
+        self.f.write(struct.pack("<B4I2Q", 0, index, len(blk.name), blk.head['ID'], 0, blk.head['length1'], blk.offset))
         self.f.seek(self.offset+25+len(self.name)+index)
         self.f.write(blk.name.encode('utf8'))
         self.f.seek(self.offset+13)
@@ -136,9 +126,9 @@ class Block:
         self.f.flush()
         os.fsync(self.f)
         
-    def create_dir(self, name, children=[], size=41+(33+20)*50, assign=True):
+    def create_dir(self, name, children=[], size=41+(33+20)*50, assign=True, id=0):
         value = struct.pack("<2IB6IQ{}x".format(size-41), size,0,  0,  0,0,0,0,0,0, 0)
-        blk = self.create_block(name, value, _type=1)
+        blk = self.create_block(name, value, _type=1, id=id)
         for x in children:
             blk.add_child(x)
         if assign:
@@ -169,7 +159,7 @@ class Block:
                 try:
                     parent = parent.gotoItem(p, idx)
                 except MissingBlock:
-                    parent = parent.create_dir(p, children=[])
+                    parent = parent.create_dir(p, children=[], id=idx)
         if name in parent:
             child = parent.gotoItem(name, id)
             child.rewrite(value)

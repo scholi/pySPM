@@ -685,7 +685,55 @@ class ITA(ITM):
         from . import utils
         m, D = self.getSpectrum(sf=sf, k0=k0)
         return utils.showPeak(m, D, m0, delta, polarity=polarity, sf=sf, k0=k0, **kargs)
+        
+    def getOperation(self, OpID):
+        """
+        Test function to retrieve the operations used in the Worksheet.
+        """
+        Nop = self.root.goto('Presentation/Imaging Worksheet/Worksheet/OPERATIONS/OpCount').getLong()
+        for i in range(Nop):
+            blk = self.root.goto('Presentation/Imaging Worksheet/Worksheet/OPERATIONS/Operation[{}]'.format(i))
+            if blk.gotoItem('OpID').getLong() == OpID:
+                return blk
+        return None
 
+    def showWorksheet(self, page=0):
+        """
+        In Dev. function to display the worksheet
+        """
+        import matplotlib as mpl
+        from .utils import sp
+        NumPages = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/COUNT').getLong()
+        assert page < NumPages
+        Nitems = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/ItemCount'.format(page)).getLong()
+        sett = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/SETTINGS'.format(page)).dictList()
+        print("Name", sett['Name']['utf16'])
+        Nx = sett['Xsize']['long']
+        Ny = sett['Ysize']['long']
+        items = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/Items'.format(page)).getData()
+        ax = sp(len(items))
+        IntV = {}
+        for x in self.root.goto("MassIntervalList"):
+            if x.name == 'mi':
+                d = x.dictList()
+                IntV[d['id']['long']] = d['desc']['utf16']+d['assign']['utf16']
+        for i, it in enumerate(items):
+            blk = self.getOperation(it)
+            OPTYPE = blk.gotoItem('OPTYPE').getLong()
+            while OPTYPE !=3:
+                OPTYPE = blk.gotoItem('OPTYPE').getLong()
+                if OPTYPE == 4:
+                    blk = self.getOperation(blk.gotoItem('ArgOpIDs').getLong())
+                elif OPTYPE==3:
+                    palette = np.array(blk.gotoItem('BMP-Palette').getData('B')).reshape((256, 4))
+                    B,G,R = palette[:,0],palette[:,1],palette[:,2]
+                    dimx = blk.goto('Cache/IImage-Cache-DimX').getLong()
+                    dimy = blk.goto('Cache/IImage-Cache-DimY').getLong()
+                    img = np.array(blk.goto('Cache/IImage-Cache-Intensities').getData('d')).reshape((dimy, dimx))
+                    RGB = np.hstack([R[:,None],G[:,None],B[:,None]])/256
+                    cm = mpl.colors.ListedColormap(RGB)
+                    ax[i].imshow(img, cmap=cm)
+                    
 class ITA_collection(Collection):
     """
     ITA_collection is a super class containing a collection of tof-sims images.
@@ -895,3 +943,4 @@ class ITA_collection(Collection):
         if debug:
             return N, S
         return N
+

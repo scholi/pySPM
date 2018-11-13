@@ -87,7 +87,7 @@ class ITM:
                 self.Nscan = self.root.goto('propend/Measurement.ScanNumber').getKeyValue()['int']
             except:
                 self.Nscan = None
-            
+        self.spp = self.root.goto("propend/Registration.Raster.ShotsPerPixel").getKeyValue()['int']
         try:
             R = [z for z in self.root.goto('MassIntervalList').getList() if z[
                 'name'] == 'mi']
@@ -912,8 +912,13 @@ class ITM:
             else:
                 print("{0}) {cmass:.2f}u [{lmass:.2f}u-{umass:.2f}u]".format(p, cmass=P['cmass']['float'],lmass=P['lmass']['float'],umass=P['umass']['float']))
             
-    def modify_block_and_export(self, path, new_data, output, **kargs):
+    def modify_block_and_export(self, path, new_data, output, reload=True, **kargs):
         self.root.modify_block_and_export(path, new_data, output, **kargs)
+        if reload:
+            self.f.close()
+            self.f.open(path, "rb+")
+            self.f.read(8)
+            self.root = Block.Block(self.f)
 
     def reconstruct(self, channels, scans=None, sf=None, k0=None, prog=False, time=False):
         """
