@@ -126,6 +126,29 @@ class Block:
         self.f.flush()
         os.fsync(self.f)
         
+    def edit_child(self, old_block, new_block):
+        import os
+        assert self.Type[0] in [1,3]
+        
+        header_length = 41+33*self.head['N']
+        children_names_length = 0
+        last_id = None
+        lowest_index = struct.unpack("<I", self.value[:4])[0]
+        children_names_length = self.head['length1']-lowest_index
+        found = False
+        for i in range(self.head['N']):
+            self.f.seek(self.offset+25+len(self.name)+41+33*i)
+            entry = list(struct.unpack("<B4I2Q", self.f.read(33)))
+            if entry[6]==old_block.offset:
+                found = True
+                self.f.seek(self.offset+25+len(self.name)+41+33*i)
+                entry[6] = new_block.offset
+                entry[5] = new_block.head['length1']
+                self.f.write(struct.pack("<B4I2Q", *entry))
+                break
+        if not found:
+            raise Exception('Child {} not found in {}'.format(old_block.name, self.name))
+        
     def create_dir(self, name, children=[], size=41+(33+20)*50, assign=True, id=0):
         value = struct.pack("<2IB6IQ{}x".format(size-41), size,0,  0,  0,0,0,0,0,0, 0)
         blk = self.create_block(name, value, _type=1, id=id)
@@ -136,12 +159,13 @@ class Block:
         return blk
         
     
-    def edit_block(self, path, name, value, id=0):
+    def edit_block(self, path, name, value, id=0, force=False):
         """
         This function will go to a given path and create all necessary "folder" (block of type 1).
         It will then either create a new child with a given name and value if it does not exists and if so it will edit it.
         Please note that for safety the new value should be of the exact same length than the existing one.
         If this is not the case, you should consider using the modify_block_and_export() method.
+        You can also use the force=True parameter to force to edit a block when its content is not the same. Be careful, because this will actually keep the old data in the file (but won't be accessible or seen anymore). This means that the size of your ita can grow quickly if you perform a lot of edits...
         """
         self.f.seek(self.offset)
         parent = Block(self.f)
@@ -160,10 +184,15 @@ class Block:
                     parent = parent.gotoItem(p, idx)
                 except MissingBlock:
                     parent = parent.create_dir(p, children=[], id=idx)
-        if name in parent:
+        try:
             child = parent.gotoItem(name, id)
-            child.rewrite(value)
-        else:
+            if force and child.head['length1'] != len(value):
+                blk = parent.create_block(name, value, id=id)
+                parent.edit_child(child, blk)
+            else:
+                child.rewrite(value)
+                
+        except:
             parent.add_child(parent.create_block(name, value, id=id))
     
     def create_block(self, name, value, id=0, _type=0):
