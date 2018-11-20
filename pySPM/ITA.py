@@ -741,9 +741,11 @@ class ITA(ITM):
         if Added is None:
             AddedImg = np.zeros((sy, sx), dtype=np.uint32)
         chID = miblock.goto("id").getLong()
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(chID), "Image.MassIntervalSN", SN.encode('utf8'))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(chID), "Image.XSize", struct.pack("<I", sx))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(chID), "Image.YSize", struct.pack("<I", sy))
+        N = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfImages").getLong()
+        AN = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image.NumberOfImages").getLong()
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MassIntervalSN", SN.encode('utf8'))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.XSize", struct.pack("<I", sx))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.YSize", struct.pack("<I", sy))
         RS = range(self.Nscan)
         if prog:
             try:
@@ -754,7 +756,7 @@ class ITA(ITM):
         for i in RS:
             img = np.flipud(Scans[i].astype(np.uint32, casting='unsafe'))
             data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(img)), level=lvl)
-            self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image[{}]".format(chID), "ImageArray.Long", data, id=i, _type=128)
+            self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image[{}]".format(N), "ImageArray.Long", data, id=i, _type=128)
             if Added is None:
                 AddedImg += img
 
@@ -763,16 +765,16 @@ class ITA(ITM):
         else:
             Added = np.flipud(Added)
         data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(Added.astype(np.uint32, casting='unsafe'))), level=lvl)
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(chID), "ImageArray.Long", data, _type=128)
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "ImageArray.Long", data, _type=128)
         
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(chID), "Image.PulsesPerPixel", struct.pack("<I", self.spp*self.Nscan))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(chID), "Image.MaxCountsPerPixel", struct.pack("<I", int(np.max(Added))))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(chID), "Image.MinCountsPerPixel", struct.pack("<I", int(np.min(Added))))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(chID), "Image.TotalCountsDbl", struct.pack("<d", np.sum(Added)))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(chID), "Image.TotalCounts", struct.pack("<I", int(np.sum(Added))))
-        N = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfImages").getLong()
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.PulsesPerPixel", struct.pack("<I", self.spp*self.Nscan))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MaxCountsPerPixel", struct.pack("<I", int(np.max(Added))))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MinCountsPerPixel", struct.pack("<I", int(np.min(Added))))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCountsDbl", struct.pack("<d", np.sum(Added)))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCounts", struct.pack("<I", int(np.sum(Added))))
+        
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans", "Image.NumberOfImages", struct.pack("<I", N+1))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded", "Image.NumberOfImages", struct.pack("<I", N+1))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded", "Image.NumberOfImages", struct.pack("<I", AN+1))
                          
     def create_new_miblock(self, assign, lmass, umass, cmass=None, desc="", _uuid=None, **kargs):
         import uuid
@@ -781,37 +783,39 @@ class ITA(ITM):
         if _uuid[0] != '{':
             _uuid = '{'+_uuid+'}'
         _uuid = _uuid.upper()
-        
-        highest_id = max([x.head['ID'] for x in self.root.goto("MassIntervalList") if x.name=='mi'])
-        highest_index =  max([x.goto('id').getLong() for x in self.root.goto("MassIntervalList") if x.name=='mi'])
-        new_index = self.root.goto("Measurement Options/massintervals/NextId").getLong()
-        self.root.edit_block("Measurement Options/massintervals", "NextId", struct.pack("<I", new_index+1))
-        new_id = highest_id + 1
+        new_index = max([x.head['ID'] for x in self.root.goto("MassIntervalList") if x.name == 'mi'])+1
+        new_index2 = self.root.goto("Measurement Options/massintervals/NextId").getLong()
+        new_id = max([x.goto("id").getLong() for x in self.root.goto("MassIntervalList") if x.name == 'mi'])+1
+        new_id2 = max([x.goto("id").getLong() for x in self.root.goto("Measurement Options/massintervals") if x.name == 'mi'])+1
+        NID = self.root.goto("MassIntervalList/NextId", lazy=True)
+        NID.rewrite(struct.pack("<I", NID.getLong()+1))
         defaults = {
-            'color': ('raw',b'\xff\x00\x00\x00'),
+            'clsid': ('raw', b'\x85\x1b\xa9\xe4hZ\xc8M\x93\xe0\x7f\xc0\xf8\xe2\xbb\xd9'),
+            'color': ('raw', b'\xff\x00\x00\x00'),
             'symbolID': ('I',8),
             'RSF': ('d', 0),
             'label': ('B', 1),
-            'peaklabel': ('utf16',''),
-            'edrfl': ('I',0),
-            'attr.ConsiderBurstMode': ('B',1),
-            'attr.Normalized':('B',0),
-            'attr.PoissonCorrectable':('B',1),
-            'attr.Sticky':('B',0),
-            'attr.Visible':('B',1)
+            'peaklabel': ('I', 0),
+            'edrfl': ('I', 0),
+            'attr.ConsiderBurstMode': ('B', 1),
+            'attr.Normalized':('B', 0),
+            'attr.PoissonCorrectable':('B', 1),
+            'attr.Sticky':('B', 0),
+            'attr.Visible':('B', 1)
             }
-        for path in ["Measurement Options/massintervals/mi[{new_index}]","MassIntervalList/mi[{new_id}]"]:
-            self.root.edit_block(path.format(new_index=new_index,new_id=new_id), "clsid", b'\x85\x1b\xa9\xe4hZ\xc8M\x93\xe0\x7f\xc0\xf8\xe2\xbb\xd9')
-            self.root.edit_block(path.format(new_index=new_index,new_id=new_id), "desc", desc.encode('utf16')[2:])
-            self.root.edit_block(path.format(new_index=new_index,new_id=new_id), "SN", _uuid.encode('utf16')[2:])
-            self.root.edit_block(path.format(new_index=new_index,new_id=new_id), "assign", assign.encode('utf16')[2:])
-            self.root.edit_block(path.format(new_index=new_index,new_id=new_id), "id", struct.pack("<I", new_index))
-            self.root.edit_block(path.format(new_index=new_index,new_id=new_id), "lmass", struct.pack("<d", lmass))
-            self.root.edit_block(path.format(new_index=new_index,new_id=new_id), "umass", struct.pack("<d", umass))
+        p = dict(new_index=new_index,new_index2=new_index2)
+        self.root.edit_block("Measurement Options/massintervals/mi[{new_index2}]".format(**p), "id", struct.pack("<I", new_id))
+        self.root.edit_block("MassIntervalList/mi[{new_index}]".format(**p), "id", struct.pack("<I", new_id))
+        for path in ["Measurement Options/massintervals/mi[{new_index2}]","MassIntervalList/mi[{new_index}]"]:
+            self.root.edit_block(path.format(**p), "desc", desc.encode('utf16')[2:])
+            self.root.edit_block(path.format(**p), "SN", _uuid.encode('utf16')[2:])
+            self.root.edit_block(path.format(**p), "assign", assign.encode('utf16')[2:])
+            self.root.edit_block(path.format(**p), "lmass", struct.pack("<d", lmass))
+            self.root.edit_block(path.format(**p), "umass", struct.pack("<d", umass))
             if cmass is None:
                 cmass = (lmass+umass)/2
-            self.root.edit_block(path.format(new_index=new_index,new_id=new_id), "cmass", struct.pack("<d", cmass))
-            self.root.edit_block(path.format(new_index=new_index,new_id=new_id), "desc", desc.encode('utf16')[2:])
+            self.root.edit_block(path.format(**p), "cmass", struct.pack("<d", cmass))
+            self.root.edit_block(path.format(**p), "desc", desc.encode('utf16')[2:])
             for key in defaults:
                 data = kargs.get(key, defaults[key][1])
                 fmt = defaults[key][0]
@@ -821,8 +825,8 @@ class ITA(ITM):
                     pass
                 else:
                     data = struct.pack("<"+fmt, data)
-                self.root.edit_block(path.format(new_index=new_index,new_id=new_id), key, data)
-        return self.root.goto("Measurement Options/massintervals/mi[{new_index}]".format(new_index=new_index))
+                self.root.edit_block(path.format(**p), key, data)
+        return self.root.goto("MassIntervalList/mi[{new_index}]".format(**p))
         
 
 class ITA_collection(Collection):

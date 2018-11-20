@@ -89,6 +89,9 @@ class Block:
         self.value = self.f.read(self.head['length1'])
         self.List = None
         self.iterP = 0
+    
+    def inc(self):
+        self.rewrite(struct.pack("<I", self.getLong()+1))
         
     def add_child(self, blk):
         """
