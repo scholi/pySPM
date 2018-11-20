@@ -18,7 +18,7 @@ class InvalidRAWdataformat(Exception):
         return "Invalid RAW dataformat seen in block "+self.block.parent+'/'+self.block.name+' : '+self.msg
 
 class ITM:
-    def __init__(self, filename, debug=False):
+    def __init__(self, filename, debug=False, readonly=False):
         """
         Create the ITM object out of the filename.  Note that this works for
         all .ITA,.ITM, .ITS files as they have the same structure
@@ -52,7 +52,10 @@ class ITM:
         if not os.path.exists(filename):
             print("ERROR: File \"{}\" not found".format(filename))
             raise FileNotFoundError
-        self.f = open(self.filename, 'r+b')
+        if readonly:
+            self.f = open(self.filename, 'rb')
+        else:
+            self.f = open(self.filename, 'r+b')
         self.Type = self.f.read(8)
         assert self.Type == b'ITStrF01'
         self.root = Block.Block(self.f)

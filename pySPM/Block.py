@@ -36,33 +36,32 @@ class Block:
         Each block start with one byte of type followed by 4 bytes that should always be \x19\x00\x00\x00 (all those 5 bytes are saved in self.Type)
         Note: the value \x19\x00\x00\x00 is the unit32 for 25 which is the pre-header length of the block.
         
-        Then follows 5 uint32: length, z, u ,x ,y
-            length: The length of the block's name
-            z: Block ID. Start at 0 and is increased monotonically for each blocks of the same name with the same parent. We usually find the ID from the children's list (see below) and this information is never used as it's redundant.
-            u: The number of children / sub-blocks. Might be = 0 even if the block has children. Check the value L (defined below) if so
-            x: The length of the block's value
-            y: Redundant. Seems to be always = x
-        Then follow length-bytes representing the name of the block
-        Then follow x-bytes forming the value of the block
+        Then follows 5 uint32: slen, ID, N ,length1, length2
+            slen: The length of the block's name
+            ID: Block ID. Start at 0 and is increased monotonically for each blocks of the same name with the same parent. We usually find the ID from the children's list (see below) and this information is never used as it's redundant.
+            N: The number of children / sub-blocks. Might be = 0 even if the block has children. Check the value L (defined below) if so
+            length1: The length of the block's value
+            length2: Redundant. Seems to be always = x
+        Then follow slen-bytes representing the name of the block
+        Then follow length1-bytes forming the value of the block
         
-        Blocks of types \x01\x19\x00\x00\x00 and \x03\x19\x00\x00\x00 are blocks that contains sub-blocks. There is no big difference between the two. I guess that types \x01 is the first one and type \x03 are the continuation blocks
+        Blocks of types \x01\x19\x00\x00\x00 and \x03\x19\x00\x00\x00 are blocks that contains sub-blocks. There is no big difference between the two. I guess that types \x01 is the first one and type \x03 are the continuation blocks (see NextBlock information below)
             Those block have a value which starts with 41-bytes.
                 2 uint32 -> (length, nums).
                     length: We actually don't need it. It's a redundant information. That is the length of the sub-headers. (It stop just before the sub-blocks names)
-                    nums: The variable u (see above) contains the number of children. If u ==0, then nums will tell the correct number of children
-                5 bytes: type (usually 00 00 00 00 00 or 03 19 00 00 00)
-                5 uint32 -> a,b,L,d,e
-                    a,b,d,e are unknown
-                    L seems to give information on the number of children
+                    nums: nums is an indication on the number of children the block can contains. It was found that the block size is = 53*nums
+                5 bytes: type of the NextBlock (usually 00 00 00 00 00 or 03 19 00 00 00)
+                5 uint32 -> a,b,c,d,e
+                    a,b,c,d,e are the NextBlock header (a=slen, b=ID, ...)
                 1 uint64 -> NextBlock
                     Big blocks can be chunked in several ones. NextBlock tells the position in the file of the next chunk. If = 0, then it's the last chunk
             Then 33 bytes for each sub-block follows:
-                1 byte: spacing (usually = 0 or 1)
+                1 byte: Type of the child
                 3 uint32 -> index, slen, id
                     index: The position of the sub-block name in the header
                     slen: The length of the sub-block name (which is store later). So basically the sub-block name is: Block.value[index:index+slen]
                     id: start at 0 and increase monotonically for sub-blocks having the same name
-                4 unknown padding bytes
+                1 uint32: 1 if the child contains data (we believe)?
                 2 uint64 -> blen, bidx
                     blen: Block length
                     bidx: Position of the Block in the file
@@ -90,7 +89,7 @@ class Block:
         self.value = self.f.read(self.head['length1'])
         self.List = None
         self.iterP = 0
-
+        
     def add_child(self, blk):
         """
         Add a new child to a given block. /!\ will overwrite the ITA file.
@@ -98,25 +97,51 @@ class Block:
         import os
         assert self.Type[0] in [1,3]
         
+        length, nums, NextBlock = struct.unpack('<II25xQ', self.value[:41])
+        if NextBlock != 0:
+            return self.gotoNextBlock().add_child(blk)
+        
         # Check the available size of the block
         header_length = 41+33*self.head['N']
+        
         children_names_length = 0
         last_id = None
         lowest_index = struct.unpack("<I", self.value[:4])[0]
         children_names_length = self.head['length1']-lowest_index
         free_space = lowest_index-header_length
-        assert free_space >= 33+len(blk.name)
+        new_name = blk.name not in self
         
+        new_subblock = False
+        if new_name:
+            if free_space < 33+len(blk.name):
+                new_subblock = True
+            index = lowest_index-len(blk.name)
+        else:
+            if free_space < 33:
+                new_subblock = True
+            else:
+                index = 0
+                for i in range(self.head['N']):
+                    self.f.seek(self.offset+25+len(self.name)+41+33*i)
+                    s = struct.unpack("<B4I2Q", self.f.read(33))
+                    if s[2] == len(blk.name):
+                        self.f.seek(self.offset+25+len(self.name)+s[1])
+                        if blk.name == self.f.read(s[2]).decode('utf8'):
+                            index = s[1]
+                            break
+                assert index > 0
+        if new_subblock:
+            raise Exception("Block is too small to fit the data.")
         self.f.seek(self.offset+25+len(self.name)+header_length)
-        index = lowest_index-len(blk.name)
-        self.f.write(struct.pack("<B4I2Q", 0, index, len(blk.name), blk.head['ID'], 0, blk.head['length1'], blk.offset))
+        self.f.write(struct.pack("<B4I2Q", blk.Type[0], index, len(blk.name), blk.head['ID'], [0,1][blk.Type[0] in [0,128]], blk.head['length1'], blk.offset))
         self.f.seek(self.offset+25+len(self.name)+index)
         self.f.write(blk.name.encode('utf8'))
         self.f.seek(self.offset+13)
         self.head['N'] += 1
         self.f.write(struct.pack("<I", self.head['N']))
         self.f.seek(self.offset+25+len(self.name))
-        self.f.write(struct.pack("<I", struct.unpack("<I", self.value[:4])[0]-len(blk.name)))
+        if new_name:
+            self.f.write(struct.pack("<I", struct.unpack("<I", self.value[:4])[0]-len(blk.name)))
         self.List = None
         
         # reload value
@@ -125,6 +150,7 @@ class Block:
         
         self.f.flush()
         os.fsync(self.f)
+        return blk
         
     def edit_child(self, old_block, new_block):
         import os
@@ -149,17 +175,33 @@ class Block:
         if not found:
             raise Exception('Child {} not found in {}'.format(old_block.name, self.name))
         
-    def create_dir(self, name, children=[], size=41+(33+20)*50, assign=True, id=0):
-        value = struct.pack("<2IB6IQ{}x".format(size-41), size,0,  0,  0,0,0,0,0,0, 0)
+    def create_dir(self, name, children=[], nums=100, assign=True, id=0):
+        """
+        Create a directory in the ITStr format.
+        
+        Parameters
+        ----------
+        name: string
+            name of the directory
+        children: list of blocks
+            list of the childrens' block which are added
+        nums: int
+            this number will give the approximate number of children one can create. The size of the block will be 53*nums
+        assign: bool
+            If True, will add the created dir as a child of self
+        id: int
+            Blocks having the same name should have a different id.
+        """
+        size = 53*nums
+        value = struct.pack("<2IB6IQ{}x".format(size-41), size, nums,  0,  0, 0, 0, 0, 0, 0, 0)
         blk = self.create_block(name, value, _type=1, id=id)
         for x in children:
             blk.add_child(x)
         if assign:
             self.add_child(blk)
         return blk
-        
     
-    def edit_block(self, path, name, value, id=0, force=False):
+    def edit_block(self, path, name, value, id=0, _type=0, force=False):
         """
         This function will go to a given path and create all necessary "folder" (block of type 1).
         It will then either create a new child with a given name and value if it does not exists and if so it will edit it.
@@ -187,13 +229,14 @@ class Block:
         try:
             child = parent.gotoItem(name, id)
             if force and child.head['length1'] != len(value):
-                blk = parent.create_block(name, value, id=id)
+                blk = parent.create_block(name, value, id=id, _type=_type)
                 parent.edit_child(child, blk)
             else:
                 child.rewrite(value)
+                return child
                 
         except:
-            parent.add_child(parent.create_block(name, value, id=id))
+            return parent.add_child(parent.create_block(name, value, id=id, _type=_type))
     
     def create_block(self, name, value, id=0, _type=0):
         if type(name) is str:
@@ -255,6 +298,8 @@ class Block:
         head = dict(zip(['name_length', 'ID', 'N', 'length1', 'length2'], struct.unpack('<5x5I', self.f.read(25))))
         name = self.f.read(head['name_length'])
         length, nums, NextBlock = struct.unpack('<II25xQ', self.f.read(41))
+        if NextBlock==0:
+            return None
         self.f.seek(NextBlock)
         return Block(self.f, parent=self.parent)
     
