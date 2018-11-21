@@ -625,8 +625,10 @@ class Block:
         L = len(raw)//struct.calcsize(fmt)
         return struct.unpack("<"+str(L)+fmt, raw)
     
-    def rewrite(self, content):
+    def rewrite(self, content, debug=False):
         assert(len(content)) == self.head['length1']
+        if do_debug(debug):
+            print("Rewriting block \"{}\"".format(self.name))
         # set pointer at beginning of data
         self.f.seek(self.offset+25+self.head['name_length'])
         self.f.write(content)
