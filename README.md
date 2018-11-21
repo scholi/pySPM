@@ -23,6 +23,18 @@ This library is offered as it is and is still in development. Please note that r
 If you find bugs and issues, please report them to the developer: https://github.com/scholi/pySPM/issues
 
 ## News
+### ITA files are writable
+From now on you can, not only view the ita files, but you can also write them. For the moment this is still a non-user-friendly procedure, but you can edit each ITStr Block with the ```edit_block()``` function. Be careful, because if the new data has a different size than the old one, a new block is created, but the old one is also kept. This means that your ITA file size will grow.
+You can also add new channels and images with the more user-friendly function ```pySPM.ITA.add_new_images()```.
+:warning: It is highly advised to copy the ita file before making any change. You can use the following code to copy the ita in a temporary ita before making any change.
+
+```python
+from shutil import copyfile
+import pySPM
+copyfile(filename, "temp.ita")
+A = pySPM.ITA("temp.ita")
+```
+
 ### New tools
 The library comes with three scripts to make your life easier. Those scripts are located in your python folder in the Scripts directory. You can also run them from the command line.
 #### stability
