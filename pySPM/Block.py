@@ -13,7 +13,7 @@ import os
 
 class MissingBlock(Exception):
     def __init__(self, parent, name, index):
-        self.block_name = parent.parent+'/'+name
+        self.block_name = parent.path+parent.name+'/'+name
         self.index = index
         
     def __str__(self):
@@ -28,7 +28,7 @@ class Block:
     Note: This class was created by reverse engineering on the fileformat of iontof and is most probably not 100% accurate.
     Nevertheless is works in very good agreement with the developer's data.
     """
-    def __init__(self, fp, parent=''):
+    def __init__(self, fp, parent=None):
         """
         Init the class
         fp: file pointer (the one created by open(...) of an ITA,ITM,ITS, etc... file pointing at the beginning of a block
@@ -76,6 +76,12 @@ class Block:
         """
         self.f = fp
         self.parent = parent
+        self.path = ''
+        if parent is not None:
+            if parent.parent is None:
+                self.path = '/'
+            else:
+                self.path = parent.path+parent.name+'/'
         self.offset = self.f.tell()
         self.Type = self.f.read(5)
         if self.Type[1:] != b'\x19\x00\x00\x00':
@@ -267,9 +273,9 @@ class Block:
             res += [func(self)]
             if callback is not None:
                 callback(self)
-            if self.Type[0] in [1,3]:
-                for x in self:
-                    res += x.DepthFirstSearch(callback=callback, filter=filter, func=func)
+        if self.Type[0] in [1,3]:
+            for x in self:
+                res += x.DepthFirstSearch(callback=callback, filter=filter, func=func)
         return res
     
     def getName(self):
@@ -358,7 +364,7 @@ class Block:
         d = {}
         for i, l in enumerate(self.getList()):
             self.f.seek(l['bidx'])
-            child = Block(self.f, parent=[self.parent+'/'+self.name,'/'][self.parent==''])
+            child = Block(self.f, parent=self)
             if child.Type[0:1] == b'\x00':
                 value = binascii.hexlify(child.value)
                 d[child.name] = {'raw':value}
@@ -382,7 +388,7 @@ class Block:
             self.f.seek(l['bidx'])
             other = ''
             try:
-                child = Block(self.f, parent=[self.parent+'/'+self.name,'/'][self.parent==''])
+                child = Block(self.f, parent=self)
                 if child.Type[0:1] == b'\x00':
                     if len(child.value) == 4:
                         vL = child.getLong()
@@ -441,7 +447,7 @@ class Block:
         """
         Idx = self.getIndex(name, idx, lazy=lazy)
         self.f.seek(Idx)
-        return Block(self.f, parent=[self.parent+'/'+self.name,'/'][self.parent==''])
+        return Block(self.f, parent=self)
 
     def getIndex(self, name, idx=0, lazy=False):
         """
@@ -479,6 +485,8 @@ class Block:
         As the id sometimes start at weird values and we just want the first ones
         saved whatever its id is, we can use the lazy=True argument.
         """
+        if path.startswith('/'):
+            path = path[1:]
         if path == '':
             return self
         self.f.seek(self.offset)

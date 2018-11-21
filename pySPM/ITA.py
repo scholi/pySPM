@@ -734,31 +734,34 @@ class ITA(ITM):
                     cm = mpl.colors.ListedColormap(RGB)
                     ax[i].imshow(img, cmap=cm)
 
-    def add_new_images(self, miblock, Scans, Added=None, prog=False):
+    def add_new_images(self, miblock, Scans=None, Added=None, prog=False):
+        assert Scans is not None or Added is not None
         lvl = 3 # zlib encoding level
         sy, sx = self.size['pixels']['y'], self.size['pixels']['x']
         SN = miblock.goto("SN").getString()
         if Added is None:
             AddedImg = np.zeros((sy, sx), dtype=np.uint32)
         chID = miblock.goto("id").getLong()
-        N = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfImages").getLong()
+        if Scans is not None:
+            N = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfImages").getLong()
         AN = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image.NumberOfImages").getLong()
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MassIntervalSN", SN.encode('utf8'))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.XSize", struct.pack("<I", sx))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.YSize", struct.pack("<I", sy))
-        RS = range(self.Nscan)
-        if prog:
-            try:
-                from tqdm import tqdm_notebook as tqdm
-            except:
-                from tqdm import tqdm
-            RS = tqdm(RS)
-        for i in RS:
-            img = np.flipud(Scans[i].astype(np.uint32, casting='unsafe'))
-            data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(img)), level=lvl)
-            self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image[{}]".format(N), "ImageArray.Long", data, id=i, _type=128)
-            if Added is None:
-                AddedImg += img
+        if Scans is not None:
+            RS = range(self.Nscan)
+            if prog:
+                try:
+                    from tqdm import tqdm_notebook as tqdm
+                except:
+                    from tqdm import tqdm
+                RS = tqdm(RS)
+            for i in RS:
+                img = np.flipud(Scans[i].astype(np.uint32, casting='unsafe'))
+                data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(img)), level=lvl)
+                self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image[{}]".format(N), "ImageArray.Long", data, id=i, _type=128)
+                if Added is None:
+                    AddedImg += img
 
         if Added is None:
             Added = AddedImg
@@ -773,7 +776,8 @@ class ITA(ITM):
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCountsDbl", struct.pack("<d", np.sum(Added)))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCounts", struct.pack("<I", int(np.sum(Added))))
         
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans", "Image.NumberOfImages", struct.pack("<I", N+1))
+        if Scans is not None:
+            self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans", "Image.NumberOfImages", struct.pack("<I", N+1))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded", "Image.NumberOfImages", struct.pack("<I", AN+1))
                          
     def create_new_miblock(self, assign, lmass, umass, cmass=None, desc="", _uuid=None, **kargs):

@@ -15,7 +15,7 @@ class InvalidRAWdataformat(Exception):
         self.msg = msg
         
     def __str__(self):
-        return "Invalid RAW dataformat seen in block "+self.block.parent+'/'+self.block.name+' : '+self.msg
+        return "Invalid RAW dataformat seen in block "+self.block.path+self.block.name+' : '+self.msg
 
 class ITM:
     def __init__(self, filename, debug=False, readonly=False):
