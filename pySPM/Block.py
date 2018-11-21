@@ -10,6 +10,7 @@ import sys
 import binascii
 import struct
 import os
+from .utils import dec_debug, do_debug
 
 class MissingBlock(Exception):
     def __init__(self, parent, name, index):
@@ -151,17 +152,16 @@ class Block:
         self.f.seek(self.offset+25+len(self.name))
         if new_name:
             self.f.write(struct.pack("<I", struct.unpack("<I", self.value[:4])[0]-len(blk.name)))
-        self.List = None
         
-        # reload value
-        self.f.seek(self.offset+25+len(self.name))
-        self.value = self.f.read(self.head['length1'])
-        
-        self.f.flush()
-        os.fsync(self.f)
+        self.refresh()
         return blk
         
-    def edit_child(self, old_block, new_block):
+    def refresh(self):
+        self.List = None
+        self.f.seek(self.offset+self.head['name_length']+25)
+        self.value = self.f.read(self.head['length1'])
+        
+    def edit_child(self, old_block, new_block, debug=False):
         import os
         assert self.Type[0] in [1,3]
         
@@ -179,10 +179,13 @@ class Block:
                 self.f.seek(self.offset+25+len(self.name)+41+33*i)
                 entry[6] = new_block.offset
                 entry[5] = new_block.head['length1']
+                if do_debug(debug):
+                    print("Update inode")
                 self.f.write(struct.pack("<B4I2Q", *entry))
                 break
         if not found:
             raise Exception('Child {} not found in {}'.format(old_block.name, self.name))
+        self.refresh()
         
     def create_dir(self, name, children=[], nums=100, assign=True, id=0):
         """
@@ -210,7 +213,7 @@ class Block:
             self.add_child(blk)
         return blk
     
-    def edit_block(self, path, name, value, id=0, _type=0, force=False):
+    def edit_block(self, path, name, value, id=0, _type=0, force=False, debug=False):
         """
         This function will go to a given path and create all necessary "folder" (block of type 1).
         It will then either create a new child with a given name and value if it does not exists and if so it will edit it.
@@ -219,7 +222,7 @@ class Block:
         You can also use the force=True parameter to force to edit a block when its content is not the same. Be careful, because this will actually keep the old data in the file (but won't be accessible or seen anymore). This means that the size of your ita can grow quickly if you perform a lot of edits...
         """
         self.f.seek(self.offset)
-        parent = Block(self.f)
+        parent = self
         if path != '':
             for p in path.split('/'):
                 idx = 0
@@ -236,18 +239,27 @@ class Block:
                 except MissingBlock:
                     parent = parent.create_dir(p, children=[], id=idx)
         try:
+            if do_debug(debug):
+                print("Accessing block \"{}\"[{}]".format(name, id))
             child = parent.gotoItem(name, id)
-            if force and child.head['length1'] != len(value):
-                blk = parent.create_block(name, value, id=id, _type=_type)
-                parent.edit_child(child, blk)
-            else:
-                child.rewrite(value)
+            if child.head['length1'] == len(value):
+                if do_debug(debug):
+                    print("rewrite block")
+                child.rewrite(value, debug=dec_debug(debug))
                 return child
-                
-        except:
+            elif force:
+                blk = parent.create_block(name, value, id=id, _type=_type, debug=dec_debug(debug))
+                parent.edit_child(child, blk, debug=dec_debug(debug))
+            else:
+                raise Exception("Use the force=True parameter if you wish to replace an existing block with another data size")
+        except MissingBlock:
+            if do_debug(debug):
+                print("create new block")
             return parent.add_child(parent.create_block(name, value, id=id, _type=_type))
     
-    def create_block(self, name, value, id=0, _type=0):
+    def create_block(self, name, value, id=0, _type=0, debug=False):
+        if do_debug(debug):
+            print("Creating new block \"{}\" of size {}".format(name, len(value)))
         if type(name) is str:
             name = name.encode('utf8')
         self.f.seek(0, 2) # goto end of file
@@ -258,8 +270,6 @@ class Block:
         self.f.write(name)
         self.f.write(value)
         self.f.seek(offset)
-        self.f.flush()
-        os.fsync(self.f)
         return Block(self.f)
    
     def DepthFirstSearch(self, callback=None, filter=lambda x: True, func=lambda x: x):
@@ -620,8 +630,7 @@ class Block:
         # set pointer at beginning of data
         self.f.seek(self.offset+25+self.head['name_length'])
         self.f.write(content)
-        self.f.flush()
-        os.fsync(self.f)
+        self.refresh()
             
     def modify_block_and_export(self, path, new_data, output, debug=False, prog=False, lazy=False):
         assert not os.path.exists(output) # Avoid to erase an existing file. Erase it outside the library if needed.

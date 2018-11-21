@@ -8,6 +8,7 @@ import struct
 import os.path
 import zlib
 import re
+import os
 
 class InvalidRAWdataformat(Exception):
     def __init__(self, block, msg):
@@ -967,6 +968,8 @@ class ITM:
         return res
     
     def __del__(self):
+        self.f.flush()
+        os.fsync(self.f)
         self.f.close()
 
     def setK0(self, k0):
