@@ -962,14 +962,15 @@ class ITM:
             for xy in Data:
                 for i,ch in enumerate(channels):
                     Counts[i][xy[1],xy[0]] += np.sum((Data[xy]>=left[i])*(Data[xy]<=right[i]))
-        res = [SPM_image(C, real=self.size['real'], _type='TOF', channel="{0[0]:.2f}{unit}-{0[1]:.2f}{unit}".format(channels[i],unit=["u","s"][time]), zscale="Counts") for i,C in enumerate(Counts)]
+        res = [SPM_image(C, real=self.size['real'], _type='TOF', channel="{0[0]:.2f}{unit}-{0[1]:.2f}{unit}".format(channels[i],unit=["u", "s"][time]), zscale="Counts") for i,C in enumerate(Counts)]
         if len(res) == 1:
             return res[0]
         return res
     
     def __del__(self):
-        self.f.flush()
-        os.fsync(self.f)
+        if self.f.writable():
+            self.f.flush()
+            os.fsync(self.f)
         self.f.close()
 
     def setK0(self, k0):
