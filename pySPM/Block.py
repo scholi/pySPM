@@ -482,7 +482,7 @@ class Block:
                     return l['bidx']
                 i+=1
         raise MissingBlock(self, name, idx)
-
+       
     def goto(self, path, lazy=False):
         """
         Return a sub Block having a specific path

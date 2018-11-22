@@ -966,7 +966,67 @@ class ITM:
         if len(res) == 1:
             return res[0]
         return res
-    
+        
+    def create_new_miblock(self, assign, lmass=None, umass=None, cmass=None, desc="", _uuid=None, **kargs):
+        import uuid
+        if _uuid is None:
+            _uuid = str(uuid.uuid4())
+        if _uuid[0] != '{':
+            _uuid = '{'+_uuid+'}'
+        _uuid = _uuid.upper()
+        if lmass is None:
+            lmass = self.channel2mass(0)
+        if umass is None:
+            up = int(np.round(self.getValue("Measurement.CycleTime")['float']/self.getValue("Registration.TimeResolution")['float'], 0))
+            umass = self.channel2mass(up)
+        new_index = max([x.head['ID'] for x in self.root.goto("MassIntervalList") if x.name == 'mi'])+1
+        new_index2 = self.root.goto("Measurement Options/massintervals/NextId").getLong()
+        new_id = max([x.goto("id").getLong() for x in self.root.goto("MassIntervalList") if x.name == 'mi'])+1
+        new_id2 = max([x.goto("id").getLong() for x in self.root.goto("Measurement Options/massintervals") if x.name == 'mi'])+1
+        NID = self.root.goto("MassIntervalList/NextId", lazy=True)
+        NID.rewrite(struct.pack("<I", NID.getLong()+1))
+        defaults = {
+            'clsid': ('raw', b'\x85\x1b\xa9\xe4hZ\xc8M\x93\xe0\x7f\xc0\xf8\xe2\xbb\xd9'),
+            'color': ('raw', b'\xff\x00\x00\x00'),
+            'symbolID': ('I',8),
+            'RSF': ('d', 0),
+            'label': ('B', 1),
+            'peaklabel': ('I', 0),
+            'edrfl': ('I', 0),
+            'attr.ConsiderBurstMode': ('B', 1),
+            'attr.Normalized':('B', 0),
+            'attr.PoissonCorrectable':('B', 1),
+            'attr.Sticky':('B', 0),
+            'attr.Visible':('B', 1)
+            }
+        p = dict(new_index=new_index,new_index2=new_index2)
+        self.root.edit_block("Measurement Options/massintervals/mi[{new_index2}]".format(**p), "id", struct.pack("<I", new_id))
+        self.root.edit_block("MassIntervalList/mi[{new_index}]".format(**p), "id", struct.pack("<I", new_id))
+        for path in ["Measurement Options/massintervals/mi[{new_index2}]","MassIntervalList/mi[{new_index}]"]:
+            self.root.edit_block(path.format(**p), "desc", desc.encode('utf16')[2:])
+            self.root.edit_block(path.format(**p), "SN", _uuid.encode('utf16')[2:])
+            self.root.edit_block(path.format(**p), "assign", assign.encode('utf16')[2:])
+            self.root.edit_block(path.format(**p), "lmass", struct.pack("<d", lmass))
+            self.root.edit_block(path.format(**p), "umass", struct.pack("<d", umass))
+            if cmass is None:
+                cmass = (lmass+umass)/2
+            self.root.edit_block(path.format(**p), "cmass", struct.pack("<d", cmass))
+            self.root.edit_block(path.format(**p), "desc", desc.encode('utf16')[2:])
+            for key in defaults:
+                data = kargs.get(key, defaults[key][1])
+                fmt = defaults[key][0]
+                if fmt == 'utf16':
+                    data = data.encode('utf16')[2:]
+                elif fmt=='raw':
+                    pass
+                else:
+                    data = struct.pack("<"+fmt, data)
+                self.root.edit_block(path.format(**p), key, data)
+        blk = self.root.goto("MassIntervalList/mi[{new_index}]".format(**p))
+        d = blk.dictList()
+        self.peaks[d['id']['long']] = d
+        return blk
+      
     def __del__(self):
         if self.f.writable():
             self.f.flush()
