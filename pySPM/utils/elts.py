@@ -9,9 +9,12 @@ Handle elements to calculate mass, abundance, etc.
 import sqlite3
 import os
 import re
-
 from .constants import me
 
+def formulafy(x):
+    import re
+    return '$'+re.sub('([a-zA-Z])_?([0-9]+)', r'\1_{\2}', re.sub(r'\^([0-9]+)', r'^{\1}', re.sub('([\\+-]+)$', r'^{\1}', x)))+'$'
+    
 def get_peaklist(nominal_mass, negative=False):
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
@@ -43,6 +46,8 @@ def get_properties(elt):
     
     
 def get_mass(elt, mz=True):
+    if type(elt) is Molecule:
+        elt = str(elt)
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -128,6 +133,9 @@ def is_fragment_of(fragment, element):
 
 def simplify_formula(elt, debug=False):
     elts = formula2dict(elt)
+    return dict2formula(elts)
+    
+def dict2formula(elts, debug=False):
     if debug:
         print(elts)
     order = "CHSNO"
@@ -210,6 +218,8 @@ def get_isotopes(elt, min_abund=0):
     return R
 
 def get_abund(elt):
+    if type(elt) is Molecule:
+        elt = str(elt)
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -246,3 +256,78 @@ def getOrganicAt(m0):
                 if int(np.round(get_mass(elt), 0))==m0:
                     res.append(elt)
     return res
+    
+def elts_substract(elt1, elt2):
+    r = formula2dict(elt1)
+    d = formula2dict(elt2)
+    for x in d:
+        if x not in r:
+            raise Exception("Cannot subtract a molecule with more atoms than the main one")
+        r[x] -= d[x]
+
+class Molecule:    
+    def __init__(self, formula):
+        self.atoms = formula2dict(formula)
+    
+    def formula(self):
+        return dict2formula(self.atoms)
+        
+    def __add__(self, b):
+        r = Molecule(self.formula())
+        for x in b.atoms:
+            if x in r.atoms:
+                r.atoms[x] += b.atoms[x]
+            else:
+                r.atoms[x] = b.atoms[x]
+        return r
+        
+    __radd__ = __add__
+    
+    def __mul__(self, n):
+        assert type(n) is int
+        r = Molecule(self.formula())
+        for x in r.atoms:
+            r.atoms[x] *= n
+        return r
+        
+    __rmul__ = __mul__
+    
+    def __sub__(self, b):
+        r = Molecule(self.formula())
+        for x in b.atoms:
+            n = b.atoms[x]
+            if x not in r.atoms or r.atoms[x]<n:
+                raise Exception("Cannot subtract a larger molecule from a smaller one")
+            r.atoms[x] -= n
+        return r
+    
+    def inc(self, elt='H'):
+        r = Molecule(self.formula())
+        k = list(formula2dict(elt).keys())[0]
+        if k in r.atoms:
+            r.atoms[k] += 1
+        else:
+            r.atoms[k] = 1
+        return r
+        
+    def dec(self, elt='H'):
+        r = Molecule(self.formula())
+        k = list(formula2dict(elt).keys())[0]
+        if k not in r.atoms or r.atoms[k]<1:
+            raise Exception("Cannot decrement molecule below 0 atoms")
+        r.atoms[k] -= 1
+        return r
+            
+    def mass(self):
+        return get_mass(self.formula())
+        
+    def abund(self):
+        return get_abund(self.formula())
+        
+    def __repr__(self):
+        return self.formula()
+        
+    def __str__(self):
+        return self.formula()
+
+H = Molecule('H')

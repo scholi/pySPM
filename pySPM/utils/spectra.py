@@ -16,12 +16,7 @@ def get_substance_peaks(substance, negative=True):
     c = conn.cursor()
     c.execute("SELECT Peaks.Fragment from Peaks where Peaks.Substance==(SELECT ID from substance where Name LIKE '%{name}%') and Polarity{pol}=0".format(name=substance,pol='><'[negative]))
     return [x[0] for x in c.fetchall()]
-
         
-def formulafy(x):
-    import re
-    return '$'+re.sub('([a-zA-Z])_?([0-9]+)',r'\1_{\2}',re.sub(r'\^([0-9]+)',r'^{\1}',re.sub('([\\+-]+)$',r'^{\1}',x)))+'$'
-
 def get_dm(m, sf, k0, dsf, dk0):
     import numpy as np
     return 2*np.sqrt(m)*np.sqrt((dk0**2/(sf**2))+m*(dsf**2/(sf**2)))
@@ -34,6 +29,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
     Will perform a peak-fitting if dofit is True
     """
     from . import LG, get_mass, get_peaklist
+    from .elts import formulafy
     from scipy.optimize import curve_fit
     import numpy as np
     import copy
@@ -141,7 +137,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
             popt, pcov = curve_fit(fit, m[mask], D[mask], p0=p0,
                     bounds=(
                         [1/kargs.get('asym_max', 10),-0.015]+[0,0]*((len(p0)-1)//2),
-                        [kargs.get('asym_max', 10),0.015]+[kargs.get('sig_max', 0.01),np.inf]*((len(p0)-1)//2))
+                        [kargs.get('asym_max', 10),0.015]+[kargs.get('sig_max', 0.01), np.inf]*((len(p0)-1)//2))
                         )
             fit_type = 0
         except:
@@ -150,8 +146,8 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
                 assert not fakefit
                 popt, pcov = curve_fit(fit, m[mask], D[mask], p0=p0,
                     bounds=(
-                        [1/kargs.get('asym_max', 4),-0.015]+[0,0]*((len(p0)-1)//2),
-                        [kargs.get('asym_max', 4), 0.015]+[kargs.get('sig_max', 0.01),np.inf]*((len(p0)-1)//2))
+                        [1/kargs.get('asym_max', 4),-0.015]+[0, 0]*((len(p0)-1)//2),
+                        [kargs.get('asym_max', 4), 0.015]+[kargs.get('sig_max', 0.01), np.inf]*((len(p0)-1)//2))
                         )
                 fit_type = 1
             except Exception as e:
@@ -159,9 +155,9 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
                 if do_debug(debug):
                     raise e
                 popt = p0
-                pcov = np.zeros((len(p0),len(p0)))
+                pcov = np.zeros((len(p0), len(p0)))
                 if ax is not None:
-                    for x in ['right','left','top','bottom']:
+                    for x in ['right', 'left', 'top', 'bottom']:
                         ax.spines[x].set_color('red')
     else:
         popt = p0
@@ -169,9 +165,9 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
         pcov = np.zeros((len(p0),len(p0)))
     if ax is not None:
         if label is None:
-            p = ax.plot(m[mask]-popt[1],D[mask])
+            p = ax.plot(m[mask]-popt[1],D[mask], color=kargs.get('curve_color',None))
         else:
-            p = ax.plot(m[mask]-popt[1],D[mask], label=label)
+            p = ax.plot(m[mask]-popt[1],D[mask], label=label, color=kargs.get('curve_color',None))
     res = {}
     err = np.sqrt(np.diag(pcov))
     for i in range((len(popt)-1)//2):
@@ -263,25 +259,51 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
     return res
 
 
-def plot_isotopes(elt, Amp=None, ax=None, sig=0.005, asym=1, lg=0, limit=1, color='C1', showElts=False, **kargs):
+def plot_isotopes(elt, Amp=None, main=None, ax=None, sig=None, asym=None, lg=0, limit=1, color='C1', showElts=False, debug=False, **kargs):
     """
     plot the isotopes of a given element on a spectral profile plot
     """
-    from . import get_isotopes, LG
+    from . import get_isotopes, LG, get_mass, get_abund, Molecule
     import matplotlib.pyplot as plt
     import numpy as np
     import re
+    from scipy.optimize import curve_fit
+    if type(elt) is Molecule:
+        elt = str(elt)
     if ax is None:
         ax = plt.gca()
+    if main is None:
+        main = ax
     main_isotope = re.sub('^([0-9]+)', '', elt)
-    L = ax.lines[0]
+    main_iso = (main_isotope, get_mass(main_isotope), get_abund(main_isotope))
+    L = main.lines[0]
     m, y = L.get_xdata(), L.get_ydata()
+    mask = np.abs(m-main_iso[1])<.1
     if Amp is None:
         i = np.argmin(np.abs(m-main_iso[1]))
         Amp = np.max(y[i-10:i+10])/main_iso[2]
+    if sig is None and asym is None:
+        def fit(x, s, a):
+            return LG(x, main_iso[1], s, Amp=Amp*main_iso[2], lg=lg, asym=a)
+        (sig, asym),_ = curve_fit(fit, m[mask], y[mask], (0.005, 1))
+    elif sig is None:
+        def fit(x, s):
+            return LG(x, main_iso[1], s, Amp=Amp*main_iso[2], lg=lg, asym=asym)
+        s,_ = curve_fit(fit, m[mask], y[mask], (0.005))
+        sig = s[0]
+    elif asym is None:
+        def fit(x, a):
+            return LG(x, main_iso[1], sig, Amp=Amp*main_iso[2], lg=lg, asym=a)
+        a, _ = curve_fit(fit, m[mask], y[mask], (1))
+        asym = a[0]
+    if debug:
+        print(sig, asym)
     isos = get_isotopes(elt, min_abund=limit/Amp)
-    r = ax.get_xlim()
+    L = ax.lines[0]
+    m, y = L.get_xdata(), L.get_ydata()
+    r = main.get_xlim()
     s = m*0
+    
     for iso in isos:
         s += LG(m, iso[1], sig, Amp=Amp*iso[2], lg=lg, asym=asym)
         if showElts:

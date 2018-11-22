@@ -745,7 +745,7 @@ class ITM:
                     dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
                     ip = int(dt)
                     fp = dt%1
-                    id = ROI[xy[1],xy[0]]
+                    id = ROI[xy[1], xy[0]]
                     for x in Data[xy]:
                         Spectrum[x-ip, id] += (1-fp)
                         Spectrum[x-ip-1, id] += fp
@@ -760,27 +760,27 @@ class ITM:
                     fp = dt%1
                     li = []
                     for k,R in enumerate(ROI):
-                        if R[xy[1],xy[0]]:
+                        if R[xy[1], xy[0]]:
                             li.append(k)
                     for x in Data[xy]:
                         for k in li:
-                            Spectrum[x-ip,k] += (1-fp)
-                            Spectrum[x-ip-1,k] += fp
-        sf = kargs.get('sf',self.root.goto('MassScale/sf').getDouble())
-        k0 = kargs.get('k0',self.root.goto('MassScale/k0').getDouble())
-        masses = self.channel2mass(np.arange(number_channels),sf=sf,k0=k0)
+                            Spectrum[x-ip, k] += (1-fp)
+                            Spectrum[x-ip-1, k] += fp
+        sf = kargs.get('sf', self.root.goto('MassScale/sf').getDouble())
+        k0 = kargs.get('k0', self.root.goto('MassScale/k0').getDouble())
+        masses = self.channel2mass(np.arange(number_channels), sf=sf, k0=k0)
         if deadTimeCorr:
             dt = 1300 # 65ns*(1ch/50ps) = 1300 channels
             N = self.Nscan*self.size['pixels']['x']*self.size['pixels']['y'] # total of count events
             Np = np.zeros(Spectrum.shape)
             if Spectrum.ndim>1:
                 for i in range(Spectrum.shape[1]):
-                    Np[:,i] = N-np.convolve(Spectrum[:,i], np.ones(dt-1,dtype=int), 'full')[:-dt+2]
+                    Np[:,i] = N-np.convolve(Spectrum[:, i], np.ones(dt-1, dtype=int), 'full')[:-dt+2]
             else:
                 Np = N-np.convolve(Spectrum, np.ones(dt-1,dtype=int), 'full')[:-dt+2]
             Np[Np==0] = 1
             Spectrum = -N*np.log(1-Spectrum/Np)
-        if kargs.get('time',False):
+        if kargs.get('time', False):
             return np.arange(number_channels), Spectrum
         return masses, Spectrum
 
