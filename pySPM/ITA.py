@@ -659,7 +659,7 @@ class ITA(ITM):
                     V[:, -r[0]:] = const
         return V
         
-    def showSpectrumAround(self, m0, delta=0.15, sf=None, k0=None, **kargs):
+    def showSpectrumAround(self, m0, delta=None, sf=None, k0=None, **kargs):
         """
         Display the Spectrum around a given mass.
 

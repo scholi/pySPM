@@ -26,7 +26,7 @@ def get_dm(m, sf, k0, dsf, dk0):
     import numpy as np
     return 2*np.sqrt(m)*np.sqrt((dk0**2/(sf**2))+m*(dsf**2/(sf**2)))
     
-def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=True,
+def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=True,
     debug=False, Aredux=1, label=None, include=None, include_only=None, exclude=[],
     polarity="+", colors='rgb', pretty=True, formula=True, auto_scale=True, fakefit=False, **kargs):
     """
@@ -57,7 +57,18 @@ def showPeak(m, D, m0, delta=0.15, errors=False, dm0=0, dofit=False, showElts=Tr
     
     if type(exclude) is str:
        exclude = [exclude]
-    mask = (m>=m0-delta)*(m<=m0+delta)
+   
+    if delta is None:
+        delta0 = .5
+        mask = (m>=m0-delta0)*(m<=m0+delta0)
+        thresh = max(5, np.max(D[mask])*kargs.get('min_perc', .01))
+        li = np.argmax(mask)+np.argmax(D[mask]> thresh)
+        ui = np.argmax(mask)+np.sum(mask)-np.argmax(D[mask][::-1]>thresh)
+        mask = (m>=m[li]-.01)*(m<=m[ui]+.01)
+        delta = np.max([m[ui]-m0, m0-m[li]])+.01
+    else:
+        mask = (m>=m0-delta)*(m<=m0+delta)
+    
     negative = False
     if polarity in ['-', 'Negative', 'negative', 'neg', 'Neg', 'NEG']:
         negative = True

@@ -375,7 +375,7 @@ class ITM:
                             
         return Vals
 
-    def autoMassCal(self, t=None, S=None, pos=True, debug=False, error=False, Range=5000, FittingPeaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None):
+    def autoMassCal(self, t=None, S=None, pos=True, debug=False, error=False, Range=5000, FittingPeaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None, apply=False):
         """
         perform an auto calibration for spectrum. (in test, might be unreliable)
         """
@@ -408,9 +408,15 @@ class ITM:
             t_peak = t[mask][np.argmax(S[mask])]
             ts.append(t_peak)
         ms = [get_mass(x) for x in FittingPeaks]
+        sf, k0, dsf, dk0 = fitSpectrum(ts, ms, error=True)
+        if apply:
+            self.setSF(sf)
+            self.setK0(k0)
         if debug:
-            return fitSpectrum(ts, ms, error=True), ts, ms
-        return fitSpectrum(ts, ms, error=error)
+            return sf, k0, dsf, dk0, ts, ms
+        if error:
+            return sf, k0, dsf, dk0
+        return sf, k0
     
     def showValues(self, pb=False, gui=False, **kargs):
         from .utils import html_table, aa_table
@@ -743,9 +749,9 @@ class ITM:
                     for x in Data[xy]:
                         Spectrum[x-ip, id] += (1-fp)
                         Spectrum[x-ip-1, id] += fp
-        elif type(ROI) in [list,tuple]:
+        elif type(ROI) in [list, tuple]:
             multi_roi = True
-            Spectrum = np.zeros((number_channels,len(ROI)), dtype=np.float32)
+            Spectrum = np.zeros((number_channels, len(ROI)), dtype=np.float32)
             for s in T:
                 Data = self.getRawData(s)[2]
                 for xy in Data:
