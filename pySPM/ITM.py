@@ -604,8 +604,10 @@ class ITM:
         M = m[mask]
         S = s[mask]
         if log:
-            S = np.log(S)
-        ax.plot(M, S)
+            ax.log = True
+            S[S>=1] = np.log10(S[S>=1])
+            S[S<1] = 0
+        ax.plot(M, S, **kargs)
         self.get_masses()
         if showPeaks:
             ymax = ax.get_ylim()[1]

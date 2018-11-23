@@ -278,6 +278,8 @@ def plot_isotopes(elt, Amp=None, main=None, ax=None, sig=None, asym=None, lg=0, 
     main_iso = (main_isotope, get_mass(main_isotope), get_abund(main_isotope))
     L = main.lines[0]
     m, y = L.get_xdata(), L.get_ydata()
+    if hasattr(ax, 'log') and ax.log:
+        y = 10**y
     mask = np.abs(m-main_iso[1])<.1
     if Amp is None:
         i = np.argmin(np.abs(m-main_iso[1]))
@@ -301,6 +303,8 @@ def plot_isotopes(elt, Amp=None, main=None, ax=None, sig=None, asym=None, lg=0, 
     isos = get_isotopes(elt, min_abund=limit/Amp)
     L = ax.lines[0]
     m, y = L.get_xdata(), L.get_ydata()
+    if hasattr(ax, 'log') and ax.log:
+        y = 10**y
     r = main.get_xlim()
     s = m*0
     
@@ -308,6 +312,9 @@ def plot_isotopes(elt, Amp=None, main=None, ax=None, sig=None, asym=None, lg=0, 
         s += LG(m, iso[1], sig, Amp=Amp*iso[2], lg=lg, asym=asym)
         if showElts:
             ax.annotate(iso[0], (iso[1], Amp*iso[2]), (0,5), textcoords='offset pixels', ha='center')
+    if hasattr(ax, 'log') and ax.log:
+        s[s>=1] = np.log10(s[s>=1])
+        s[s<1] = 0
     ax.plot(m, s, color, **kargs);
-    return m,s
+    return m, s
     
