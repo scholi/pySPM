@@ -78,16 +78,16 @@ pip install -U pySPM
 ```
 
 ### Toy dataset
-As the data are big and not necessary for the library another package [pySPM_data](https://sftpweb.empa.ch/main.html?download&weblink=fa1463c2998315d98202fa73cda7f846&realfilename=pySPM_data-0.2.1-py3-none-any.whl) was created with several AFM and ToF-SIMS data. You can install it with pip
+As the data are big and not necessary for the library another package [pySPM_data](https://sftpweb.empa.ch/main.html?download&weblink=3a68538a1f9653fb487ab6ffd69114e6&realfilename=pySPM_data-0.2.2-py3-none-any.whl) was created with several AFM and ToF-SIMS data. You can install it with pip
 
 ```bash
-pip install pySPM_data-0.2.1-py3-none-any.whl
+pip install pySPM_data-0.2.2-py3-none-any.whl
 ```
 
 or update it with 
 
 ```bash
-pip install -U pySPM_data-0.2.1-py3-none-any.whl
+pip install -U pySPM_data-0.2.2-py3-none-any.whl
 ```
 
 ### Structure reformatting
