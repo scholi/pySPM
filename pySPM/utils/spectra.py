@@ -39,7 +39,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
         include = []
         
     if type(include) is str:
-        include = [include]
+        include = include.split(',')
         
     assert type(include) is list
 
@@ -52,7 +52,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
         t0 = time.time()
     
     if type(exclude) is str:
-       exclude = [exclude]
+       exclude = exclude.split(',')
    
     if delta is None:
         delta0 = .5
@@ -70,17 +70,17 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
         negative = True
     if include_only is not None:
         if type(include_only) is str:
-            E = [include_only]
+            E = include_only.split(",")
         else:
             E = include_only
     else:
-        E = get_peaklist(int(round(m0)), negative)
+        E = [x for NM in range(int(round(m0-delta)), int(round(m0+delta))+1) for x in get_peaklist(NM, negative)]
         E = [x for x in E if x not in exclude] + include
     E = list(set(E))
     m0s = [get_mass(x) for x in E]
-    E = [x for x,y in zip(E,m0s) if y>=m0-delta and y<=m0+delta]
+    E = [x for x, y in zip(E, m0s) if y>=m0-delta and y<=m0+delta]
     if negative:
-        E = [x+['-','']['-' in x] for x in E]
+        E = [x+['-', '']['-' in x] for x in E]
     if formula:
         E_labels = [formulafy(x) for x in E]
     else:
@@ -96,7 +96,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
         if dm0 is None:
             dm = mp-get_mass(E[i])
     m0s = [get_mass(x) for x in E]
-    p0 = [kargs.get('asym0',1), dm]+[0, 0]*len(E) # delta m is estimated from the deviation of the highest peak
+    p0 = [kargs.get('asym0', 1), dm]+[0, 0]*len(E) # delta m is estimated from the deviation of the highest peak
     Et = copy.deepcopy(E) # copy element list
     if do_debug(debug):
         print(" ; ".join(E))
@@ -124,20 +124,20 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
             y += LG(x, x0, p[2+2*i], Amp=p[3+2*i], asym=p[0], lg=0)
         return y
         
-    ax = kargs.pop('ax',plt.gca())
+    ax = kargs.pop('ax', plt.gca())
     
     fit_type = None
     if do_debug(debug):
-        print("p0",p0)
+        print("p0", p0)
         t1 = time.time()
-        print("setup time: ",t1-t0)
+        print("setup time: ", t1-t0)
     if dofit:
         try:
             assert not fakefit
             popt, pcov = curve_fit(fit, m[mask], D[mask], p0=p0,
                     bounds=(
-                        [1/kargs.get('asym_max', 10),-0.015]+[0,0]*((len(p0)-1)//2),
-                        [kargs.get('asym_max', 10),0.015]+[kargs.get('sig_max', 0.01), np.inf]*((len(p0)-1)//2))
+                        [1/kargs.get('asym_max', 10), -0.015]+[0, 0]*((len(p0)-1)//2),
+                        [kargs.get('asym_max', 10), 0.015]+[kargs.get('sig_max', 0.01), np.inf]*((len(p0)-1)//2))
                         )
             fit_type = 0
         except:
@@ -165,9 +165,9 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
         pcov = np.zeros((len(p0),len(p0)))
     if ax is not None:
         if label is None:
-            p = ax.plot(m[mask]-popt[1],D[mask], color=kargs.get('curve_color',None))
+            p = ax.plot(m[mask]-popt[1], D[mask], color=kargs.get('curve_color', None))
         else:
-            p = ax.plot(m[mask]-popt[1],D[mask], label=label, color=kargs.get('curve_color',None))
+            p = ax.plot(m[mask]-popt[1], D[mask], label=label, color=kargs.get('curve_color', None))
     res = {}
     err = np.sqrt(np.diag(pcov))
     for i in range((len(popt)-1)//2):
@@ -241,14 +241,19 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
             fig = plt.gcf()
             renderer = fig.canvas.get_renderer()
             ymax = ax.get_ylim()[1]
+            ymin = ax.get_ylim()[0]
             for child in ax.get_children():
                 bbox = child.get_window_extent(renderer)
                 bbox_data = bbox.transformed(ax.transData.inverted())
                 if ymax<bbox_data.ymax:
                     ymax = bbox_data.ymax
-            ax.set_ylim((0, ymax))
+            ax.set_ylim((ymin, ymax))
             ax.autoscale_view()    
             
+    # Add the Intensity=0 line in case there is negative intensities (happens when plotting PCA components)
+    if np.min(D[mask])<0:
+        ax.axhline(0, color='k', alpha=.5, lw=.5)
+        
     if do_debug(debug):
         print(popt)
     if (dofit or do_debug(debug)) and ax is not None:
