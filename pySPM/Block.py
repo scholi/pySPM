@@ -337,8 +337,11 @@ class Block:
         self.List = []
         while True:
             self.f.seek(offset)
+            data = self.f.read(25)
+            if len(data)<25:
+                raise Exception('Children of {} @{} cannot be read. Data might be corrupted!'.format(self.name, offset))
             head = dict(zip(['name_length', 'ID', 'N', 'length1', 'length2'], \
-                struct.unpack('<5x5I', self.f.read(25))))
+                struct.unpack('<5x5I', data)))
             name = self.f.read(head['name_length'])
             data = self.f.tell()
             length, nums, NextBlock = \
