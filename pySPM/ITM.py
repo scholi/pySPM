@@ -581,12 +581,142 @@ class ITM:
                 tick.set_color(["black","green"][colors[i]])
             axs.set_xlim(ax.get_xlim())
             for i in range(1,self.Nscan-1,2):
-                ax.fill_between([s[i],s[i+1]],*lim,color='green',alpha=.1)
+                ax.fill_between([s[i], s[i+1]],*lim,color='green',alpha=.1)
             axs.set_xlabel("Scan number")
             axs.set_xlim(ax.get_xlim())
             axs.set_ylim(*lim)
         return p
+        
+    def SpectraPerPixel(self, pixel_aggregation=None, peak_lim=0, scans=None, prog=False, safe=True, FOVcorr=True, smooth=False):
+        """
+        The pixels will be aggregated in order to be able to handle all the data in RAM.
+        By default the image will be aggregated such that the final image is 64x64 pixels
+        The RAM usage can be further kept down by setting peak_lim which will filter out all data with an intensity below the threshold value.
+        
+        """
+        if pixel_aggregation is None:
+            pixel_aggregation = max(1,int(self.size['pixels']['x']//64))
+                 
+        from .utils import get_mass, constants as const
+        gun = self.root.goto('propend/Instrument.PrimaryGun.Species').getKeyValue()['string'] # Primary Gun Species (Bi1,Bi3,Bi3++)
+        
+        # if the + is missing in the name, add it
+        if gun[-1]!='+':
+            gun += '+'
+            
+        Q = gun.count('+') # number of charge
+        
+        nrj = self.root.goto('propend/Instrument.PrimaryGun.Energy').getKeyValue()['float'] # Primary ion energy (in eV)
+        dx = self.size['real']['x']/self.size['pixels']['x'] # distance per pixel
+        
+        # Calculate the mass of the primary ion
+        mp = get_mass(gun)
+        
+        if FOVcorr:
+            DT = dx*(1/5e-11)*.5*np.sqrt(2)*np.sqrt((1e-3*mp/const.NA)/(Q*2*nrj*const.qe)) # delta time in channel per pixel. The 5e-11 is the channelwidth (50ps)
+            # sqrt(2)/2 is from the sin(45°), nrj=E=.5*mp*v^2
+        else:
+            DT = 0
+            
+        if peak_lim is None:
+            peak_lim = 0
+            
+        if prog:
+            try:
+                from tqdm import tqdm_notebook as tqdm
+            except:
+                from tqdm import tqdm
+            PB = tqdm(total=3, postfix={'task':"Calculating total spectrum"})
+            IT = lambda x: tqdm(x, leave=False)
+        else:
+            IT = lambda x: x
+            
+        pixel_size = int(self.size['pixels']['x']*self.size['pixels']['y']//pixel_aggregation**2)
+        channels = round(self.getValue("Measurement.CycleTime")['float']/self.getValue("Registration.TimeResolution")['float'])
+        
+        # calculate total spectra
+        m = np.zeros(channels)
+        
+        if scans is None:
+            scans = range(self.Nscan)
+        for scan in IT(scans):
+            r = self.getRawData(scan)
+            for p in r[2]:
+                x, y = p
+                for t in r[2][p]:
+                    dt = DT*(self.size['pixels']['x']/2-x) # time correction for the given x coordinate (in channel number)
+                    ip = int(dt)
+                    fp = dt%1
+                    m[t-ip] += (1-fp)
+                    m[t-ip-1] += fp
+                    
+        # calculate the extreme cases
+        max_time = np.nonzero(m)[0][-1]
+        max_count = np.max(m)
+        
+        if prog:
+            PB.update(1)
+            PB.set_postfix({'task':"calculating aggregated spectrum"})
 
+        # Select the peaks which are higher that peak_lim counts
+        t = np.arange(channels)
+        tx = t[m>peak_lim] # reduced time vector
+        mx = m[m>peak_lim] # reduced mass vector
+        rev = {x:-1 for x in range(max_time)}
+        for k in range(len(tx)):
+            rev[tx[k]] = k
+        
+        if safe:
+            import psutil
+            free_ram = psutil.virtual_memory().free
+            if pixel_size*tx.size*8>= free_ram:
+                raise Exception("""You don't have sufficient free RAM to perform this operation.
+                Free RAM: {ram:.1f}Mb
+                Number of pixels: {Npix}
+                Spectrum size [value>{peak_lim}] : {ss}
+                It is advised that you clean up memory or use a higher pixel_aggregation value.
+                You can force the execution of this command by using the argument safe=False.
+                """.format(ram=free_ram/1024**2, peak_lim=peak_lim, Npix=pixel_size, ss=pixel_size*tx.size*4/1024**2))
+                
+        size = (pixel_size, tx.size)
+        spec = np.zeros(size, dtype='float32')
+        for scan in IT(scans):
+            r = self.getRawData(scan)
+            for p in r[2]:
+                x, y = p
+                i = (self.size['pixels']['x']//pixel_aggregation)*(y//pixel_aggregation)+x//pixel_aggregation
+
+                for t in r[2][p]:
+                    dt = DT*(self.size['pixels']['x']/2-x) # time correction for the given x coordinate (in channel number)
+                    ip = int(dt)
+                    fp = dt%1
+                    j1 = rev.get(t-ip, 0)
+                    j2 = rev.get(t-ip-1, 0)
+                    if j1>0:
+                        spec[i][j1] += 1-fp
+                    if j2>0:
+                        spec[i][j2] += fp
+                        
+        if prog:
+            PB.update(1)
+            PB.set_postfix({'task':'smooth spectra'})
+
+        if smooth:
+            if smooth is True:
+                smooth = (51, 3)
+            from scipy.signal import savgol_filter
+            for i in IT(range(pixel_size)):
+                s = np.zeros(channels)
+                s[m>peak_lim] = spec[i]
+                s = savgol_filter(s, *smooth)
+                spec[i] = s[m>peak_lim]
+            
+        if prog:
+            PB.update(1)
+            PB.set_postfix({'task':'done'})
+            
+        return m>peak_lim, spec
+                    
     def showSpectrum(self, low=0, high=None, sf=None, k0=None, ax=None, log=False, showPeaks=True, **kargs):
         """
         Plot the (summed) spectrum
