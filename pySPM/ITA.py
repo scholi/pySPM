@@ -327,7 +327,7 @@ class ITA(ITM):
         ax.set_xlabel("x [$\mu$m]")
         ax.set_ylabel("y [$\mu$m]")
 
-    @aliad("get_shifts_by_mass")
+    @alias("get_shifts_by_mass")
     def getShiftsByMass(self, masses, centered=True, prog=False, Filter=None):
         """
         Deprecated. A relic function that the developer is not even sure what it was supposed to do ;)

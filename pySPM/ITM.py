@@ -512,7 +512,7 @@ class ITM:
             return m, D, Dm
         return m, D
     
-    älias("get_meas_data")
+    @alias("get_meas_data")
     def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, debug=False):
         """
         Allows to recover the data saved during the measurements.
