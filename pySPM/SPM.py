@@ -1091,7 +1091,7 @@ class SPM_image:
         return the FFT2 transform opf the image
         """
         return np.fft.fftshift(np.fft.fft2(self.pixels))
-
+        
     def corr_fit2d(self, nx=2, ny=1, poly=False, inline=True, mask=None):
         """
         Subtract a fitted 2D-polynom of nx and ny order from the data
@@ -1215,7 +1215,7 @@ class SPM_image:
             self.pixels = cut(self.pixels, c, **kargs)
             self._resize_infos()
             return self
-    
+            
     def zoom(self, zoom_factor, inplace=False, order=3):
         """
         Resize the image to a new pixel size (but keep the real size) by pixel interpolation.
@@ -1267,7 +1267,6 @@ def cut(img, c, **kargs):
         raise Exception("Reshaping the same array again?")
     return img[c[1]:c[3], c[0]:c[2]]
 
-
 def normalize(data, sig=None, vmin=None, vmax=None):
     """
     Normalize the input data. Minimum_value -> 0 and maximum_value -> 1
@@ -1308,7 +1307,6 @@ def normalize(data, sig=None, vmin=None, vmax=None):
     N[N > 1] = 1
     return N
 
-
 def imshow_sig(img, sig=1, ax=None, **kargs):
     """
     Shortcut to plot a numpy array around it's mean with bounds ±sig sigmas
@@ -1331,7 +1329,6 @@ def imshow_sig(img, sig=1, ax=None, **kargs):
     vmin = avg - sig * std
     vmax = avg + sig * std
     ax.imshow(img, vmin=vmin, vmax=vmax, **kargs)
-
 
 def adjust_position(fixed, to_adjust, shift=False):
     """ Shift the current pixels to match a fixed image by rolling the data"""
@@ -1369,7 +1366,6 @@ def tukeyfy(A, alpha, type='default'):
     avg = np.mean(A)
     return avg+(A-avg) * tuk
 
-
 def tukeywin(window_length, alpha=0.5):
     '''The Tukey window, also known as the tapered cosine window, can be regarded as a cosine lobe of width \alpha * N / 2
     that is convolved with a rectangle window of width (1 - \alpha / 2). At \alpha = 1 it becomes rectangular, and
@@ -1406,7 +1402,6 @@ def tukeywin(window_length, alpha=0.5):
         (1 + np.cos(2*np.pi/alpha * (x[third_condition] - 1 + alpha/2)))
     return w
 
-
 def overlay(ax, mask, color, **kargs):
     """
     Plot an overlay on an existing axis
@@ -1426,7 +1421,6 @@ def overlay(ax, mask, color, **kargs):
     col = np.array(colors.colorConverter.to_rgba(color))
     I = col[:, None, None].T*m[:, :, None]
     ax.imshow(I, **kargs)
-
 
 def normP(x, p, trunk=True):
     """
@@ -1455,7 +1449,7 @@ def normP(x, p, trunk=True):
         r[r < 0] = 0
         r[r > 1] = 1
     return r
-
+    
 def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=False, source_tukey=None, real=np.abs, **kargs):
     """
     Calculate the PSF by deconvolution of the target
@@ -1476,7 +1470,6 @@ def beam_profile(target, source, mu=1e-6, tukey=0, meanCorr=False, source_tukey=
     recon_tf = np.conj(tf) / (np.abs(tf)**2 + mu)
     return np.fft.fftshift(real(np.fft.ifft2(np.fft.fft2(target) * recon_tf)))/np.size(target)
 
-
 def beam_profile1d(target, source, mu=1e-6, real=np.abs):
     source = source
     tf = np.fft.fft(source)
@@ -1484,7 +1477,6 @@ def beam_profile1d(target, source, mu=1e-6, real=np.abs):
     recon_tf = np.conj(tf) / (np.abs(tf)**2 + mu)
     F = np.fft.fft(target) * recon_tf
     return np.fft.fftshift(real(np.fft.ifft(F))), F
-
 
 def zoom_center(img, sx, sy=None):
     """
@@ -1519,27 +1511,6 @@ def real2px(x, y, size, ext):
     px = size[1]*(x-ext[0])/(ext[1]-ext[0])
     py = size[0]*(y-ext[2])/(ext[3]-ext[2])
     return px, py
-
-
-def gaussian(x, mu, sig, A=1):
-    """
-    Deprecated, please use pySPM.utils.Gauss
-    Will be removed in the next revision
-    """
-    from warnings import warn
-    warn("Function pySPM.SPM.gaussian is deprecated. Please use pySPM.utils.Gauss instead")
-    return A*np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
-
-def stat(x):
-    """
-    Quick function to display the min/max, mean and standard-deviation of a given data.
-
-    Note
-    ----
-    Please use the more adavanced function pySPM.utils.stat_info which also provide information about the quartile and also plot the distribution
-    """
-    print("Min: {mi:.3f}, Max: {ma:.3f}, Mean: {mean:.3f}, Std: {std:.3f}".format(mi=np.min(x), ma=np.max(x), mean=np.mean(x), std=np.std(x)))
-
 
 def fit2d(Z0, dx=2, dy=1, mask=None):
     """
@@ -1615,7 +1586,6 @@ def warp_and_cut(img, tform, cut=True):
     if cut:
         New = cut(New, Cut)
     return New, Cut
-
 
 def get_profile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,\
         transx=lambda x: x, transy=lambda x: x, interp_order=1, **kargs):
@@ -1744,7 +1714,7 @@ def mfm_inv_calc_flat(img, z, tf_in, thickness=None, delta_w=None, amplitude=0, 
     work_img = np.abs(np.fft.ifft2(np.fft.fft2(img) * recon_tf ))
     return work_img
 
-def getTikTf(Img, mu, tukey=0, source_tukey=0, debug=False, d=200, real=np.real):
+def get_tik_tf(Img, mu, tukey=0, source_tukey=0, debug=False, d=200, real=np.real):
     import scipy
     def fit(x, a ,A, bg, x0):
         return bg+(A-bg)*np.exp(-abs(x-x0)/a)
@@ -1766,48 +1736,3 @@ def getTikTf(Img, mu, tukey=0, source_tukey=0, debug=False, d=200, real=np.real)
     if debug:
         return bg+np.exp(-np.abs(R)/a), Z, p0, popt
     return bg+np.exp(-np.abs(R)/a)
-    
-DEPRECATED_METHODS = {
-    'getRowProfile': 'get_row_profile',
-    'plotProfile':   'plot_profile',
-    'getProfile':    'get_profile',
-    'getShadowMask': 'get_shadow_mask',
-    'addScale':      'add_scale',
-    'getExtent':     'get_extent',
-    'getBinThreshold':'get_bin_threshold',
-    'corrFit2d':      'corrr_fit2d',
-    'getFFT':         'get_fft',
-    'filterLowPass':  'filter_lowpass',
-    'ResizeInfos':    '_resize_infos'
-    }
-
-def method_alias(old_name, new_name):
-    def _alias_meth(self, *args, **kargs):
-        from warnings import warn
-        warn("Function {name} is deprecated. Please use \"{new_name}\" instead".format(name=old_name, new_name=new_name))
-        return getattr(SPM_image, new_name)(self, *args, **kargs)
-    return _alias_meth
-        
-def fun_alias(old_name, new_name):
-    def _alias_fun(*args, **kargs):
-        from warnings import warn
-        warn("Function {name} is deprecated. Please use \"{new_name}\" instead".format(name=old_name, new_name=new_name))
-        return getattr(SPM, new_name)(*args, **kargs)
-    return _alias_fun
-        
-DEPRECATED_FUNCTIONS = {
-        'NormP':'normP',
-        'getProfile':'get_profile',
-        'BeamProfile':'beam_profile',
-        'BeamProfile1D':'beam_profile1d',
-        'Normalize':'normalize',
-        'Align':'align',
-        'ZoomCenter':'zoom_center',
-    }
-    
-for x in DEPRECATED_METHODS:
-    setattr(SPM_image, x, method_alias(x, DEPRECATED_METHODS[x]))
-
-thisModule = sys.modules[__name__]
-for x in DEPRECATED_FUNCTIONS:
-    setattr(thisModule, x, fun_alias(x, DEPRECATED_FUNCTIONS[x]))    

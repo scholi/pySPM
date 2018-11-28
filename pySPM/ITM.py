@@ -10,6 +10,7 @@ import os.path
 import zlib
 import re
 import os
+from .utils.misc import deprecated, aliased, alias
 
 class InvalidRAWdataformat(Exception):
     def __init__(self, block, msg):
@@ -19,6 +20,7 @@ class InvalidRAWdataformat(Exception):
     def __str__(self):
         return "Invalid RAW dataformat seen in block "+self.block.path+self.block.name+' : '+self.msg
 
+@aliased
 class ITM:
     def __init__(self, filename, debug=False, readonly=False):
         """
@@ -108,6 +110,7 @@ class ITM:
             if debug:
                 raise e
     
+    @alias("get_peak_list")
     def getPeakList(self, name):
         """
         Retrieve extra MassIntervalList (MIL) by it's name. Those are saved and visible in iontof software in the spectrum window.
@@ -120,11 +123,13 @@ class ITM:
                     PeakList.append({key.decode('utf8'):d[key] for key in d})
                 return PeakList
         return None
-        
+    
+    @alias("show_peak_list")
     def showPeakList(self, name):
         for m in self.getPeakList(name):
             print("{id[long]}: ({desc[utf16]}) [{assign[utf16]}] {lmass[float]:.2f}u - {umass[float]:.2f}u (center: {cmass[float]:.2f}u)".format(**m))
     
+    @alias("get_property_trend")
     def getPropertyTrend(self, name):
         """
         Sometimes values might be saved in ITA files under PropertyTrend.
@@ -301,7 +306,8 @@ class ITM:
         """
         from .SPM import SPM_image
         return SPM_image(I, real=self.size['real'], _type="TOF", zscale=zscale, channel=channel)     
-        
+       
+    @alias("get_intensity")
     def getIntensity(self):
         """
         Retieve the total Ion image
@@ -328,9 +334,11 @@ class ITM:
         for i, x in enumerate(rs):
             Val.append([x, rs[x], re[x]])
 
+    @alias("get_value")
     def getValue(self, name, end=True):
         return self.root.goto('prop{}/{name}'.format(['start','end'][end],name=name)).getKeyValue()
     
+    @alias("get_values")
     def getValues(self, pb=False, start=False,end=True,names=[], startsWith="", nest=False, hidePrefix=True, numeric=False):
         """
         Beta function: Retrieve a list of the values
@@ -373,9 +381,9 @@ class ITM:
                             Vals[key_name].append(value)
                         else:
                             Vals[key_name] = [value]
-                            
         return Vals
 
+    @alias("auto_mass_cal")
     def autoMassCal(self, t=None, S=None, pos=True, debug=False, error=False, Range=5000, FittingPeaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None, apply=False):
         """
         perform an auto calibration for spectrum. (in test, might be unreliable)
@@ -419,6 +427,7 @@ class ITM:
             return sf, k0, dsf, dk0
         return sf, k0
     
+    @alias("show_values")
     def showValues(self, pb=False, gui=False, **kargs):
         from .utils import html_table, aa_table
         html = True
@@ -484,6 +493,7 @@ class ITM:
             k0 = k00
         return ((binning*channels-k0)/(sf))**2
 
+    @alias("get_spectrum")
     def getSpectrum(self, sf=None, k0=None, time=False, error=False, **kargs):
         """
         Retieve a mass,spectrum array
@@ -502,6 +512,7 @@ class ITM:
             return m, D, Dm
         return m, D
     
+    älias("get_meas_data")
     def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, debug=False):
         """
         Allows to recover the data saved during the measurements.
@@ -551,6 +562,7 @@ class ITM:
         axb = DualPlot(ax)
         self.showMeasData("Instrument.LMIG.Suppressor", ax=axb, color='orange', scans=False, prog=prog);
         
+    @alias("show_meas_data")
     def showMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, mul=1, scans=2, **kargs):
         t = self.getMeasData('Measurement.AcquisitionTime')
         S = self.getMeasData("Measurement.ScanNumber")
@@ -588,7 +600,8 @@ class ITM:
             axs.set_ylim(*lim)
         return p
         
-    def SpectraPerPixel(self, pixel_aggregation=None, peak_lim=0, scans=None, prog=False, safe=True, FOVcorr=True, smooth=False):
+    @deprecated("SpectraPerPixel")
+    def spectra_per_pixel(self, pixel_aggregation=None, peak_lim=0, scans=None, prog=False, safe=True, FOVcorr=True, smooth=False):
         """
         This function return a 2D array representing the spectra per pixel. The first axis correspond to each aggregated pixel and the second axis the spectral time.
         In order to keep the 2D array small enough the spectra are filtered in order to keep only strictly positive values (or larger than peak_lim).
@@ -721,7 +734,8 @@ class ITM:
             PB.set_postfix({'task':'done'})
             
         return m>peak_lim, spec
-                    
+            
+    @alias("show_spectrum")
     def showSpectrum(self, low=0, high=None, sf=None, k0=None, ax=None, log=False, showPeaks=True, **kargs):
         """
         Plot the (summed) spectrum
@@ -787,6 +801,7 @@ class ITM:
                 'umass': p['umass']['float']})
         return result
 
+    @alias("get_raw_spectrum")
     def getRawSpectrum(self, scans=None, ROI=None, FOVcorr=True, deadTimeCorr=True, **kargs):
         """
         Reconstruct the spectrum from RAW data.
@@ -921,6 +936,7 @@ class ITM:
             return np.arange(number_channels), Spectrum
         return masses, Spectrum
 
+    @alias("get_raw_raw_data")
     def getRawRawData(self, scan=0):
         assert scan < self.Nscan
         found = False
@@ -941,7 +957,8 @@ class ITM:
         if type(RAW) is str:
             return bytearray(RAW)
         return RAW
-        
+
+    @alias("get_raw_data")
     def getRawData(self, scan=0):
         """
         Function which allows you to read and parse the raw data.
@@ -992,6 +1009,7 @@ class ITM:
                 print(
                     "{id}: ({desc}) [{assign}] {lmass:.2f}u - {umass:.2f}u (center: {cmass:.2f}u)".format(**m))
 
+    @alias("show_stage")
     def showStage(self, ax=None, markers=False, plist=False):
         """
         Display an image of the stage used
@@ -1037,6 +1055,7 @@ class ITM:
         ax.set_xticks([])
         ax.set_yticks([])
 
+    @alias("get_snapshot")
     def getSnapshot(self):
         """
         Return the video snapshot
@@ -1049,7 +1068,7 @@ class ITM:
             return  img
         except Exception as e:
             return None
-
+    @alias("show_peaks")
     def showPeaks(self):
         for p in self.peaks:
             P = self.peaks[p]
@@ -1176,12 +1195,14 @@ class ITM:
             os.fsync(self.f)
         self.f.close()
 
+    @alias("set_k0")
     def setK0(self, k0):
         import struct
         b = self.root.goto("MassScale/k0")
         buffer = struct.pack("<d", k0)
         b.rewrite(buffer);
 
+    @alias("set_sf")
     def setSF(self, sf):
         import struct
         b = self.root.goto("MassScale/sf")

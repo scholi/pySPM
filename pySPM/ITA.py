@@ -21,8 +21,10 @@ from .SPM import SPM_image
 from .Block import MissingBlock
 from .utils import in_ipynb
 from .PCA import ITA_PCA
+from .utils.misc import deprecated, aliased, alias
 import warnings
 
+@aliased
 class ITA(ITM):
     def __init__(self, filename, readonly=False):
         """
@@ -85,7 +87,8 @@ class ITA(ITM):
                     return l['SN']['utf16']
 
         raise Exception("Channel name \"{channel}\" not found".format(channel=channel))
-
+    
+    @alias("get_channels_by_name")
     def getChannelsByName(self, name, strict=False):
         """
         Retrieve the channels for a given assignment name in the form of a list of dictionaries.
@@ -158,7 +161,8 @@ class ITA(ITM):
                     res.append(p)
         return res
 
-    def showChannels(self, ch):
+    @deprecated("showChannels")
+    def show_channels(self, ch):
         """
         Format a list of channels where each channel is represented by a dictionary (like the ones produced by pySPM.ITA.getChannelsByName) to a human readable output.
 
@@ -177,6 +181,7 @@ class ITA(ITM):
                   .format(desc=z['desc']['utf16'], name=z['assign']['utf16'],
                           lower=z['lmass']['float'], upper=z['umass']['float']))
 
+    @alias("get_channels_by_mass")
     def getChannelByMass(self, mass, full=False):
         """
         Retrieves the first channel ID which has a mass range containing a given mass.
@@ -204,6 +209,7 @@ class ITA(ITM):
                 return p['id']['long']
         raise ValueError('Mass {:.2f} Not Found'.format(mass))
 
+    alias("get_shift_corrected_image_by_name")
     def getShiftCorrectedImageByName(self, names, **kargs):
         """
         Retrieve the drift corrected (or shift corrected) image for the sum of all channels matching a given name. The shift correction applied is the one saved in the ITA file.
@@ -237,6 +243,7 @@ class ITA(ITM):
             Z += self.fastGetImage(ID, scans, Shifts)
         return Z
 
+    @alias("get_sum_image_by_sn")
     def getSumImageBySN(self, SN, scans=None, prog=False, raw=False, **kargs):
         """
         Retrieve the image for the sum of several scans for a given channel SN.
@@ -263,6 +270,7 @@ class ITA(ITM):
         channel = self.getChannelBySN(SN)
         return self.image(np.flipud(Z), channel=channel)
 
+    @alias("get_sum_image_by_name")
     def getSumImageByName(self, names, scans=None, strict=False, prog=False, raw=False, **kargs):
         """
         Retrieve the image for the sum of several scans and channels selected by their channel name.
@@ -319,6 +327,7 @@ class ITA(ITM):
         ax.set_xlabel("x [$\mu$m]")
         ax.set_ylabel("y [$\mu$m]")
 
+    @aliad("get_shifts_by_mass")
     def getShiftsByMass(self, masses, centered=True, prog=False, Filter=None):
         """
         Deprecated. A relic function that the developer is not even sure what it was supposed to do ;)
@@ -344,6 +353,7 @@ class ITA(ITM):
             Shifts = [(z[0]-avSx, z[1]-avSy) for z in Shifts]
         return Shifts
 
+    @alias("get_xsection_by_mass")
     def getXsectionByMass(self, x1, y1, x2, y2, masses, N=None, prog=False, ax=None, flip=False, col='w-', **kargs):
         """
         Retrieves a Cross-Section for a given mass along the profile determined by coordinates (x1,y1) and (x2,y2).
@@ -401,6 +411,7 @@ class ITA(ITM):
             out[s, :] = P
         return out
 
+    @alias("get_added_image_by_name")
     def getAddedImageByName(self, names, strict=False, raw=False, **kargs):
         """
         Retrieve the image for the sum of all scan (precomputed by iontof, but not shift-corrected) for given names
@@ -434,6 +445,7 @@ class ITA(ITM):
             return Z, ch
         return self.image(np.flipud(Z), channel=",".join([z['assign'] for z in ch])), ch
 
+    @alias("get_saved_shift")
     def getSavedShift(self):
         """
         getSavedShift returns the shifts saved with the file. Usually this is the shift correction you perform with the IonToF software.
@@ -453,12 +465,14 @@ class ITA(ITM):
         dy = D[1::2]
         return list(zip(dx, dy))
         
+    @alias("get_shift_corrected_image_by_mass")
     def getShiftCorrectedImageByMass(self, masses, **kargs):
         """
         Shortcut function for pySPM.ITA.getSumImageByMass using the saved shift corrections.
         """
         return self.getSumImageByMass(masses, Shifts=[(-x,-y) for x,y in self.getSavedShift()], **kargs)
         
+    @alias("get_sum_image_by_mass")
     def getSumImageByMass(self, masses, scans=None, prog=False, raw=False, **kargs):
         """
         Similar to pySPM.ITA.getSumImageByName but instead of the names, the mass or list of mass is provided
@@ -486,6 +500,7 @@ class ITA(ITM):
         channels_name = [["{:.2f}u".format(m['cmass']['float']),m['assign']['utf16']][m['assign']['utf16']!=''] for m in channels]
         return self.image(np.flipud(Z), channel="Masses: "+",".join(channels_name))
 
+    @alias("get_added_image_by_mass")
     def getAddedImageByMass(self, masses, raw=False, **kargs):
         """
         Retrieve the image for the sum of all scan (precomputed by iontof, but not shift-corrected) for (a) given masse(s)
@@ -524,6 +539,7 @@ class ITA(ITM):
             return Z, channels
         return self.image(np.flipud(Z), channel=",".join(channels))
 
+    @alias("get_channel_by_sn","get_channel_by_SN")
     def getChannelBySN(self, SN):
         for node in self.root.goto("MassIntervalList"):
             if node.name == "mi":
@@ -536,6 +552,7 @@ class ITA(ITM):
                         name = '{:.2f}u'.format(l['cmass']['float'])
                     return name
 
+    @alias("get_added_image_by_sn","get_added_image_by_SN")
     def getAddedImageBySN(self, SN, raw=False):
         """
         New ITA fileformat save images with their respective serial number (SN).
@@ -555,7 +572,7 @@ class ITA(ITM):
         channel = self.getChannelBySN(SN)
         return self.image(np.flipud(img), channel=channel)
 
-
+    @alias("get_added_image")
     def getAddedImage(self, channel, **kargs):
         """
         Retrieve the numpy 2D array of a given channel ID for the sum of all scan (precomputed by iontof, but not shift-corrected)
@@ -570,6 +587,7 @@ class ITA(ITM):
                      dtype=np.float).reshape((self.sy, self.sx))
         return V
     
+    @alias("fast_get_image")
     def fastGetImage(self, channel, scans, Shifts=False, prog=False):
         """
         Retieve a 2D numpy array corresponding to a given channel ID for given scan(s) and return their sum.
@@ -618,6 +636,7 @@ class ITA(ITM):
                 Z += V
         return Z
         
+    @alias("get_image")
     def getImage(self, channel, scan, Shifts=None, ShiftMode='roll', const=0):
         """
         getImage retrieve the image of a specific channel (ID) and a specific scan.
@@ -660,7 +679,8 @@ class ITA(ITM):
                 elif r[0] > 0:
                     V[:, -r[0]:] = const
         return V
-        
+    
+    @alias("show_spectrum_around")
     def showSpectrumAround(self, m0, delta=None, sf=None, k0=None, **kargs):
         """
         Display the Spectrum around a given mass.
@@ -684,6 +704,7 @@ class ITA(ITM):
         m, D = self.getSpectrum(sf=sf, k0=k0)
         return utils.showPeak(m, D, m0, delta, polarity=polarity, sf=sf, k0=k0, **kargs)
         
+    @alias("get_opertion")
     def getOperation(self, OpID):
         """
         Test function to retrieve the operations used in the Worksheet.
@@ -694,7 +715,8 @@ class ITA(ITM):
             if blk.gotoItem('OpID').getLong() == OpID:
                 return blk
         return None
-
+        
+    @alias("show_worksheet")
     def showWorksheet(self, page=0):
         """
         In Dev. function to display the worksheet
@@ -779,6 +801,7 @@ class ITA(ITM):
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded", "Image.NumberOfImages", struct.pack("<I", AN+1))
         self.Nimg += 1
 
+@aliased
 class ITA_collection(Collection):
     """
     ITA_collection is a super class containing a collection of tof-sims images.
@@ -876,6 +899,7 @@ class ITA_collection(Collection):
             return None
         return self.channels[key]
 
+    @alias("run_pca")
     def runPCA(self, channels=None):
         """
         Perform a Principle Component Analysis (PCA) on the channels
@@ -889,7 +913,8 @@ class ITA_collection(Collection):
         if channels is None:
             channels = self.channels.keys()
         self.PCA = ITA_PCA(self, channels)
-
+    
+    @alias("show_pca")
     def showPCA(self, num=None, loadings=True, **kargs):
         """
         Run PCA if not already done and display the PCA images.
@@ -941,8 +966,9 @@ class ITA_collection(Collection):
             else:
                 self.PCA.hinton(matrix=L, ax=ax)
         return L
-
-    def StitchCorrection(self, channel, stitches, gauss=0, debug=False):
+    
+    @deprecated("StitchCorrection")
+    def stitch_correction(self, channel, stitches, gauss=0, debug=False):
         """
         When an image is created by stitching of several images (while moving the stage during the measurement) the resulting image can have several artifacts due to charging.
         The goal of this function is the try to suppress this stitching artifacts by givings a channel name which is known to be homogeneous everywhere
@@ -988,4 +1014,3 @@ class ITA_collection(Collection):
         if debug:
             return N, S
         return N
-

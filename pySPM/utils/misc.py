@@ -28,3 +28,44 @@ def smiley(width, height=None, ratio=.9, eye=.15, thick=.1, eye_sep=.35, eye_hei
     smiley += np.sqrt((X+eye_sep*ratio*size/2)**2+(Y+eye_height*ratio*size/2)**2)<ratio*eye*size/2
     smiley += (R<ratio*mouth_rad)*(R>(ratio*mouth_rad-ratio*mouth_thick))*(Y>0)
     return smiley*1.0
+import functools
+
+def aliased(cls):
+    original_methods = cls.__dict__.copy()
+    for name in original_methods:
+        method = original_methods[name]
+        if hasattr(method, '_aliases'):
+            for alias in method._aliases:
+                setattr(cls, *alias)
+    return cls
+
+class alias(object):
+    def __init__(self, *aliases):
+       self.aliases = aliases
+       
+    def __call__(self, func):
+        if not hasattr(func, '_aliases'):
+            func._aliases = []
+        func._aliases += [(x, func) for x in self.aliases]
+        return func
+
+class deprecated(object):
+    def __init__(self, alias):
+        self.alias = alias
+        
+    def __call__(self, func):
+        import sys
+        import inspect
+        msg = "the function {} is DEPRECATED. Please use {} instead".format(self.alias, func.__name__)
+        module = sys.modules[func.__module__]
+        @functools.wraps(func)
+        def wrapper(*args, **kargs):
+            from warnings import warn
+            warn(msg)
+            return func(*args, **kargs)
+        setattr(module, self.alias, wrapper)
+        if not hasattr(func, '_aliases'):
+            func._aliases = []
+        func._aliases += [(self.alias, wrapper)]
+        return func
+    
