@@ -6,6 +6,7 @@
 This module gives the ability to ready and parse the ToF-SIMS ITA files from iontof.
 You can mainly retrieve images and spectra for each channel and scan.
 """
+from __future__ import absolute_import
 
 import numpy as np
 import struct
@@ -19,6 +20,7 @@ from .collection import Collection
 from .SPM import SPM_image
 from .Block import MissingBlock
 from .utils import in_ipynb
+from .PCA import ITA_PCA
 import warnings
 
 class ITA(ITM):
@@ -883,10 +885,10 @@ class ITA_collection(Collection):
         channels : None or list of strings
             List of channels to use for the PCA. If None all channels will be used.
         """
-        from pySPM import PCA
+
         if channels is None:
             channels = self.channels.keys()
-        self.PCA = PCA.ITA_PCA(self, channels)
+        self.PCA = ITA_PCA(self, channels)
 
     def showPCA(self, num=None, loadings=True, **kargs):
         """

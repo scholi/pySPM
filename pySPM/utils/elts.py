@@ -264,7 +264,34 @@ def elts_substract(elt1, elt2):
         if x not in r:
             raise Exception("Cannot subtract a molecule with more atoms than the main one")
         r[x] -= d[x]
+        
+def dict_add(d1, d2):
+    r = {k:d1[k] for k in d1}
+    for k in d2:
+        r[k] = r.get(k, 0) + d2[k]
+    return r
+    
+def elts_add(eltsa, eltsb):
+    r = []
+    for x,mx in eltsa:
+        for y,my in eltsb:
+            r.append((dict_add(x, y), mx+my))
+    return r
 
+def eltsNM(elts, NM):
+    import re
+    r = [({}, 0)]
+    res = []
+    if type(elts) is str:
+        elts = re.compile(r'((?:^[0-9]+)?[A-Z][a-z]?(?:_[0-9]+)?)').findall(elts)
+    me = [get_mass(x) for x in elts]
+    while r:
+        rnew = elts_add(r, list(zip([formula2dict(x) for x in elts], me)))
+        r = [x for x in rnew if x[1]<NM+.5]
+        res += [dict2formula(x[0]) for x in r if x[1]>NM-.5 if dict2formula(x[0]) not in res]
+        res = list(set(res))
+    return res
+    
 class Molecule:    
     def __init__(self, formula):
         self.atoms = formula2dict(formula)

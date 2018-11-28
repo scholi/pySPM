@@ -5,7 +5,7 @@
 """
 Module to handle block type used in iontof file formats ITA,ITM,ITS, etc...
 """
-
+from __future__ import absolute_import
 import sys
 import binascii
 import struct

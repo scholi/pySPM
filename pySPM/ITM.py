@@ -2,6 +2,7 @@
 
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
+from __future__ import absolute_import
 from . import Block
 import numpy as np
 import struct
@@ -589,9 +590,13 @@ class ITM:
         
     def SpectraPerPixel(self, pixel_aggregation=None, peak_lim=0, scans=None, prog=False, safe=True, FOVcorr=True, smooth=False):
         """
-        The pixels will be aggregated in order to be able to handle all the data in RAM.
-        By default the image will be aggregated such that the final image is 64x64 pixels
-        The RAM usage can be further kept down by setting peak_lim which will filter out all data with an intensity below the threshold value.
+        This function return a 2D array representing the spectra per pixel. The first axis correspond to each aggregated pixel and the second axis the spectral time.
+        In order to keep the 2D array small enough the spectra are filtered in order to keep only strictly positive values (or larger than peak_lim).
+        
+        Parameters
+        ----------
+        pixel_aggregation: int
+            the number of pixels aggregation. pixel_aggregation 
         
         """
         if pixel_aggregation is None:
