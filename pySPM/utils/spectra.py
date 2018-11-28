@@ -23,10 +23,54 @@ def get_dm(m, sf, k0, dsf, dk0):
     
 def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=True,
     debug=False, Aredux=1, label=None, include=None, include_only=None, exclude=[],
-    polarity="+", colors='rgb', pretty=True, formula=True, auto_scale=True, fakefit=False, **kargs):
+    polarity="+", colors='rgb', pretty=True, formula=True, auto_scale=True, fakefit=False, zero_axis=True, **kargs):
     """
-    given masses m and Spectrum D, zoom around m0 with Δm=delta.
-    Will perform a peak-fitting if dofit is True
+    Plot a spectrum (given by its mass vector m and intensity vector D) around a mass m0 (Δm=delta).
+    
+    Parameters
+    ----------
+    m : numpy.ndarray
+        mass vector
+    D : numpy.ndarray
+        Intensity vector
+    m0 : float
+        Central mass of the plot's x-axis
+    delta: None or float
+        the half-span of the plot's x-axis.
+        If None will try to determine automatically the peaks region
+    errors : boolean
+        If true will include the fitting errors (if dofit is True)
+    dofit : boolean
+        If True will fit the peaks for the elements found
+    showElts : boolean
+        If True will display a list of all elements for the plotted region. The basic elements comes from a database, but they can be adjusted with the include, include_only and exclude parameters.
+    include : list
+        List of elements to be included to the plotting elements
+    include_only : list
+        Only those elements will be displayed and none from the database
+    exclude : list
+        Exclude some elements from display
+    fakefit : boolean
+        If the fit fails, fakefit can be used in order to see and adjust the first fitting guess
+    dm0 : float
+        The mass shift used for the fitting first guess.
+    Aredux : float
+        The amplitude reduction used to the first fitting guess.
+    label : string
+        Plot label. Will be displayed if you use the legend() function from matplotlib.
+    polarity : string ("+" or "-")
+        will switch the elements chosen from the database
+    colors : string
+        A series of letters defining matplotlib color used to display the elements.
+    pretty : boolean
+        If True will display the elements in a pretty way such that the elements text are not overlapping (or at least will avoid it as much as possible)
+    formula : boolean
+        Will convert the formula in a pretty manner. Exponents and indices will be written correctly
+    auto_scale : boolean
+        If True will try to rescale the plot in order to have all labels inside.
+    zero_axis : boolean or dict
+        Will draw an horizontal line for the zero intensities.
+        If a dict, the parameters of the lines can be tuned. See the parameters passed to axhline from matplotlib
     """
     from . import LG, get_mass, get_peaklist
     from .elts import formulafy
@@ -53,6 +97,9 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
     
     if type(exclude) is str:
        exclude = exclude.split(',')
+
+    if fakefit:
+        dofit = True
    
     if delta is None:
         delta0 = .5
@@ -163,6 +210,8 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
         popt = p0
         popt[1] = 0
         pcov = np.zeros((len(p0),len(p0)))
+    if fakefit:
+        popt[1] = dm0
     if ax is not None:
         if label is None:
             p = ax.plot(m[mask]-popt[1], D[mask], color=kargs.get('curve_color', None))
@@ -230,13 +279,13 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
                 ax.axvline(mi+dmi, color=col, alpha=.5, linestyle=':')
             
         if not pretty:
-            P = list(zip(m0s, E))
+            P = list(zip(m0s, E_labels))
             P.sort(key=lambda x: x[0])
             y = ax.get_ylim()[1]
             for i,(mi,Ei) in enumerate(P):
                 col = colors[i%len(colors)]
                 ax.axvline(mi, color=col, alpha=.5)
-                ax.annotate(Ei, (mi,y), (5,0), rotation=90, va='bottom', ha='left', textcoords='offset pixels')
+                ax.annotate(Ei, (mi,y), (5,0), rotation=90, va='top', ha='left', textcoords='offset pixels', color=col)
         if auto_scale:
             fig = plt.gcf()
             renderer = fig.canvas.get_renderer()
@@ -251,8 +300,11 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
             ax.autoscale_view()    
             
     # Add the Intensity=0 line in case there is negative intensities (happens when plotting PCA components)
-    if np.min(D[mask])<0:
-        ax.axhline(0, color='k', alpha=.5, lw=.5)
+    if zero_axis:
+        if type(zero_axis) is dict:
+            ax.achline(0, **zero_axis)
+        else:
+            ax.axhline(0, color='k', alpha=.5, lw=.5)
         
     if do_debug(debug):
         print(popt)
