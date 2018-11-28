@@ -384,10 +384,12 @@ class ITM:
         return Vals
 
     @alias("auto_mass_cal")
-    def autoMassCal(self, t=None, S=None, pos=True, debug=False, error=False, Range=5000, FittingPeaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None, apply=False):
+    def autoMassCal(self, t=None, S=None, pos=True, debug=False, error=False, Range=5000, fitting_peaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None, apply=False, **kargs):
         """
         perform an auto calibration for spectrum. (in test, might be unreliable)
         """
+        if 'FittingPeaks' in kargs:
+            fitting_peaks = kargs['FittingPeaks']
         from .utils import get_mass, time2mass, fitSpectrum, mass2time
         from scipy.optimize import curve_fit
         TimeWidth = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').getKeyValue()['float']
@@ -412,11 +414,11 @@ class ITM:
                 sf = np.sqrt((t1-k0)**2 - (t0-k0)**2)
                 k0 = tH-sf*np.sqrt(get_mass('H'))
         ts = []
-        for x in [mass2time(get_mass(x), sf=sf, k0=k0) for x in FittingPeaks]:
+        for x in [mass2time(get_mass(x), sf=sf, k0=k0) for x in fitting_peaks]:
             mask = (t>=(x-Range))*(t<=(x+Range))
             t_peak = t[mask][np.argmax(S[mask])]
             ts.append(t_peak)
-        ms = [get_mass(x) for x in FittingPeaks]
+        ms = [get_mass(x) for x in fitting_peaks]
         sf, k0, dsf, dk0 = fitSpectrum(ts, ms, error=True)
         if apply:
             self.setSF(sf)

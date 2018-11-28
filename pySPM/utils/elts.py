@@ -6,16 +6,40 @@
 Handle elements to calculate mass, abundance, etc.
 """
 
+from __future__ import absolute_import
+
 import sqlite3
 import os
 import re
 from .constants import me
+from .misc import deprecated
 
 def formulafy(x):
+    """
+    Convert the input string x to a Latex representation of the chemical formula.
+    e.g. ^13CH4 -> $^{13}CH_{4}$
+    This can be used in matplotlib to display nicely a chemical formula.
+    """
     import re
     return '$'+re.sub('([a-zA-Z])_?([0-9]+)', r'\1_{\2}', re.sub(r'\^([0-9]+)', r'^{\1}', re.sub('([\\+-]+)$', r'^{\1}', x)))+'$'
     
 def get_peaklist(nominal_mass, negative=False):
+    """
+    Retrieve all elements from the database which have a given nominal_mass
+    
+    Parameters
+    ----------
+    nominal_mass : int or tuple/list
+        If int provide the nominal mass of the elements
+        If tuple/list return all elements bounded between a lower (first element) and upper (second eleemnt) nominal mass.
+    negative : boolean
+        If True will return the elements in the database for negative polarity
+    
+    Examples
+    --------
+    get_peaklist(12) will return all elements with a nominal mass of 12u
+    get_peaklist((12,15)) will return all elements with a nominal mass between 12 and 15
+    """
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -26,6 +50,26 @@ def get_peaklist(nominal_mass, negative=False):
     return [str(x[0]) for x in c.fetchall()]
 
 def get_properties(elt):
+    """
+    Retrieve properties of an element such as its density, lattice constant, etc. as a dictionary
+    If no information is found in the database then at least Element, Z and mass will be returned
+    Examples
+    --------
+    > get_properties("C")
+    {'Element': 'C', 'Z': 6, 'mass': 12.010735896764459}
+    
+    > get_properties("Si")
+    {'Element': 'Si',
+    'Q': 0.78,
+    'Z': 14,
+    'density': 5e+22,
+    'ion_nrj': 8.15,
+    'lattice_const': 5.431,
+    'lattice_type': 'diamond_fcc',
+    'mass': 28.085498706418875,
+    'sublim_nrj': 4.63,
+    'work_func': 4.85}
+    """
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -46,9 +90,25 @@ def get_properties(elt):
     
     
 def get_mass(elt, mz=True):
+    """
+    Calculate the exact molar mass of a givent chemical compound.
+    
+    Parameters
+    ----------
+    elt : string
+        Element given by its chemical formula
+    mz : boolean
+        Will output the mass per ion.
+        e.g. This means that if the formula is Si++, then the answer will be half the mass of Si
+    
+    Notes
+    -----
+    "Si+" will subtract the mass of one electron compared to "Si"
+    "Si-" will add the mass of one electron compared to "Si"
+    """
     if type(elt) is Molecule:
         elt = str(elt)
-    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
+    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     m = 0
@@ -73,6 +133,10 @@ def get_mass(elt, mz=True):
     return m
     
 def get_main_isotope(elt):
+    """
+    Return the A value of the main isotope of a given element.
+    e.g. get_main_isotope("Si") will return 28
+    """
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -83,24 +147,22 @@ def get_main_isotope(elt):
     return res[0]
 
 def is_main_isotope(elt, A):
-    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT A from elements where symbol='{sym}' and abund=(SELECT max(abund) from elements where symbol='{sym}')".format(sym=elt))
-    res = c.fetchone()
-    if res is None:
-        raise Exception("Cannot fetch element '{sym}'".format(sym=elt))
-    return res[0]==A
-
+    return get_main_isotope(elt)==A
 
 def get_isotopes_of_element(elt):
+    """
+    Get all the isotopes for a given element
+    """
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT symbol, A, abund from elements where symbol='{sym}'".format(sym=elt))
     return c.fetchall()
 
-def formula2dict(elt, iso=True):
+def _formula2dict(elt, iso=True):
+    """
+    Convert a formula into a dictionary.
+    """
     elts = {}
     for A,x,n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)', elt):
         if A == '':
@@ -124,18 +186,18 @@ def formula2dict(elt, iso=True):
     return elts
 
 def is_fragment_of(fragment, element):
-    f = formula2dict(fragment, iso=False)
-    e = formula2dict(element, iso=False)
+    f = _formula2dict(fragment, iso=False)
+    e = _formula2dict(element, iso=False)
     for x in f:
         if x not in e or e[x]<f[x]:
             return False
     return True
 
 def simplify_formula(elt, debug=False):
-    elts = formula2dict(elt)
-    return dict2formula(elts)
+    elts = _formula2dict(elt)
+    return _dict2formula(elts)
     
-def dict2formula(elts, debug=False):
+def _dict2formula(elts, debug=False):
     if debug:
         print(elts)
     order = "CHSNO"
@@ -177,7 +239,7 @@ def dict2formula(elts, debug=False):
         res += fmt.format(A=A, sym=sym, n=n)
     return res 
 
-def __get_isotopes_elt(n, x, min_abund=0):
+def _get_isotopes_elt(n, x, min_abund=0):
     """
     get the isotopes of n atoms x
     """
@@ -206,7 +268,7 @@ def get_isotopes(elt, min_abund=0):
             n = 1
         else:
             n = int(n)
-        R = __get_isotopes_elt(n, x, min_abund=min_abund)
+        R = _get_isotopes_elt(n, x, min_abund=min_abund)
         Nres = {}
         for x0 in res:
             for x, ab0 in R:
@@ -239,7 +301,8 @@ def get_abund(elt):
         abund *= (res[0])**n
     return abund
 
-def getOrganicAt(m0):
+@deprecated("getOrganicAt")
+def get_organic_at(m0):
     import numpy as np
     res = []
     for C in range(1, 1+m0//12):
@@ -258,27 +321,28 @@ def getOrganicAt(m0):
     return res
     
 def elts_substract(elt1, elt2):
-    r = formula2dict(elt1)
-    d = formula2dict(elt2)
+    r = _formula2dict(elt1)
+    d = _formula2dict(elt2)
     for x in d:
         if x not in r:
             raise Exception("Cannot subtract a molecule with more atoms than the main one")
         r[x] -= d[x]
         
-def dict_add(d1, d2):
+def _dict_add(d1, d2):
     r = {k:d1[k] for k in d1}
     for k in d2:
         r[k] = r.get(k, 0) + d2[k]
     return r
     
-def elts_add(eltsa, eltsb):
+def _elts_add(eltsa, eltsb):
     r = []
     for x,mx in eltsa:
         for y,my in eltsb:
-            r.append((dict_add(x, y), mx+my))
+            r.append((_dict_add(x, y), mx+my))
     return r
 
-def eltsNM(elts, NM):
+@deprecated("eltsNM")
+def elts_nm(elts, NM):
     import re
     r = [({}, 0)]
     res = []
@@ -286,18 +350,18 @@ def eltsNM(elts, NM):
         elts = re.compile(r'((?:^[0-9]+)?[A-Z][a-z]?(?:_[0-9]+)?)').findall(elts)
     me = [get_mass(x) for x in elts]
     while r:
-        rnew = elts_add(r, list(zip([formula2dict(x) for x in elts], me)))
+        rnew = _elts_add(r, list(zip([_formula2dict(x) for x in elts], me)))
         r = [x for x in rnew if x[1]<NM+.5]
-        res += [dict2formula(x[0]) for x in r if x[1]>NM-.5 if dict2formula(x[0]) not in res]
+        res += [_dict2formula(x[0]) for x in r if x[1]>NM-.5 if _dict2formula(x[0]) not in res]
         res = list(set(res))
     return res
     
 class Molecule:    
     def __init__(self, formula):
-        self.atoms = formula2dict(formula)
+        self.atoms = _formula2dict(formula)
     
     def formula(self):
-        return dict2formula(self.atoms)
+        return _dict2formula(self.atoms)
         
     def __add__(self, b):
         r = Molecule(self.formula())
@@ -330,7 +394,7 @@ class Molecule:
     
     def inc(self, elt='H'):
         r = Molecule(self.formula())
-        k = list(formula2dict(elt).keys())[0]
+        k = list(_formula2dict(elt).keys())[0]
         if k in r.atoms:
             r.atoms[k] += 1
         else:
@@ -339,7 +403,7 @@ class Molecule:
         
     def dec(self, elt='H'):
         r = Molecule(self.formula())
-        k = list(formula2dict(elt).keys())[0]
+        k = list(_formula2dict(elt).keys())[0]
         if k not in r.atoms or r.atoms[k]<1:
             raise Exception("Cannot decrement molecule below 0 atoms")
         r.atoms[k] -= 1

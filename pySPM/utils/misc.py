@@ -47,6 +47,10 @@ class alias(object):
         if not hasattr(func, '_aliases'):
             func._aliases = []
         func._aliases += [(x, func) for x in self.aliases]
+        import sys
+        module = sys.modules[func.__module__]
+        for alias in self.aliases:
+            setattr(module, alias, func)
         return func
 
 class deprecated(object):

@@ -6,7 +6,7 @@
 Helper functions to handle spectras.
 """
 
-from .misc import dec_debug, do_debug
+from .misc import dec_debug, do_debug, alias
 
 def get_substance_peaks(substance, negative=True):
     import os
@@ -20,7 +20,8 @@ def get_substance_peaks(substance, negative=True):
 def get_dm(m, sf, k0, dsf, dk0):
     import numpy as np
     return 2*np.sqrt(m)*np.sqrt((dk0**2/(sf**2))+m*(dsf**2/(sf**2)))
-    
+
+@alias("show_peak")    
 def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=True,
     debug=False, Aredux=1, label=None, include=None, include_only=None, exclude=[],
     polarity="+", colors='rgb', pretty=True, formula=True, auto_scale=True, fakefit=False, zero_axis=True, **kargs):

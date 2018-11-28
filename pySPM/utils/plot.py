@@ -10,8 +10,9 @@ Various helper function for plotting data with matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from .misc import dec_debug, do_debug
+from .misc import dec_debug, do_debug, alias
 
+@alias("plot_mask")
 def plotMask(ax, mask, color, **kargs):
     """
     Create an overlay of a given color where mask is True.
@@ -107,7 +108,8 @@ def Ydist(ax, down, up, x, color='r', linestyle=':', fmt="{dist:.2f}{unit}", ytr
     arr = dict(arrowstyle='<->',color=color)
     arr.update({k[4:]:kargs[k] for k in kargs if k.startswith('arr_')})
     ax.annotate("", (x, down), (x, up), arrowprops=arr)
-    
+
+@alias("dual_plot")    
 def DualPlot(ax, col1='C0',col2='C1'):
     """
     Create a dual axis from ax and tune the color of the left/right axes to col1, col2 resp.
@@ -182,22 +184,22 @@ def formula(x):
     x = re.sub(r'\^([0-9\+\-]+)',r'$^{\1}$',x)
     return x
 
-def __points_in_bbox(x,y,bbox):
+def _points_in_bbox(x,y,bbox):
     x_in = np.logical_and(x>=bbox.xmin, x<=bbox.xmax)
     y_in = np.logical_and(y>=bbox.ymin, y<=bbox.ymax)
     mask = x_in & y_in
     return np.any(mask), mask
 
-def __bbox_overlap(bbox1, bbox2):
+def _bbox_overlap(bbox1, bbox2):
     x_overlap = (bbox1.xmax >= bbox2.xmin) and (bbox1.xmin <= bbox2.xmax)
     y_overlap = (bbox1.ymax >= bbox2.ymin) and (bbox1.ymin <= bbox2.ymax)
     return x_overlap and y_overlap
 
-__cached_points = {}
-__cached_pointsd = {}
+_cached_points = {}
+_cached_pointsd = {}
 
-def __overlap(ax, obj, objs, debug=False):
-    global __cached_points
+def _overlap(ax, obj, objs, debug=False):
+    global _cached_points
     fig = ax.get_figure()
     renderer = fig.canvas.get_renderer()
     tr = ax.transData
@@ -205,21 +207,21 @@ def __overlap(ax, obj, objs, debug=False):
     r = obj.get_window_extent(renderer) # got object bbox
     for o in objs:
         if type(o) is mpl.lines.Line2D:
-            if o in __cached_points:
-                xy = __cached_points[o]
-                xyd = __cached_pointsd[o]
+            if o in _cached_points:
+                xy = _cached_points[o]
+                xyd = _cached_pointsd[o]
             else:
                 xyd = np.vstack(o.get_data()).T # retriev data in data coordinates
                 xy = tr.transform(xyd) # retrieve data in pixel coordinates
-                __cached_points[o] = xy
-                __cached_pointsd[o] = xyd
-            isin, ins = __points_in_bbox(xy[:,0],xy[:,1],r)
+                _cached_points[o] = xy
+                _cached_pointsd[o] = xyd
+            isin, ins = _points_in_bbox(xy[:,0],xy[:,1],r)
             if isin:
                 if debug: ax.plot(xyd[:,0][ins],xyd[:,1][ins],'rx')
                 return o
         else:
             ro = o.get_window_extent(renderer)
-            if __bbox_overlap(r,ro):
+            if _bbox_overlap(r,ro):
                 return o
     return False
 
@@ -230,7 +232,7 @@ def color_frame(ax, color, sx = 0.01, sy=None, lw = 5, **kargs):
     fig = plt.gcf()
     fig.patches.append(mpl.patches.Rectangle((-sx,-sy), 1+2*sx,1+2*sy, transform=ax.transAxes, ec=color, fill=False, lw=lw, zorder=0, **kargs))
 
-def __get_yextend_of_curve(ax, bbox, curve):
+def _get_yextend_of_curve(ax, bbox, curve):
     tri = ax.transData.inverted()
     rd = bbox.transformed(tri) # bbox in data coordinates
     x, y = curve.get_data()
@@ -257,7 +259,7 @@ def put_Xlabels(ax, pos, labels, colors='rgb', debug=False, save=False, bbox=Fal
         ax.axvline(x, color=col, linestyle=kargs.get('linestyle','-'), alpha=kargs.get('line_alpha',.5))
         ax.draw(renderer) # make sure to draw the new object
         r = labs[-1].get_window_extent(renderer) # get the Bbox of the last label
-        ov = __overlap(ax, labs[-1], objs+labs[:-1])
+        ov = _overlap(ax, labs[-1], objs+labs[:-1])
         if save:
             if ov:
                 r1 = r.transformed(ax.transData.inverted())
@@ -279,7 +281,7 @@ def put_Xlabels(ax, pos, labels, colors='rgb', debug=False, save=False, bbox=Fal
             it += 1
             if debug: print("Label \"{}\" overlap with {}".format(labs[-1].get_text(), repr(ov)))
             if type(ov) is mpl.lines.Line2D:
-                new_y = __get_yextend_of_curve(ax, r, ov)[1]
+                new_y = _get_yextend_of_curve(ax, r, ov)[1]
             else:
                 rov = ov.get_window_extent(renderer).transformed(ax.transData.inverted())
                 new_y = rov.ymax
@@ -294,7 +296,7 @@ def put_Xlabels(ax, pos, labels, colors='rgb', debug=False, save=False, bbox=Fal
             new_xy = ax.transData.inverted().transform(new_xy_px) # Offset the new_y of 5 pixels
             labs[-1].set_position(new_xy)
             ax.draw(renderer)
-            ov = __overlap(ax, labs[-1], objs+labs[:-1], debug=debug)
+            ov = _overlap(ax, labs[-1], objs+labs[:-1], debug=debug)
             if save:
                 ax.draw(renderer)
                 fig.savefig("put_Xlabels_{:03d}_{:03d}.png".format(i,it))
