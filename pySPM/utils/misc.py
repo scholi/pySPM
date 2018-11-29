@@ -72,4 +72,49 @@ class deprecated(object):
             func._aliases = []
         func._aliases += [(self.alias, wrapper)]
         return func
+
+def getBAM(x, x0, N=10, edges=False):
+    """
+    get the profile of the GaAlAs layer from a BAM-L200 sample.
     
+    Parameters
+    ----------
+    x: numpy.ndarray
+        x-axis in nm
+    x0: float
+        offset of the x-axis in nm (ie. where the first edge of the BAM is located)
+    N: int
+        The number of headings grating (seems to be 13 on the SEM image in the doc, but 10 in reality?)
+    edges: boolean
+        If False (default) return the binary profile (0 for GaAs and 1 for GaAlAs)
+        If True returns the location of the edges as a binary vector (0 everywhere and 1 at the position of each edge). Note that at least a 1 will be set for each edge, but this might lead to wrong distances if the input x is given at low resolution.
+    """
+    P = x*0
+    l = 0
+    Edges = []
+    
+    # Here are the position and width of each Al stripe
+    for xx in [(68,80)]*N+[(67,691),
+            (695,293), (294,293),
+            (380,19.5),
+            (420,195), (195,195),
+            (415,135), (135,135),
+            (360,96), (96,96),
+            (300,68), (68,68),
+            (260,48), (49,48),
+            (210,38), (39,38),
+            (105,24), (24,24),
+            (800,38),
+            (494,3.6),
+            (495,14.2)]:
+        l += xx[0]
+        Edges.append(x0+l)
+        P = P + ((x-x0)>=l)*((x-x0)<=l+xx[1])
+        if x0+l>=x[0] and x0+l<=x[-1]:
+            P[np.argmin(abs(x-x0-l))] = 1 # At least 1 pixel set
+        l += xx[1]
+        Edges.append(x0+l)
+    if edges:
+        return P, Edges
+    return P
+        
