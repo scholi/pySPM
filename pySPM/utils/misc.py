@@ -99,7 +99,7 @@ def getBAM(x, x0, N=10, least_one=False):
         
     # Estimated coordinates of the starting of lines
     pos = dict(W1=0, P1=d['W1']+d['W2'], W5=2683, P9=8760, W8=7300, W9=7800, W10=8250, W11=9500, W12=9840, W14=8100)
-    pos_rel = dict(W5=dict(P2=397, P3=1350, P4=2120, P5=2710, P6=3160, P7=3520, P8=3730),P9=dict(P10=231, P11=402, P12=539, P13=642, P14=710),W11=dict(P15=60, P16=104, P17=141, P18=162, P19=182, P20=191))
+    pos_rel = dict(W5=dict(P2=397, P3=1380, P4=2140, P5=2730, P6=3200, P7=3535, P8=3730),P9=dict(P10=231, P11=402, P12=539, P13=642, P14=710),W11=dict(P15=60, P16=104, P17=141, P18=162, P19=182, P20=191))
     for rel in pos_rel:
         for key in pos_rel[rel]:
             pos[key] = pos[rel]+pos_rel[rel][key]
