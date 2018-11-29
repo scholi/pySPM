@@ -68,39 +68,44 @@ def butter_lowpass_filter(data, cutOff, fs, order=4):
     y = scipy.signal.lfilter(b, a, data)
     return y
 
-def Gauss(x, x0, s, A=None):
-    old = np.geterr()
-    np.seterr(all='ignore')
+def Gauss(x, x0, s, Amp=None, **kargs):
+    if 'A' in kargs:
+        from warnings import warn
+        warn("Parameter A is deprecated. Please use Amp in order to set the amplitude!")
+        Amp = kargs['A']
     R = np.exp(-(x-x0)**2/(2*s**2))
-    if A is None:
+    if Amp is None:
         R /= (s*np.sqrt(2*np.pi))
     else:
-        R *= A
+        R *= Amp
     R[s==0] = (x[s==0]==x0)*1.0
-    np.seterr(**old)
     return R
 
-def Lorentz(x, x0, gamma, A=None):
+def Lorentz(x, x0, gamma, Amp=None, **kargs):
+    if 'A' in kargs:
+        from warnings import warn
+        warn("Parameter A is deprecated. Please use Amp in order to set the amplitude!")
+        Amp = kargs['A']
     R = 1/((x-x0)**2+(.5*gamma)**2)
-    if A is None:
+    if Amp is None:
         return .5*gamma*R/np.pi
-    return A*R*(.5*gamma)**2
+    return Amp*R*(.5*gamma)**2
 
 def CDF(x,mu,sig, Amp=1, lg=0):
     from scipy.special import erf
     g = sig*np.sqrt(2*np.log(2))
     return Amp*lg*(.5+np.arctan2(x-mu,g)/np.pi)+(1-lg)*Amp*.5*(1+erf((x-mu)/(sig*np.sqrt(2))))
     
-def LG(x, x0, sig=None, Amp=1, lg=.5, asym=1, FWHM=None):
+def LG(x, x0, sig=None, Amp=None, lg=.5, asym=1, FWHM=None):
     assert sig is not None or FWHM is not None
       
     if FWHM is None:
         FWHM = 2*np.sqrt(2*np.log(2))*sig
     if sig is None:
         sig = FWHM/(2*np.sqrt(2*np.log(2)))
-    Y = Amp*((1-lg)*Gauss(x,x0,sig,A=1)+lg*Lorentz(x,x0,FWHM,A=1))
+    Y = (1-lg)*Gauss(x,x0,sig,Amp=Amp)+lg*Lorentz(x,x0,FWHM,Amp=Amp)
     if asym!=1:
-        Yr = Amp*((1-lg)*Gauss(x,x0,sig*asym,A=1)+lg*Lorentz(x,x0,FWHM*asym,A=1))
+        Yr = (1-lg)*Gauss(x,x0,sig*asym,Amp=Amp)+lg*Lorentz(x,x0,FWHM*asym,Amp=Amp)
         Y[x>x0] = Yr[x>x0]
     return Y
 
