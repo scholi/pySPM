@@ -663,7 +663,7 @@ class ITA(ITM):
         assert scan >= 0 and scan < self.Nscan
         c = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans'
                            '/Image['+str(channel)+']/ImageArray.Long['+str(scan)+']')
-        V = np.array(c.getData(self.sx*self.sy), dtype=np.float).reshape((self.sy, self.sx))
+        V = np.array(c.getData(), dtype=np.float).reshape((self.sy, self.sx))
         if not Shifts is None:
             r = [int(z) for z in Shifts[scan]]
             V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)

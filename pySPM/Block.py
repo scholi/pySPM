@@ -625,7 +625,7 @@ class Block:
             raw = self.decompress()
         else:
             raw = self.value
-        L = len(raw)//struct.calcsize(fmt)
+        L = len(raw)//int(struct.calcsize(fmt))
         return struct.unpack("<"+str(L)+fmt, raw)
     
     def rewrite(self, content, debug=False):
