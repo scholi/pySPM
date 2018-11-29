@@ -73,7 +73,8 @@ class deprecated(object):
         func._aliases += [(self.alias, wrapper)]
         return func
 
-def getBAM(x, x0, N=10, edges=False):
+@alias("get_bam", "get_BAM")
+def getBAM(x, x0, N=10, least_one=False):
     """
     get the profile of the GaAlAs layer from a BAM-L200 sample.
     
@@ -85,36 +86,30 @@ def getBAM(x, x0, N=10, edges=False):
         offset of the x-axis in nm (ie. where the first edge of the BAM is located)
     N: int
         The number of headings grating (seems to be 13 on the SEM image in the doc, but 10 in reality?)
-    edges: boolean
-        If False (default) return the binary profile (0 for GaAs and 1 for GaAlAs)
-        If True returns the location of the edges as a binary vector (0 everywhere and 1 at the position of each edge). Note that at least a 1 will be set for each edge, but this might lead to wrong distances if the input x is given at low resolution.
+    least_one: bool
+        if True each GaAlAs strip are at least 1px wide.
     """
     P = x*0
     l = 0
-    Edges = []
     
-    # Here are the position and width of each Al stripe
-    for xx in [(68,80)]*N+[(67,691),
-            (695,293), (294,293),
-            (380,19.5),
-            (420,195), (195,195),
-            (415,135), (135,135),
-            (360,96), (96,96),
-            (300,68), (68,68),
-            (260,48), (49,48),
-            (210,38), (39,38),
-            (105,24), (24,24),
-            (800,38),
-            (494,3.6),
-            (495,14.2)]:
-        l += xx[0]
-        Edges.append(x0+l)
-        P = P + ((x-x0)>=l)*((x-x0)<=l+xx[1])
-        if x0+l>=x[0] and x0+l<=x[-1]:
-            P[np.argmin(abs(x-x0-l))] = 1 # At least 1 pixel set
-        l += xx[1]
-        Edges.append(x0+l)
-    if edges:
-        return P, Edges
-    return P
+    # Here are the certified known distances
+    d = dict(W1=691, W2=691, W3=293, W4=294, W5=19.5, W6=195, W7=195, W8=38, W9=3.6, W10=14.2, W11=3.5, W12=96, W13=5, W14=1, P1=587,P2=389,P3=273,P4=193,P5=136,P6=97,P7=67.5,P8=48.5,P9=76.5,P10=57,P11=42,P12=31,P13=23,P14=17.5,P15=13.3,P16=9.4,P17=6.9,P18=4.6,P19=3,P20=2)
+    # The prelines
+    lines = [(-147*i, 80) for i in range(N,0,-1)]
         
+    # Estimated coordinates of the starting of lines
+    pos = dict(W1=0, P1=d['W1']+d['W2'], W5=2683, P9=8760, W8=7300, W9=7800, W10=8250, W11=9500, W12=9840, W14=8100)
+    pos_rel = dict(W5=dict(P2=397, P3=1350, P4=2120, P5=2710, P6=3160, P7=3520, P8=3730),P9=dict(P10=231, P11=402, P12=539, P13=642, P14=710),W11=dict(P15=60, P16=104, P17=141, P18=162, P19=182, P20=191))
+    for rel in pos_rel:
+        for key in pos_rel[rel]:
+            pos[key] = pos[rel]+pos_rel[rel][key]
+
+    for key in sorted(pos):
+        width = [d[key],d[key]//2][key[0] == 'P']
+        lines.append((pos[key], width))
+        if key[0] == 'P': lines.append((pos[key]+d[key], width))        
+            
+    for pos, width in lines:
+        P[((x-x0)>=pos)*((x-x0)<=pos+width)] = 1
+        if least_one: P[np.argmin(abs(x-x0-pos))] = 1 # At least 1 pixel set ?
+    return P

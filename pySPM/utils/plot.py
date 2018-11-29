@@ -318,3 +318,30 @@ def put_Xlabels(ax, pos, labels, colors='rgb', debug=False, save=False, bbox=Fal
             ax.add_patch(
                     mpl.patches.Rectangle((r.xmin,r.ymin), r.xmax-r.xmin, r.ymax-r.ymin, ec='b', fill=False)
                     )
+
+def stdplot(x, y, Nsig=2, ax=None, color='b', axis=1, **kargs):
+    """
+    Plot the mean / standard-deviation for a signal
+    
+    x: 1D numpy.ndarrayx
+        x values
+    y: 2D numpy.ndarray
+        y values. One of the two axis is used for the statistics
+    Nsig: int
+        The number of standard-deviations to display
+    axis: int
+        which axis is used to calculate mean/std
+    ax: matplotlib axis
+        maplotlib axis to plot in
+    color: string
+        color of the line
+    **kargs: arguments passed to plot
+    
+    """
+    if ax is None:
+        ax = plt.gca()
+    dy = np.std(y, axis=axis)
+    mean = np.mean(y, axis=axis)
+    ax.plot(x, mean, color=color, **kargs)
+    for i in range(1, Nsig+1):
+        ax.fill_between(x, mean-i*dy, mean+i*dy, color=color, alpha=.2)
