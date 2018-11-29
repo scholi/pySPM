@@ -11,7 +11,7 @@ from .elts import *
 from .constants import *
 from .spectra import *
 from .plot import *
-from . import fit
+from . import fit, misc, colors
 from .save import *
 from .restoration import *
 
