@@ -121,7 +121,7 @@ class Collection:
         assert channels_number > 0
         channels.sort(key=natural_keys)
         if ax is None:
-            if channels_number == 4:
+            if channels_number == 4 and ncols==3:
                 fig, ax = plt.subplots(2, 2, figsize=(width,
                                                       self[channels[0]].pixels.shape[
                                                           0]*width
