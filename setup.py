@@ -17,6 +17,7 @@ setup(
     version=find_version(),
     description="library to handle SPM and ToF-SIMS data",
     long_description=description(),
+    long_description_content_type="text/markdown",
     url="https://github.com/scholi/pySPM",
     author = "Olivier Scholder",
     author_email = "o.scholder@gmail.com",
