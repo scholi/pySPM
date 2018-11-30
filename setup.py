@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import re
 
 def description():
-    with open('description.rst') as f:
+    with open('README.md') as f:
         return f.read()
 
 def find_version():
