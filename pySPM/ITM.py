@@ -738,7 +738,7 @@ class ITM:
         return m>peak_lim, spec
             
     @alias("show_spectrum")
-    def showSpectrum(self, low=0, high=None, sf=None, k0=None, ax=None, log=False, showPeaks=True, **kargs):
+    def showSpectrum(self, low=0, high=None, sf=None, k0=None, ax=None, log=False, showPeaks=False, **kargs):
         """
         Plot the (summed) spectrum
         low and high: mass boundary of the plotted data
