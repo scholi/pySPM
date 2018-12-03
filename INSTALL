@@ -1,3 +1,31 @@
-install the SPM folder in your PYTHONPATH.
+Install from pypi with pip
+==========================
+in a terminal run:
 
-For Windows users it means you have to create a system variable (environment variable) called PythonPath pointing toward the parent directory where the SPM folder is located.
+pip install pySPM
+
+Install from github with pip
+============================
+
+pip install git+https://github.com/scholi/pySPM@master
+
+Install with git from github
+============================
+git clone https://github.com/scholi/pySPM
+cd pySPM
+python setup.py install
+
+Install zip file from github
+============================
+
+download : https://github.com/scholi/pySPM/archive/master.zip
+unzip file and go inside the pySPM-master folder
+run: python setup.py install
+
+Install in edit mode
+====================
+You might want to get the library and be able to modify it without reinstalling it all the time.
+Get a version of pySPM. Either with git or the zipfile from github (see above).
+within the pySPM folder run:
+pip install -e .
+
