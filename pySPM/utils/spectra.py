@@ -116,15 +116,18 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
     negative = False
     if polarity in ['-', 'Negative', 'negative', 'neg', 'Neg', 'NEG']:
         negative = True
-    if include_only is not None:
-        if type(include_only) is str:
-            E = include_only.split(",")
+    if showElts:
+        if include_only is not None:
+            if type(include_only) is str:
+                E = include_only.split(",")
+            else:
+                E = include_only
         else:
-            E = include_only
+            E = [x for NM in range(int(round(m0-delta)), int(round(m0+delta))+1) for x in get_peaklist(NM, negative)]
+            E = [x for x in E if x not in exclude] + include
+        E = list(set(E))
     else:
-        E = [x for NM in range(int(round(m0-delta)), int(round(m0+delta))+1) for x in get_peaklist(NM, negative)]
-        E = [x for x in E if x not in exclude] + include
-    E = list(set(E))
+        E = []
     m0s = [get_mass(x) for x in E]
     E = [x for x, y in zip(E, m0s) if y>=m0-delta and y<=m0+delta]
     if negative:
