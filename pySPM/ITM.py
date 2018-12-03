@@ -485,7 +485,7 @@ class ITM:
         For an extractor of 2keV and L=2m, 1u = (time[s]*310620.843175[u**.5/s])**2 = [channel/sf]**2 => sf is about 32000 for k0 = 0
         Caution. If data are binned, the channel number should be multiplied by the binning factor in order to use the same sf and k0 factor!
         
-        For information the channel width is 50ps and is strangely not saved in the file.
+        For information the channel width is 50ps and can be retrieved by pySPM.ITM.get_value("Registration.TimeResolution")
         """
         if sf is None or k0 is None:
             sf0, k00 = self.get_mass_cal()
@@ -505,7 +505,7 @@ class ITM:
         RAW = zlib.decompress(self.root.goto(
             'filterdata/TofCorrection/Spectrum/Reduced Data/IITFSpecArray/'+['CorrectedData','Data'][kargs.get('uncorrected',False)]).value)
         D = np.array(struct.unpack("<{0}f".format(len(RAW)//4), RAW))
-        ch = 2*np.arange(len(D))
+        ch = 2*np.arange(len(D)) # We multiply by two because the channels are binned.
         if time:
             return ch, D
         m = self.channel2mass(ch, sf=sf, k0=k0)

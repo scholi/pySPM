@@ -114,7 +114,11 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
-def mass2time(m, sf, k0):    
+def mass2time(m, sf, k0):
+    """
+    Here the time is actually the number of channels.
+    To convert it to real time, you should multiply the answer by the Time Resolution which can be obtained by pySPM.ITM.get_value("Registration.TimeResolution")
+    """
     r = m*0+k0
     if not hasattr(r, '__setitem__'):
         if m<0:
@@ -124,6 +128,10 @@ def mass2time(m, sf, k0):
     return r
 
 def time2mass(t, sf, k0):
+    """
+    Here the time t is actually the number of channels.
+    To convert a real time to the number of channel t, you should divide the real time by the Time Resolution which can be obtained by pySPM.ITM.get_value("Registration.TimeResolution")
+    """
     return ((t-k0)/sf)**2
 
 def show_table(t):
