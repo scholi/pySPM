@@ -64,7 +64,7 @@ class ITM:
         assert self.Type == b'ITStrF01'
         self.root = Block.Block(self.f)
         try:
-            d = self.root.goto('Meta/SI Image').dictList()
+            d = self.root.goto('Meta/SI Image').dict_list()
             self.size = {
                 'pixels': {
                     'x': d['res_x']['long'],
@@ -74,35 +74,34 @@ class ITM:
                     'y': d['fieldofview']['float']*d['res_y']['long']/d['res_x']['long'],
                     'unit': 'm'}}
         except:
-            s = self.getValue('Registration.Raster.Resolution')['int']
-            fov = self.getValue("Registration.Raster.FieldOfView")['float']
+            s = self.get_value('Registration.Raster.Resolution')['int']
+            fov = self.get_value("Registration.Raster.FieldOfView")['float']
             self.size = {'pixels':dict(x=s,y=s),'real':dict(x=fov,y=fov,unit='m')}
         try:
             self.size['Scans'] = \
                 self.root.goto(
-                    'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfScans').getULong()
+                    'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfScans').get_ulong()
         except:
             pass
-        self.polarity = self.getValue("Instrument.Analyzer_Polarity_Switch")['string']
+        self.polarity = self.get_value("Instrument.Analyzer_Polarity_Switch")['string']
         self.peaks = {}
-        self.MeasData = {}
+        self.meas_data = {}
         self.rawlist = None
         try:
             self.Nscan = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/NumberOfScans").getLong()
         except:
             try:
-                self.Nscan = self.root.goto('propend/Measurement.ScanNumber').getKeyValue()['int']
+                self.Nscan = self.root.goto('propend/Measurement.ScanNumber').get_key_value()['int']
             except:
                 self.Nscan = None
-        self.spp = self.root.goto("propend/Registration.Raster.ShotsPerPixel").getKeyValue()['int']
+        self.spp = self.root.goto("propend/Registration.Raster.ShotsPerPixel").get_key_value()['int']
         try:
-            R = [z for z in self.root.goto('MassIntervalList').getList() if z[
-                'name'] == 'mi']
+            R = [z for z in self.root.goto('MassIntervalList').get_list() if z['name'] == 'mi']
             N = len(R)
             for x in R:
                 try:
                     X = self.root.goto('MassIntervalList/mi['+str(x['id'])+']')
-                    d = X.dictList()
+                    d = X.dict_list()
                     self.peaks[d['id']['long']] = d
                 except ValueError:
                     pass
@@ -110,34 +109,34 @@ class ITM:
             if debug:
                 raise e
     
-    @alias("get_peak_list")
-    def getPeakList(self, name):
+    @alias("getPeakList")
+    def get_peak_list(self, name):
         """
         Retrieve extra MassIntervalList (MIL) by it's name. Those are saved and visible in iontof software in the spectrum window.
         """
         PeakList = []
         for x in self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/ExtraMILs'):
-            if x.goto('Name').getString() == name:
-                for y in [z for z in x.getList() if z['name'].decode() == 'mi']:
-                    d = x.goto('mi[{}]'.format(y['id'])).dictList()
+            if x.goto('Name').get_string() == name:
+                for y in [z for z in x.get_list() if z['name'].decode() == 'mi']:
+                    d = x.goto('mi[{}]'.format(y['id'])).dict_list()
                     PeakList.append({key.decode('utf8'):d[key] for key in d})
                 return PeakList
         return None
     
-    @alias("show_peak_list")
-    def showPeakList(self, name):
-        for m in self.getPeakList(name):
+    @alias("showPeakList")
+    def show_peak_list(self, name):
+        for m in self.get_peak_list(name):
             print("{id[long]}: ({desc[utf16]}) [{assign[utf16]}] {lmass[float]:.2f}u - {umass[float]:.2f}u (center: {cmass[float]:.2f}u)".format(**m))
     
-    @alias("get_property_trend")
-    def getPropertyTrend(self, name):
+    @alias("getPropertyTrend")
+    def get_property_trend(self, name):
         """
         Sometimes values might be saved in ITA files under PropertyTrend.
         You can recover them here
         """
         for x in self.root.goto("PropertyTrends"):
-            if (x.name=='PropertyTrend' and x.goto("Trend.Name").getString() == name) or x.name == name:
-                N = x.goto('Trend.Data.NumberEntries').getLong()
+            if (x.name=='PropertyTrend' and x.goto("Trend.Name").get_string() == name) or x.name == name:
+                N = x.goto('Trend.Data.NumberEntries').get_long()
                 data = x.goto("Trend.Data").value
                 dat = np.array([struct.unpack('<4d',data[32*i:32*(i+1)])[2:4] for i in range(N)])
                 return dat
@@ -220,18 +219,18 @@ class ITM:
             if fig is None:
                 fig = plt.figure(figsize=kargs.get("figsize",(21,10)))
             
-            SI = self.getIntensity()
-            Snapshot = self.getSnapshot()
-            EC = self.getPropertyTrend("Instrument.LMIG.Emission_Current")
-            Supp = self.getPropertyTrend("Instrument.LMIG.Suppressor")
-            Press = self.getPropertyTrend("Instrument.VCU.Pressure.Main")
+            SI = self.get_intensity()
+            Snapshot = self.get_snapshot()
+            EC = self.get_property_trend("Instrument.LMIG.Emission_Current")
+            Supp = self.get_property_trend("Instrument.LMIG.Suppressor")
+            Press = self.get_property_trend("Instrument.VCU.Pressure.Main")
             N = (SI is not None)+(Snapshot is not None)+1+(EC is not None or Supp is not None or Press is not None)
             gs = mpl.gridspec.GridSpec(2, N)
             
             index = 0
             if SI is not None:
                 ax = plt.subplot(gs[0, index])
-                desc = self.root.goto('Meta/SI Image/description').getString()
+                desc = self.root.goto('Meta/SI Image/description').get_string()
                 SI.show(ax=ax, **{k:kargs[k] for k in kargs if k not in ['high', 'low']})
                 index += 1
             if Snapshot is not None:
@@ -277,8 +276,8 @@ class ITM:
                     axb.yaxis.set_label_position("right")
                 index += 1
             
-            self.showStage(ax=axStage, markers=True)
-            self.showSpectrum(low=kargs.get('low',0), high=kargs.get('high', None), ax=axSpectra)
+            self.show_stage(ax=axStage, markers=True)
+            self.show_spectrum(low=kargs.get('low',0), high=kargs.get('high', None), ax=axSpectra)
             
     def image(self, I, channel="Unknown", zscale="Counts"):
         """
@@ -307,39 +306,28 @@ class ITM:
         from .SPM import SPM_image
         return SPM_image(I, real=self.size['real'], _type="TOF", zscale=zscale, channel=channel)     
        
-    @alias("get_intensity")
-    def getIntensity(self):
+    @alias("getIntensity")
+    def get_intensity(self):
         """
-        Retieve the total Ion image
+        Retrieve the total Ion image
         """
-        try:
-            X, Y = self.size['pixels']['x'], self.size['pixels']['y']
-            img = self.image(np.flipud(np.array(self.root.goto('Meta/SI Image/intensdata').getData("f"), dtype=np.float32).reshape((Y, X))), channel="SI count")
-        except Exception as e:
-            try:
-                img = self.getAddedImage(0).pixels
-            except:
-                try:
-                    img = self.getAddedImageBySN(self.get_channel_SN("total"))
-                except:
-                    import warnings
-                    warn.warnings("SI image cannot be retrieved")
-                    return None
+        X, Y = self.size['pixels']['x'], self.size['pixels']['y']
+        img = self.image(np.flipud(np.array(self.root.goto('Meta/SI Image/intensdata').get_data("f"), dtype=np.float32).reshape((Y, X))), channel="SI count")
         return img
 
     def get_LMIG_info(self):
-        rs = self.getValues(start=True)
-        re = self.getValues()
+        rs = self.get_values(start=True)
+        re = self.get_values()
         Val = [["Parameter name", "Value at start", "Value at end"]]
         for i, x in enumerate(rs):
             Val.append([x, rs[x], re[x]])
 
-    @alias("get_value")
-    def getValue(self, name, end=True):
-        return self.root.goto('prop{}/{name}'.format(['start','end'][end],name=name)).getKeyValue()
+    @alias("getValue")
+    def get_value(self, name, end=True):
+        return self.root.goto('prop{}/{name}'.format(['start','end'][end],name=name)).get_key_value()
     
-    @alias("get_values")
-    def getValues(self, pb=False, start=False,end=True,names=[], startsWith="", nest=False, hidePrefix=True, numeric=False):
+    @alias("getValues")
+    def get_values(self, pb=False, start=False, end=True, names=[], startsWith="", nest=False, hidePrefix=True, numeric=False):
         """
         Beta function: Retrieve a list of the values
         """
@@ -350,14 +338,14 @@ class ITM:
         if end:
             startEnd.append(False)
         for start in startEnd:
-            List = self.root.goto(['propend', 'propstart'][start]).getList()
+            List = self.root.goto(['propend', 'propstart'][start]).get_list()
             if pb:
                 import tqdm
                 List = tqdm.tqdm(List)
             for l in List:
                 Node = self.root.goto(['propend', 'propstart'][
-                                      start]).gotoItem(l['name'], l['id'])
-                r = Node.getKeyValue()
+                                      start]).goto_item(l['name'], l['id'])
+                r = Node.get_key_value()
                 del Node
                 S = Vals
                 if numeric:
@@ -383,25 +371,29 @@ class ITM:
                             Vals[key_name] = [value]
         return Vals
 
-    @alias("auto_mass_cal")
-    def autoMassCal(self, t=None, S=None, pos=True, debug=False, error=False, Range=5000, fitting_peaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None, apply=False, **kargs):
+    @alias("autoMassCal")
+    def auto_mass_cal(self, t=None, S=None, pos=True, debug=False, error=False, Range=5000, fitting_peaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None, apply=False, **kargs):
         """
         perform an auto calibration for spectrum. (in test, might be unreliable)
         """
+        # old parameter name compatibility
         if 'FittingPeaks' in kargs:
             fitting_peaks = kargs['FittingPeaks']
-        from .utils import get_mass, time2mass, fitSpectrum, mass2time
+        if type(fitting_peaks) is str:
+            fitting_peaks = fitting_peaks.split(",")
+            
+        from .utils import get_mass, time2mass, fit_spectrum, mass2time
         from scipy.optimize import curve_fit
-        TimeWidth = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').getKeyValue()['float']
+        time_width = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').get_key_value()['float']
         if t is None or S is None:
-            t, S = self.getSpectrum(time=True)
+            t, S = self.get_spectrum(time=True)
         N = np.prod(list(self.size['pixels'].values())) * self.Nscan
-        mask = S > N*0.01/TimeWidth
+        mask = S > N*0.01/time_width
         times_start = t[1:][np.nonzero(mask[1:]*(~mask[:-1]))]
         times_end = t[np.nonzero(mask[:-1]*(~mask[1:]))]
         times = (times_start + times_end)/2
         tH = times[0]
-        mask = (t>=tH-TimeWidth)*(t<=tH+TimeWidth)
+        mask = (t>=tH-time_width)*(t<=tH+time_width)
         tH = t[mask][np.argmax(S[mask])]
         if sf is None or k0 is None:
             sf=1e5
@@ -419,18 +411,18 @@ class ITM:
             t_peak = t[mask][np.argmax(S[mask])]
             ts.append(t_peak)
         ms = [get_mass(x) for x in fitting_peaks]
-        sf, k0, dsf, dk0 = fitSpectrum(ts, ms, error=True)
+        sf, k0, dsf, dk0 = fit_spectrum(ts, ms, error=True)
         if apply:
-            self.setSF(sf)
-            self.setK0(k0)
+            self.set_sf(sf)
+            self.set_k0(k0)
         if debug:
             return sf, k0, dsf, dk0, ts, ms
         if error:
             return sf, k0, dsf, dk0
         return sf, k0
     
-    @alias("show_values")
-    def showValues(self, pb=False, gui=False, **kargs):
+    @alias("showValues")
+    def show_values(self, pb=False, gui=False, **kargs):
         from .utils import html_table, aa_table
         html = True
         if 'html' in kargs:
@@ -438,10 +430,10 @@ class ITM:
             del kargs['html']
         if gui:
             from pySPM.tools import values_display
-            Vals = self.getValues(pb, nest=True, **kargs)
-            values_display.ShowValues(Vals)
+            Vals = self.get_values(pb, nest=True, **kargs)
+            values_display.show_values(Vals)
         else:
-            Vals = self.getValues(pb, **kargs)
+            Vals = self.get_values(pb, **kargs)
             Table = [["Parameter Name", "Value @start", "Value @end"]]
             for x in Vals:
                 Table.append(tuple([x]+Vals[x]))
@@ -456,21 +448,21 @@ class ITM:
         try:
             if alt:
                 V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
-                sf = V.goto('sf',lazy=True).getDouble()
-                k0 = V.goto('k0',lazy=True).getDouble()
+                sf = V.goto('sf',lazy=True).get_double()
+                k0 = V.goto('k0',lazy=True).get_double()
             else:
-                sf = self.root.goto('MassScale/sf').getDouble()
-                k0 = self.root.goto('MassScale/k0').getDouble()
+                sf = self.root.goto('MassScale/sf').get_double()
+                k0 = self.root.goto('MassScale/k0').get_double()
         except:
             import warnings
             warnings.warn("Failed to get sf,k0, find alternative")
             if alt:
-                sf = self.root.goto('MassScale/sf').getDouble()
-                k0 = self.root.goto('MassScale/k0').getDouble()
+                sf = self.root.goto('MassScale/sf').get_double()
+                k0 = self.root.goto('MassScale/k0').get_double()
             else:
                 V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
-                sf = V.goto('sf',lazy=True).getDouble()
-                k0 = V.goto('k0',lazy=True).getDouble()
+                sf = V.goto('sf',lazy=True).get_double()
+                k0 = V.goto('k0',lazy=True).get_double()
         return sf, k0
 
     def channel2mass(self, channels, sf=None, k0=None, binning=1):
@@ -495,8 +487,8 @@ class ITM:
             k0 = k00
         return ((binning*channels-k0)/(sf))**2
 
-    @alias("get_spectrum")
-    def getSpectrum(self, sf=None, k0=None, time=False, error=False, **kargs):
+    @alias("getSpectrum")
+    def get_spectrum(self, sf=None, k0=None, time=False, error=False, **kargs):
         """
         Retieve a mass,spectrum array
         This only works for .ita and .its files.
@@ -514,17 +506,17 @@ class ITM:
             return m, D, Dm
         return m, D
     
-    @alias("get_meas_data")
-    def getMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, debug=False):
+    @alias("getMeasData")
+    def get_meas_data(self, name='Instrument.LMIG.Emission_Current', prog=False, debug=False):
         """
         Allows to recover the data saved during the measurements.
         This function is like getValues, but instead of giving the values at the beginning and at the end, 
         it track the changes of them during the measurement.
         """
-        if name in self.MeasData:
-            return self.MeasData[name]
+        if name in self.meas_data:
+            return self.meas_data[name]
         self.rawdata = self.root.goto('rawdata')
-        L = self.rawdata.getList()
+        L = self.rawdata.get_list()
         i = 1
         while L[-i]['name'] !=  '  20':
             i += 1
@@ -539,46 +531,46 @@ class ITM:
             else:
                 T = prog(L)
         else:
-            T=L
-        for i,elt in enumerate(T):
+            T = L
+        for i, elt in enumerate(T):
             if elt['name'] != '  20':
                 continue
             idx = elt['bidx']
             self.f.seek(idx)
             child = Block.Block(self.f)
-            r = child.getKeyValue(0)
-            if not r['key'] in self.MeasData:
-                self.MeasData[r['key']] = []
-            self.MeasData[r['key']].append((idx,r['float']))
-        if name in self.MeasData:
-            return self.MeasData[name]
+            r = child.get_key_value(0)
+            if not r['key'] in self.meas_data:
+                self.meas_data[r['key']] = []
+            self.meas_data[r['key']].append((idx, r['float']))
+        if name in self.meas_data:
+            return self.meas_data[name]
         else:
             raise KeyError(name)
     
     def show_stability(self, ax=None, prog=False):
-        from .utils.plot import DualPlot
+        from .utils.plot import dual_plot
         if ax is None:
             import matplotlib.pyplot as plt
             ax = plt.gca()
-        self.showMeasData(ax=ax, scans=3, mul=1e6, prog=prog);
-        axb = DualPlot(ax)
+        self.show_meas_data(ax=ax, scans=3, mul=1e6, prog=prog);
+        axb = dual_plot(ax)
         self.showMeasData("Instrument.LMIG.Suppressor", ax=axb, color='orange', scans=False, prog=prog);
         
     @alias("show_meas_data")
-    def showMeasData(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, mul=1, scans=2, **kargs):
-        t = self.getMeasData('Measurement.AcquisitionTime')
-        S = self.getMeasData("Measurement.ScanNumber")
+    def show_meas_data(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, mul=1, scans=2, **kargs):
+        t = self.get_meas_data('Measurement.AcquisitionTime')
+        S = self.get_meas_data("Measurement.ScanNumber")
         idx = [x[0] for x in t]
         time = [x[1] for x in t]
         ScanData = [x[1] for x in S]
         ScanIdx = [x[0] for x in S]
         s = np.interp(ScanIdx,idx,time)
         
-        Meas = self.getMeasData(name,prog=prog)
+        Meas = self.get_meas_data(name, prog=prog)
         
         MeasData = [x[1] for x in Meas]
         MeasIdx = [x[0] for x in Meas]
-        t = np.interp(MeasIdx,idx, time)
+        t = np.interp(MeasIdx, idx, time)
         if ax is None:
             import matplotlib.pyplot as plt
             ax = plt.gca()
@@ -590,17 +582,41 @@ class ITM:
             lim = ax.get_ylim()
             axs = ax.twiny()
             axs.set_xticks(.5*s[:-1:scans]+.5*s[1::scans])
-            axs.set_xticklabels([str(i+1) for i in range(0,self.Nscan,scans)])
-            colors = [i%2 for i in range(0,self.Nscan,scans)]
-            for i,tick in enumerate(axs.xaxis.get_ticklabels()):
-                tick.set_color(["black","green"][colors[i]])
+            axs.set_xticklabels([str(i+1) for i in range(0, self.Nscan,scans)])
+            colors = [i%2 for i in range(0, self.Nscan, scans)]
+            for i, tick in enumerate(axs.xaxis.get_ticklabels()):
+                tick.set_color(["black", "green"][colors[i]])
             axs.set_xlim(ax.get_xlim())
-            for i in range(1,self.Nscan-1,2):
-                ax.fill_between([s[i], s[i+1]],*lim,color='green',alpha=.1)
+            for i in range(1, self.Nscan-1,2):
+                ax.fill_between([s[i], s[i+1]], *lim, color='green', alpha=.1)
             axs.set_xlabel("Scan number")
             axs.set_xlim(ax.get_xlim())
             axs.set_ylim(*lim)
         return p
+        
+    @alias("showSpectrumAround")
+    def show_spectrum_around(self, m0, delta=None, sf=None, k0=None, **kargs):
+        """
+        Display the Spectrum around a given mass.
+
+        Parameters
+        ----------
+        m0 : float
+            The central mass around which the spectrum will be plotted (in u)
+        delta : float
+            The spectrum will be plotted between m0-delta and m0+delta
+        sf : float or None
+        k0 : float or None
+            sf and k0 are the mass calibration parameters. If None values saved with the file will be used.
+        **kargs : supplementary arguments
+            Passed to pySPM.utils.showPeak
+        """
+        polarity = '+'
+        if self.get_value('Instrument.Analyzer_Polarity_Switch')['string'] == 'Negative':
+            polarity = '-'
+        from . import utils
+        m, D = self.get_spectrum(sf=sf, k0=k0)
+        return utils.show_peak(m, D, m0, delta, polarity=polarity, sf=sf, k0=k0, **kargs)
         
     @deprecated("SpectraPerPixel")
     def spectra_per_pixel(self, pixel_aggregation=None, peak_lim=0, scans=None, prog=False, safe=True, FOVcorr=True, smooth=False):
@@ -615,10 +631,10 @@ class ITM:
         
         """
         if pixel_aggregation is None:
-            pixel_aggregation = max(1,int(self.size['pixels']['x']//64))
+            pixel_aggregation = max(1, int(self.size['pixels']['x']//64))
                  
         from .utils import get_mass, constants as const
-        gun = self.root.goto('propend/Instrument.PrimaryGun.Species').getKeyValue()['string'] # Primary Gun Species (Bi1,Bi3,Bi3++)
+        gun = self.root.goto('propend/Instrument.PrimaryGun.Species').get_key_value()['string'] # Primary Gun Species (Bi1,Bi3,Bi3++)
         
         # if the + is missing in the name, add it
         if gun[-1]!='+':
@@ -626,7 +642,7 @@ class ITM:
             
         Q = gun.count('+') # number of charge
         
-        nrj = self.root.goto('propend/Instrument.PrimaryGun.Energy').getKeyValue()['float'] # Primary ion energy (in eV)
+        nrj = self.root.goto('propend/Instrument.PrimaryGun.Energy').get_key_value()['float'] # Primary ion energy (in eV)
         dx = self.size['real']['x']/self.size['pixels']['x'] # distance per pixel
         
         # Calculate the mass of the primary ion
@@ -652,7 +668,7 @@ class ITM:
             IT = lambda x: x
             
         pixel_size = int(self.size['pixels']['x']*self.size['pixels']['y']//pixel_aggregation**2)
-        channels = round(self.getValue("Measurement.CycleTime")['float']/self.getValue("Registration.TimeResolution")['float'])
+        channels = round(self.get_value("Measurement.CycleTime")['float']/self.get_value("Registration.TimeResolution")['float'])
         
         # calculate total spectra
         m = np.zeros(channels)
@@ -701,7 +717,7 @@ class ITM:
         size = (pixel_size, tx.size)
         spec = np.zeros(size, dtype='float32')
         for scan in IT(scans):
-            r = self.getRawData(scan)
+            r = self.get_raw_data(scan)
             for p in r[2]:
                 x, y = p
                 i = (self.size['pixels']['x']//pixel_aggregation)*(y//pixel_aggregation)+x//pixel_aggregation
@@ -737,15 +753,19 @@ class ITM:
             
         return m>peak_lim, spec
             
-    @alias("show_spectrum")
-    def showSpectrum(self, low=0, high=None, sf=None, k0=None, ax=None, log=False, showPeaks=False, **kargs):
+    @alias("showSpectrum")
+    def show_spectrum(self, low=0, high=None, sf=None, k0=None, ax=None, log=False, show_peaks=False, **kargs):
         """
         Plot the (summed) spectrum
         low and high: mass boundary of the plotted data
         ax: matplotlib axis
         log: plot the log of the intensity if True
         """
-        m, s = self.getSpectrum(sf=sf,k0=k0,**kargs)
+        # old notation compatibility
+        if 'showPeaks' in kargs:
+            show_peaks = kargs.pop("showPeaks")
+            
+        m, s = self.get_spectrum(sf=sf, k0=k0, **kargs)
         if ax is None:
             import matplotlib.pyplot as plt
             ax = plt.gca()
@@ -760,7 +780,7 @@ class ITM:
             S[S<1] = 0
         ax.plot(M, S, **kargs)
         self.get_masses()
-        if showPeaks:
+        if show_peaks:
             ymax = ax.get_ylim()[1]
             labels = []
             pos = []
@@ -803,8 +823,8 @@ class ITM:
                 'umass': p['umass']['float']})
         return result
 
-    @alias("get_raw_spectrum")
-    def getRawSpectrum(self, scans=None, ROI=None, FOVcorr=True, deadTimeCorr=True, **kargs):
+    @alias("getRawSpectrum")
+    def get_raw_spectrum(self, scans=None, ROI=None, FOVcorr=True, deadTimeCorr=True, **kargs):
         """
         Reconstruct the spectrum from RAW data.
         scans: List of scans to use. if None all scans are used (default)
@@ -832,7 +852,7 @@ class ITM:
         if ROI is None and 'roi' in kargs:
             ROI = kargs['roi']
             
-        gun = self.root.goto('propend/Instrument.PrimaryGun.Species').getKeyValue()['string'] # Primary Gun Species (Bi1,Bi3,Bi3++)
+        gun = self.root.goto('propend/Instrument.PrimaryGun.Species').get_key_value()['string'] # Primary Gun Species (Bi1,Bi3,Bi3++)
         
         # if the + is missing in the name, add it
         if gun[-1]!='+':
@@ -840,7 +860,7 @@ class ITM:
             
         Q = gun.count('+') # number of charge
         
-        nrj = self.root.goto('propend/Instrument.PrimaryGun.Energy').getKeyValue()['float'] # Primary ion energy (in eV)
+        nrj = self.root.goto('propend/Instrument.PrimaryGun.Energy').get_key_value()['float'] # Primary ion energy (in eV)
         dx = self.size['real']['x']/self.size['pixels']['x'] # distance per pixel
         
         # Calculate the mass of the primary ion
@@ -859,8 +879,8 @@ class ITM:
         assert hasattr(scans, '__iter__')
         
         # Allocate vector for the spectrum
-        number_channels = int(round(self.root.goto('propend/Measurement.CycleTime').getKeyValue()['float']\
-            / self.root.goto('propend/Registration.TimeResolution').getKeyValue()['float']))
+        number_channels = int(round(self.root.goto('propend/Measurement.CycleTime').get_key_value()['float']\
+            / self.root.goto('propend/Registration.TimeResolution').get_key_value()['float']))
         
         if kargs.get('prog',False):
             try:
@@ -874,7 +894,7 @@ class ITM:
         if ROI is None:
             Spectrum = np.zeros(number_channels, dtype=np.float32)
             for s in T:
-                Data = self.getRawData(s)[2]
+                Data = self.get_raw_data(s)[2]
                 if kargs.get('prog', False):
                     LData = tqdm(Data, leave=False)
                 else:
@@ -890,7 +910,7 @@ class ITM:
             assert np.min(ROI)>=0
             Spectrum = np.zeros((number_channels,np.max(ROI)+1), dtype=np.float32)
             for s in T:
-                Data = self.getRawData(s)[2]
+                Data = self.get_raw_data(s)[2]
                 if kargs.get('prog', False):
                     LData = tqdm(Data, leave=False)
                 else:
@@ -907,7 +927,7 @@ class ITM:
             multi_roi = True
             Spectrum = np.zeros((number_channels, len(ROI)), dtype=np.float32)
             for s in T:
-                Data = self.getRawData(s)[2]
+                Data = self.get_raw_data(s)[2]
                 for xy in Data:
                     dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
                     ip = int(dt)
@@ -920,8 +940,8 @@ class ITM:
                         for k in li:
                             Spectrum[x-ip, k] += (1-fp)
                             Spectrum[x-ip-1, k] += fp
-        sf = kargs.get('sf', self.root.goto('MassScale/sf').getDouble())
-        k0 = kargs.get('k0', self.root.goto('MassScale/k0').getDouble())
+        sf = kargs.get('sf', self.root.goto('MassScale/sf').get_double())
+        k0 = kargs.get('k0', self.root.goto('MassScale/k0').get_double())
         masses = self.channel2mass(np.arange(number_channels), sf=sf, k0=k0)
         if deadTimeCorr:
             dt = 1300 # 65ns*(1ch/50ps) = 1300 channels
@@ -938,13 +958,13 @@ class ITM:
             return np.arange(number_channels), Spectrum
         return masses, Spectrum
 
-    @alias("get_raw_raw_data")
-    def getRawRawData(self, scan=0):
+    @alias("getRawRawData")
+    def get_raw_raw_data(self, scan=0):
         assert scan < self.Nscan
         found = False
         RAW = b''
         if self.rawlist is None:
-            self.rawlist = self.root.goto('rawdata').getList()
+            self.rawlist = self.root.goto('rawdata').get_list()
         startFound = False
         for x in self.rawlist:
             if x['name'] == '   6':
@@ -960,8 +980,8 @@ class ITM:
             return bytearray(RAW)
         return RAW
 
-    @alias("get_raw_data")
-    def getRawData(self, scan=0):
+    @alias("getRawData")
+    def get_raw_data(self, scan=0):
         """
         Function which allows you to read and parse the raw data.
         With this you are able to reconstruct the data.
@@ -969,7 +989,7 @@ class ITM:
         to the compressed version saved in the ITA files.
         scan: The scan number. Start at 0
         """
-        RAW = self.getRawRawData(scan)
+        RAW = self.get_raw_raw_data(scan)
         Blocks = {}
         _Block = []
         PixelList = []
@@ -1011,8 +1031,8 @@ class ITM:
                 print(
                     "{id}: ({desc}) [{assign}] {lmass:.2f}u - {umass:.2f}u (center: {cmass:.2f}u)".format(**m))
 
-    @alias("show_stage")
-    def showStage(self, ax=None, markers=False, plist=False):
+    @alias("showStage")
+    def show_stage(self, ax=None, markers=False, plist=False):
         """
         Display an image of the stage used
         ax: maplotlib axis to be ploted in. If None the current one (or new) will be used
@@ -1020,8 +1040,8 @@ class ITM:
         """
         import pickle
         import matplotlib as mpl
-        W = self.root.goto('SampleHolderInfo/bitmap/res_x').getLong()
-        H = self.root.goto('SampleHolderInfo/bitmap/res_y').getLong()
+        W = self.root.goto('SampleHolderInfo/bitmap/res_x').get_ulong()
+        H = self.root.goto('SampleHolderInfo/bitmap/res_y').get_ulong()
 
         if ax is None:
             import matplotlib.pyplot as plt
@@ -1032,8 +1052,8 @@ class ITM:
         I = np.array(struct.unpack("<"+str(W*H*3)+"B", Dat), dtype=np.uint8).reshape((H, W, 3))
         ax.imshow(I)
         if markers:
-            X = self.root.goto('Meta/SI Image[0]/stageposition_x').getDouble()
-            Y = self.root.goto('Meta/SI Image[0]/stageposition_y').getDouble()
+            X = self.root.goto('Meta/SI Image[0]/stageposition_x').get_double()
+            Y = self.root.goto('Meta/SI Image[0]/stageposition_y').get_double()
 
             def toXY(xy, W, H):
                 sx = 23
@@ -1057,21 +1077,22 @@ class ITM:
         ax.set_xticks([])
         ax.set_yticks([])
 
-    @alias("get_snapshot")
-    def getSnapshot(self):
+    @alias("getSnapshot")
+    def get_snapshot(self):
         """
         Return the video snapshot
         """
         try:
-            dl = self.root.goto('Meta/Video Snapshot').dictList()
-            sx = dl['res_x']['long']
-            sy = dl['res_y']['long']
-            img = np.array(self.root.goto('Meta/Video Snapshot/imagedata').getData('B')).reshape((sy, sx, 3))
+            dl = self.root.goto('Meta/Video Snapshot').dict_list()
+            sx = dl['res_x']['ulong']
+            sy = dl['res_y']['ulong']
+            img = np.array(self.root.goto('Meta/Video Snapshot/imagedata').get_data('B')).reshape((sy, sx, 3))
             return  img
         except Exception as e:
             return None
-    @alias("show_peaks")
-    def showPeaks(self):
+            
+    @alias("showPeaks")
+    def show_peaks(self):
         for p in self.peaks:
             P = self.peaks[p]
             label = P['assign']['utf16']
@@ -1120,9 +1141,9 @@ class ITM:
                 sf, k0 = self.get_mass_cal()
             left = mass2time(left, sf=sf, k0=k0)
             right = mass2time(right, sf=sf, k0=k0)
-        Counts = [np.zeros((self.size['pixels']['x'],self.size['pixels']['y'])) for x in channels]
+        Counts = [np.zeros((self.size['pixels']['x'], self.size['pixels']['y'])) for x in channels]
         for s in scans:
-            PixelList, PixelOrder, Data = self.getRawData(s)
+            PixelList, PixelOrder, Data = self.get_raw_data(s)
             for xy in Data:
                 for i,ch in enumerate(channels):
                     Counts[i][xy[1],xy[0]] += np.sum((Data[xy]>=left[i])*(Data[xy]<=right[i]))
@@ -1141,14 +1162,14 @@ class ITM:
         if lmass is None:
             lmass = self.channel2mass(0)
         if umass is None:
-            up = int(np.round(self.getValue("Measurement.CycleTime")['float']/self.getValue("Registration.TimeResolution")['float'], 0))
+            up = int(np.round(self.get_value("Measurement.CycleTime")['float']/self.get_value("Registration.TimeResolution")['float'], 0))
             umass = self.channel2mass(up)
         new_index = max([x.head['ID'] for x in self.root.goto("MassIntervalList") if x.name == 'mi'])+1
-        new_index2 = self.root.goto("Measurement Options/massintervals/NextId").getLong()
-        new_id = max([x.goto("id").getLong() for x in self.root.goto("MassIntervalList") if x.name == 'mi'])+1
-        new_id2 = max([x.goto("id").getLong() for x in self.root.goto("Measurement Options/massintervals") if x.name == 'mi'])+1
+        new_index2 = self.root.goto("Measurement Options/massintervals/NextId").get_ulong()
+        new_id = max([x.goto("id").get_ulong() for x in self.root.goto("MassIntervalList") if x.name == 'mi'])+1
+        new_id2 = max([x.goto("id").get_ulong() for x in self.root.goto("Measurement Options/massintervals") if x.name == 'mi'])+1
         NID = self.root.goto("MassIntervalList/NextId", lazy=True)
-        NID.rewrite(struct.pack("<I", NID.getLong()+1))
+        NID.rewrite(struct.pack("<I", NID.get_ulong()+1))
         defaults = {
             'clsid': ('raw', b'\x85\x1b\xa9\xe4hZ\xc8M\x93\xe0\x7f\xc0\xf8\xe2\xbb\xd9'),
             'color': ('raw', b'\xff\x00\x00\x00'),
@@ -1163,7 +1184,7 @@ class ITM:
             'attr.Sticky':('B', 0),
             'attr.Visible':('B', 1)
             }
-        p = dict(new_index=new_index,new_index2=new_index2)
+        p = dict(new_index=new_index, new_index2=new_index2)
         self.root.edit_block("Measurement Options/massintervals/mi[{new_index2}]".format(**p), "id", struct.pack("<I", new_id))
         self.root.edit_block("MassIntervalList/mi[{new_index}]".format(**p), "id", struct.pack("<I", new_id))
         for path in ["Measurement Options/massintervals/mi[{new_index2}]","MassIntervalList/mi[{new_index}]"]:
@@ -1187,7 +1208,7 @@ class ITM:
                     data = struct.pack("<"+fmt, data)
                 self.root.edit_block(path.format(**p), key, data)
         blk = self.root.goto("MassIntervalList/mi[{new_index}]".format(**p))
-        d = blk.dictList()
+        d = blk.dict_list()
         self.peaks[d['id']['long']] = d
         return blk
       
@@ -1197,15 +1218,15 @@ class ITM:
             os.fsync(self.f)
         self.f.close()
 
-    @alias("set_k0")
-    def setK0(self, k0):
+    @alias("setK0")
+    def set_k0(self, k0):
         import struct
         b = self.root.goto("MassScale/k0")
         buffer = struct.pack("<d", k0)
         b.rewrite(buffer);
 
-    @alias("set_sf")
-    def setSF(self, sf):
+    @alias("setSF")
+    def set_sf(self, sf):
         import struct
         b = self.root.goto("MassScale/sf")
         buffer = struct.pack("<d", sf)

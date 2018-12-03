@@ -9,9 +9,10 @@ import struct
 import numpy as np
 import pySPM.SPM
 from pySPM.SPM import SPM_image, funit
+from .utils.misc import aliased, alias, deprecated
 
-
-def getCurve(filename, channel='Normal Deflection', backward=False):
+@deprecated("getCurve")
+def get_curve(filename, channel='Normal Deflection', backward=False):
     """
     function to retrieve data which are not in the form of images.
     This is typically used for 1D channel where the normal deflection is recorded while z is swept.
@@ -36,9 +37,8 @@ def getCurve(filename, channel='Normal Deflection', backward=False):
     x = np.linspace(start, stop, len(vals))
     return x, vals
 
-
+@aliased
 class Nanoscan():
-
     def __init__(self, filename=None):
         if not os.path.exists(filename):
             raise IOError('File "{0}" Not Found'.format(filename))
@@ -130,14 +130,16 @@ class Nanoscan():
             result = result[0]
         return result
 
-    def arraySummary(self):
+    @deprecated("arraySummary")
+    def array_summary(self):
         from pySPM.utils import htmlTable
         res = [y.format(**self.__dict__) for y in
                ["{filename}", "{pixel_size[0]}×{pixel_size[1]}", "{size[x][value]}×{size[y][value]} {size[x][unit]}",
                 "{scan_speed[forward][value]} {scan_speed[forward][unit]}",
                 "{feedback[channel]}", "{P[value]:.2f} {P[unit]}", "{I[value]:.2f} {I[unit]}"]]
 
-    def getSummary(self):
+    @alias("getSummary")
+    def get_summary(self):
         x = funit(self.size['x'], self.size['unit'])
         y = funit(self.size['y'], self.size['unit'])
         P = funit(self.feedback['P'])

@@ -5,12 +5,14 @@
 """
 Module to handle block type used in iontof file formats ITA,ITM,ITS, etc...
 """
+
 from __future__ import absolute_import
 import sys
 import binascii
 import struct
 import os
 from .utils import dec_debug, do_debug
+from .utils.misc import deprecated, aliased, alias
 
 class MissingBlock(Exception):
     def __init__(self, parent, name, index):
@@ -20,6 +22,7 @@ class MissingBlock(Exception):
     def __str__(self):
         return "Missing block \"{name}\" with index {index}".format(name=self.block_name,index=self.index)
         
+@aliased
 class Block:
     """
     Class to handle a iontof-Block
@@ -40,13 +43,13 @@ class Block:
         Then follows 5 uint32: slen, ID, N ,length1, length2
             slen: The length of the block's name
             ID: Block ID. Start at 0 and is increased monotonically for each blocks of the same name with the same parent. We usually find the ID from the children's list (see below) and this information is never used as it's redundant.
-            N: The number of children / sub-blocks. Might be = 0 even if the block has children. Check the value L (defined below) if so
+            N: The number of children / sub-blocks
             length1: The length of the block's value
-            length2: Redundant. Seems to be always = x
+            length2: Redundant. Seems to be always = x. We suspect that length2 is the length till the next following block in the file. Length1 and length2 might be different in case a long block is modified with a smaller content. Length1 should thus math the new data length and length2 remain as large as the old data.
         Then follow slen-bytes representing the name of the block
         Then follow length1-bytes forming the value of the block
         
-        Blocks of types \x01\x19\x00\x00\x00 and \x03\x19\x00\x00\x00 are blocks that contains sub-blocks. There is no big difference between the two. I guess that types \x01 is the first one and type \x03 are the continuation blocks (see NextBlock information below)
+        Blocks of types \x01\x19\x00\x00\x00 and \x03\x19\x00\x00\x00 are blocks that contains sub-blocks. There is no big difference between the two. Types \x01 are the first one and type \x03 are the continuation blocks (see NextBlock information below)
             Those block have a value which starts with 41-bytes.
                 2 uint32 -> (length, nums).
                     length: We actually don't need it. It's a redundant information. That is the length of the sub-headers. (It stop just before the sub-blocks names)
@@ -98,18 +101,21 @@ class Block:
         self.iterP = 0
     
     def inc(self):
+        """
+        Increment the value (interpreted as unsigned in32) of a block by one and write the changes to the file
+        """
         self.rewrite(struct.pack("<I", self.getLong()+1))
         
     def add_child(self, blk):
         """
-        Add a new child to a given block. /!\ will overwrite the ITA file.
+        Add a new child to a given block. /!\ will overwrite the ITA/ITM file.
         """
         import os
         assert self.Type[0] in [1,3]
         
         length, nums, NextBlock = struct.unpack('<II25xQ', self.value[:41])
         if NextBlock != 0:
-            return self.gotoNextBlock().add_child(blk)
+            return self.goto_next_block().add_child(blk)
         
         # Check the available size of the block
         header_length = 41+33*self.head['N']
@@ -157,13 +163,20 @@ class Block:
         return blk
         
     def refresh(self):
+        """
+        Reload self.value from the file.
+        This function is useful in case a block was overwritten
+        """
         self.List = None
         self.f.seek(self.offset+self.head['name_length']+25)
         self.value = self.f.read(self.head['length1'])
         
     def edit_child(self, old_block, new_block, debug=False):
-        import os
-        assert self.Type[0] in [1,3]
+        """
+        Edit the children list of a given block.
+        """
+        if not self.Type[0] in [1,3]:
+            raise Exception("The current block should be of type 01 or 03 (folder)")
         
         header_length = 41+33*self.head['N']
         children_names_length = 0
@@ -231,17 +244,17 @@ class Block:
                     idx = int(p[i+1:-1])
                     p = p[:i]
                 if p is '*':
-                    e = parent.getList()[idx]
+                    e = parent.get_list()[idx]
                     p = e['name']
                     idx = e['id']
                 try:
-                    parent = parent.gotoItem(p, idx)
+                    parent = parent.goto_item(p, idx)
                 except MissingBlock:
                     parent = parent.create_dir(p, children=[], id=idx)
         try:
             if do_debug(debug):
                 print("Accessing block \"{}\"[{}]".format(name, id))
-            child = parent.gotoItem(name, id)
+            child = parent.goto_item(name, id)
             if child.head['length1'] == len(value):
                 if do_debug(debug):
                     print("rewrite block")
@@ -258,6 +271,9 @@ class Block:
             return parent.add_child(parent.create_block(name, value, id=id, _type=_type))
     
     def create_block(self, name, value, id=0, _type=0, debug=False):
+        """
+        Create a new block and write it at the end of the file
+        """
         if do_debug(debug):
             print("Creating new block \"{}\" of size {}".format(name, len(value)))
         if type(name) is str:
@@ -271,8 +287,9 @@ class Block:
         self.f.write(value)
         self.f.seek(offset)
         return Block(self.f)
-   
-    def DepthFirstSearch(self, callback=None, filter=lambda x: True, func=lambda x: x):
+        
+    @deprecated("DepthFirstSearch")
+    def depth_first_search(self, callback=None, filter=lambda x: True, func=lambda x: x):
         """
         Perform a depth first search on the blocks.
         pass each block where filter(block) is true to a callback
@@ -285,33 +302,37 @@ class Block:
                 callback(self)
         if self.Type[0] in [1,3]:
             for x in self:
-                res += x.DepthFirstSearch(callback=callback, filter=filter, func=func)
+                res += x.depth_first_search(callback=callback, filter=filter, func=func)
         return res
     
-    def getName(self):
+    @deprecated("getName")
+    def get_name(self):
         """
         Return the name of the Block
         """
         return self.name
 
-    def getList(self):
+    @deprecated("getList")
+    def get_list(self):
         """
         Return the list of the sub-blocks (children) of the current Block.
         """
         if not self.Type[0:1] in [b'\x01', b'\x03']:
             return []
         if self.List is None:
-            return self.createList()
+            return self.create_list()
         return self.List
     
-    def gotoFollowingBlock(self):
+    @deprecated("gotoFollowingBlock")
+    def goto_following_block(self):
         offset = self.offset+25+self.head['name_length']+self.head['length1']
         if offset < os.fstat(self.f.fileno()).st_size:
             self.f.seek(offset)
             return Block(self.f, parent=None)
         return None
-        
-    def gotoNextBlock(self):
+
+    #deprecated("gotoNextBlock")
+    def goto_next_block(self):
         offset = self.offset
         self.f.seek(offset)
         head = dict(zip(['name_length', 'ID', 'N', 'length1', 'length2'], struct.unpack('<5x5I', self.f.read(25))))
@@ -323,15 +344,16 @@ class Block:
         return Block(self.f, parent=self.parent)
     
     def getNthChild(self, n=0):
-        L = self.getList()
+        L = self.get_list()
         assert len(L)>n
-        return self.gotoItem(L[n]['name'],L[n]['id'])
-        
-    def createList(self, limit=None, debug=False):
+        return self.goto_item(L[n]['name'],L[n]['id'])
+
+    @deprecated("createList")
+    def create_list(self, limit=None, debug=False):
         """
         Generate a list (self.List) containing all the children (sub-blocks) of the current Block
         """
-        length, nums, NextBlock = struct.unpack('<II25xQ', self.value[:41])
+        length, nums, next_block = struct.unpack('<II25xQ', self.value[:41])
         self.nums = nums
         offset = self.offset
         self.List = []
@@ -344,7 +366,7 @@ class Block:
                 struct.unpack('<5x5I', data)))
             name = self.f.read(head['name_length'])
             data = self.f.tell()
-            length, nums, NextBlock = \
+            length, nums, next_block = \
                 struct.unpack('<II25xQ', self.f.read(41))
             N = head['N']
             ## The following is commented as believed to be erroneous
@@ -358,45 +380,49 @@ class Block:
                 self.f.seek(data+S['index'])
                 S['name'] = self.f.read(S['slen']).decode('ascii')
                 self.List.append(S)
-            if NextBlock == 0:
+            if next_block == 0:
                 break
-            offset = NextBlock
+            offset = next_block
         return self.List
-            
-    def getString(self):
+               
+    @deprecated("getString")
+    def get_string(self):
         """
         Decode the value of the Block to UTF-16 (standard for all strings in this fileformat)
         """
         return self.value.decode('utf16')
 
-    def dictList(self):
+    @deprecated("dictList")
+    def dict_list(self):
         """
         Return a dictionary of the value decoded with various formats (raw, long, float, utf16)
         As the type of the data is not known, this function is very helpful for debugging purpose
         """
         d = {}
-        for i, l in enumerate(self.getList()):
+        for i, l in enumerate(self.get_list()):
             self.f.seek(l['bidx'])
             child = Block(self.f, parent=self)
             if child.Type[0:1] == b'\x00':
                 value = binascii.hexlify(child.value)
                 d[child.name] = {'raw':value}
                 if len(child.value) == 4:
-                    d[child.name]['long'] = child.getLong()
+                    d[child.name]['long'] = child.get_long()
+                    d[child.name]['ulong'] = child.get_ulong()
                 elif len(child.value) == 8:
-                    d[child.name]['float'] = child.getDouble()
-                    d[child.name]['long'] = child.getLongLong()
+                    d[child.name]['float'] = child.get_double()
+                    d[child.name]['long'] = child.get_longlong()
                 if len(child.value)%2 == 0:
                     d[child.name]['utf16'] = child.value.decode('utf16', "ignore")
             del child
         return d
-
-    def showList(self):
+    
+    @deprecated("showList")
+    def show_list(self):
         """
         Show a list of all the children (sub-blocks) of the current Block.
         It will also display the value/data of all the children (if any)
         """
-        print('List of', len(self.getList()))
+        print('List of', len(self.get_list()))
         for i, l in enumerate(self.List):
             self.f.seek(l['bidx'])
             other = ''
@@ -404,17 +430,17 @@ class Block:
                 child = Block(self.f, parent=self)
                 if child.Type[0:1] == b'\x00':
                     if len(child.value) == 4:
-                        vL = child.getLong()
+                        vL = child.get_long()
                         Dtype = 'long'
                     elif len(child.value) == 8:
-                        vL = child.getDouble()
+                        vL = child.get_double()
                         Dtype = 'double'
-                        other += ' = '+str(child.getLongLong())+" (long64)"
+                        other += ' = '+str(child.get_longlong())+" (long64)"
                     elif len(child.value) == 2:
-                        vL = child.getShort()
+                        vL = child.get_short()
                         Dtype = 'short'
                     elif len(child.value) == 1:
-                        vL = child.getByte()
+                        vL = child.get_byte()
                         Dtype = 'byte'
                     else:
                         vL = '???'
@@ -446,25 +472,27 @@ class Block:
         return self
 
     def __next__(self):
-        L = self.getList()
+        L = self.get_list()
         if self.pointer >= len(L):
             raise StopIteration
         it = L[self.pointer]
         self.pointer += 1
-        return self.gotoItem(it['name'], it['id'])
+        return self.goto_item(it['name'], it['id'])
 
-    def gotoItem(self, name, idx=0, lazy=False):
+    @deprecated("gotoItem")
+    def goto_item(self, name, idx=0, lazy=False):
         """
         Return a new Block instance of a child of the current Block
         name: name of the children's block
         """
-        Idx = self.getIndex(name, idx, lazy=lazy)
+        Idx = self.get_index(name, idx, lazy=lazy)
         self.f.seek(Idx)
         return Block(self.f, parent=self)
 
-    def getIndex(self, name, idx=0, lazy=False):
+    @deprecated("getIndex")
+    def get_index(self, name, idx=0, lazy=False):
         """
-        Get the index of the children having a name=name.
+        Get the index (here to understand the offset in bytes from the beginning of the file till the block of interest) of the children having a name=name.
         This function is more intended for internal usage.
         You are encouraged to use the function _goto_ instead
         
@@ -472,14 +500,14 @@ class Block:
         the second one can by retrieved by idx=1, the third with idx=2, etc.
         
         Sometimes the id does not start with 0, but with random high values.
-        Instead of looking at the correct id, you can sue lazy=True with idx=0 in order to fetch the first one saved.
+        Instead of looking at the correct id, you can use lazy=True with idx=0 in order to fetch the first one saved.
         """
         if type(name) is bytes:
             name = name.decode('ascii')
-        i=0
+        i = 0
         if name is '*':
-            return self.getList()[idx]['bidx']
-        for l in self.getList():
+            return self.get_list()[idx]['bidx']
+        for l in self.get_list():
             if l['name'] == name:
                 if (lazy and i==idx) or (not lazy and l['id'] == idx):
                     return l['bidx']
@@ -511,43 +539,55 @@ class Block:
                 idx = int(p[i+1:-1])
                 p = p[:i]
             if p is '*':
-                e = s.getList()[idx]
+                e = s.get_list()[idx]
                 p = e['name']
                 idx = e['id']
-            s = s.gotoItem(p, idx, lazy=lazy)
+            s = s.goto_item(p, idx, lazy=lazy)
         return s
 
-    def getLongLong(self):
+    @deprecated("getLongLong")
+    def get_longlong(self):
         """
         Decode the value as an 64-Integer
         """
         return struct.unpack('<q', self.value)[0]
 
-    def getDouble(self):
+    @deprecated("getDouble")
+    def get_double(self):
         """
         Decode the value as a 64-float (Double)
         """
         return struct.unpack('<d', self.value)[0]
 
-    def getShort(self):
+    @deprecated("getShort")
+    def get_short(self):
         """
         Decode the value as an 16-Integer (Short)
         """
         return struct.unpack('<h', self.value)[0]
 
-    def getByte(self):
+    @deprecated("getByte")
+    def get_byte(self):
         """
         Decode the value as a 1-Byte
         """
         return struct.unpack('<B', self.value)[0]
+        
+    def get_bytes(self):
+        """
+        Decode the values as unsigned bytes
+        """
+        return struct.unpack('<{}B'.format(len(self.value)), self.value)
 
-    def getULong(self):
+    @deprecated("getULong")
+    def get_ulong(self):
         """
         Decode the value as an unsigned 32-Integer (Long)
         """
         return struct.unpack('<I', self.value)[0]
 
-    def getLong(self):
+    @deprecated("getLong")
+    def get_long(self):
         """
         Decode the value as an 32-Integer (Long)
         """
@@ -557,7 +597,8 @@ class Block:
         import pickle
         return pickle.loads(self.value)
         
-    def getKeyValue(self, offset=16):
+    @deprecated("getKeyValue")
+    def get_key_value(self, offset=16):
         """
         Return a dictionnary of key/values pairs of the data
         Note that the function has no idea if the data are stored as so.
@@ -570,9 +611,9 @@ class Block:
         return {'key':Key, 'float':float_value, 'int':int_value,'string':SVal}
 
     def __contains__(self, name):
-        return name in [x['name'] for x in self.getList()]
+        return name in [x['name'] for x in self.get_list()]
         
-    def show(self, maxlevel=3, level=0, All=False, out=sys.stdout, digraph=False, parent=None, ex=None):
+    def show(self, maxlevel=3, level=0, all=False, out=sys.stdout, digraph=False, parent=None, ex=None, **kargs):
         """
         Display the children of the current Block (recursively if maxlevel > 1)
         Very useful for debugging purpose and looking for the path of valuable data.
@@ -581,14 +622,17 @@ class Block:
         level: internal variable used to call the function recursively.
         ex: execute function
         """
+        if 'All' in kargs:
+            all = kargs.pop("All")
+            
         if not ex is None:
             ex(self)
         if parent == None:
             parent = self.name
         if digraph and level == 0:
             out.write('digraph {{\n graph [nodesep=.1 rankdir=LR size="10,120"]\n'.format(root=parent))
-        for l in self.getList():
-            if l['id'] == 0 or All:
+        for l in self.get_list():
+            if l['id'] == 0 or all:
                 if digraph:
                     out.write('"{parent}-{name}" [label="{name}"]\n"{parent}" -> "{parent}-{name}"\n'\
                         .format(parent=parent, name=l['name'].decode('utf8')))
@@ -597,19 +641,20 @@ class Block:
                         out.write("{tab}{name} ({id}) @{bidx}\n".format(tab="\t"*level, **l))
                 if level < maxlevel:
                     try:
-                        self.gotoItem(l['name'], l['id'])\
-                            .show(maxlevel, level+1, All=All, out=out, digraph=digraph\
+                        self.goto_item(l['name'], l['id'])\
+                            .show(maxlevel, level+1, all=all, out=out, digraph=digraph\
                             , parent=parent+'-'+l['name'], ex=ex)
                     except:
                         pass
         if digraph and level == 0:
             out.write('}')
 
-    def getIndexes(self, key, debug=False):
+    @deprecated("getIndexes")
+    def get_indexes(self, key, debug=False):
         if type(key) is str:
             key = key.encode('utf8')
         r = []
-        for x in self.getList():
+        for x in self.get_list():
             if debug:
                 print(x['name'],key)
             if x['name'] == key:
@@ -620,7 +665,8 @@ class Block:
         import zlib
         return zlib.decompress(self.value)
 
-    def getData(self, fmt="I", decompress=True):
+    @deprecated("getData")
+    def get_data(self, fmt="I", decompress=True):
         if decompress:
             raw = self.decompress()
         else:

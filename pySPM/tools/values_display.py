@@ -34,7 +34,7 @@ class GUI_values(QWidget):
                 item.appendRow(child)
 
 
-def ShowValues(data):
+def show_values(data):
     app = QApplication([])
     G = GUI_values(data)
     G.show()

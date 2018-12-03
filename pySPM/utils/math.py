@@ -68,44 +68,61 @@ def butter_lowpass_filter(data, cutOff, fs, order=4):
     y = scipy.signal.lfilter(b, a, data)
     return y
 
-def Gauss(x, x0, s, Amp=None, **kargs):
+def Gauss(x, x0, s, amp=None, **kargs):
     if 'A' in kargs:
         from warnings import warn
-        warn("Parameter A is deprecated. Please use Amp in order to set the amplitude!")
-        Amp = kargs['A']
+        warn("Parameter A is deprecated. Please use amp in order to set the amplitude!")
+        amp = kargs.pop('A')
+    elif 'Amp' in kargs:
+        from warnings import warn
+        warn("Parameter Amp is deprecated. Please use amp in order to set the amplitude!")
+        amp = kargs.pop('Amp')
     R = np.exp(-(x-x0)**2/(2*s**2))
-    if Amp is None:
+    if amp is None:
         R /= (s*np.sqrt(2*np.pi))
     else:
-        R *= Amp
+        R *= amp
     R[s==0] = (x[s==0]==x0)*1.0
     return R
 
-def Lorentz(x, x0, gamma, Amp=None, **kargs):
+def Lorentz(x, x0, gamma, amp=None, **kargs):
     if 'A' in kargs:
         from warnings import warn
-        warn("Parameter A is deprecated. Please use Amp in order to set the amplitude!")
+        warn("Parameter A is deprecated. Please use amp in order to set the amplitude!")
         Amp = kargs['A']
+    elif 'Amp' in kargs:
+        from warnings import warn
+        warn("Parameter Amp is deprecated. Please use amp in order to set the amplitude!")
+        amp = kargs.pop('Amp')
     R = 1/((x-x0)**2+(.5*gamma)**2)
-    if Amp is None:
+    if amp is None:
         return .5*gamma*R/np.pi
-    return Amp*R*(.5*gamma)**2
+    return amp*R*(.5*gamma)**2
 
-def CDF(x,mu,sig, Amp=1, lg=0):
+def CDF(x,mu,sig, amp=1, lg=0, **kargs):
+    if 'Amp' in kargs:
+        from warnings import warn
+        warn("Parameter Amp is deprecated. Please use amp in order to set the amplitude!")
+        amp = kargs.pop('Amp')
     from scipy.special import erf
     g = sig*np.sqrt(2*np.log(2))
-    return Amp*lg*(.5+np.arctan2(x-mu,g)/np.pi)+(1-lg)*Amp*.5*(1+erf((x-mu)/(sig*np.sqrt(2))))
+    return amp*lg*(.5+np.arctan2(x-mu,g)/np.pi)+(1-lg)*amp*.5*(1+erf((x-mu)/(sig*np.sqrt(2))))
     
-def LG(x, x0, sig=None, Amp=None, lg=.5, asym=1, FWHM=None):
+def LG(x, x0, sig=None, amp=None, lg=.5, asym=1, FWHM=None, **kargs):
+    if 'Amp' in kargs:
+        from warnings import warn
+        warn("Parameter Amp is deprecated. Please use amp in order to set the amplitude!")
+        amp = kargs.pop('Amp')
+        
     assert sig is not None or FWHM is not None
       
     if FWHM is None:
         FWHM = 2*np.sqrt(2*np.log(2))*sig
     if sig is None:
         sig = FWHM/(2*np.sqrt(2*np.log(2)))
-    Y = (1-lg)*Gauss(x,x0,sig,Amp=Amp)+lg*Lorentz(x,x0,FWHM,Amp=Amp)
+    Y = (1-lg)*Gauss(x,x0,sig,amp=amp)+lg*Lorentz(x,x0,FWHM,amp=amp)
     if asym!=1:
-        Yr = (1-lg)*Gauss(x,x0,sig*asym,Amp=Amp)+lg*Lorentz(x,x0,FWHM*asym,Amp=Amp)
+        Yr = (1-lg)*Gauss(x, x0, sig*asym, amp=amp)+lg*Lorentz(x, x0, FWHM*asym, amp=amp)
         Y[x>x0] = Yr[x>x0]
     return Y
 
@@ -265,7 +282,7 @@ def LG2Da(XY, amplitude=1, angle=0, sigN=10, sigS=None, sigE=10, sigW=None, x0=N
     out = bg+amplitude*f
     return out
 
-def MaxwellBoltzmann(E,T):
+def MaxwellBoltzmann(E, T):
     from . import constants as const
     return 2*const.qe*np.sqrt(E/np.pi)*np.exp(-E/(const.kb*T))/(const.kb*T)**1.5
     

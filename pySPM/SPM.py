@@ -104,7 +104,7 @@ class SPM_image:
         fxy = {xy: funit(self.size['real'][xy], self.size['real']['unit']) for xy in 'xy'}
         return [(fxy[xy]['value']/self.size['pixels'][xy], fxy[xy]['unit']) for xy in 'xy']
         
-    def add_scale(self, length, ax=None, height=20, color='w', loc=4, text=True, pixels=True, fontsize=20):
+    def add_scale(self, length, ax=None, height=20, margin=5, color='w', loc=4, text=True, pixels=None, fontsize=20):
         """
         Display a scale marker on an existing image
 
@@ -144,32 +144,56 @@ class SPM_image:
         >>> img.add_scale(50e-6);
         Add a scale of 50 μm on an image displayed in pixels
         """
+        
         import matplotlib.patches
-        L = length*self.size['pixels']['x']/self.size['real']['x']
-        ref = [height, height]
-        if loc == 1 or loc == 4:
-            ref[0] = self.size['pixels']['x'] - ref[0] - L
-        if loc == 3 or loc == 4:
-            ref[1] = self.size['pixels']['y'] - ref[1] - height
+        fL = length/self.size['real']['x']
+        L = self.size['pixels']['x']*fL
+        fH = height/self.size['pixels']['y']
         if ax is None:
             ax = plt.gca()
-        if text and loc in [1,2]:
-            ref[1] += fontsize + height
-        if not pixels:
-            x,y = self.px2real(ref[0]+L,ref[1]+height)
-            ref = self.px2real(*ref)
-            L = x-ref[0]
-            height = y-ref[1]
-        ax.add_patch(matplotlib.patches.Rectangle(
-            ref, width=L, height=height, color=color))
+        if pixels is None:
+            if hasattr(ax, 'isPixel'):
+                pixels = ax.isPixel
+            else:
+                pixels = False
+        flipped = False
+        if hasattr(ax, 'flipped'):
+            flipped = ax.flipped
+        if type(loc) is int:
+            assert loc in [1, 2, 3, 4]
+            ref = ax.transAxes.transform({1:(1-fL,0),2:(0,0),3:(0,1-fH),4:(1-fL,1-fH)}[loc])
+            if loc in [2,3]:
+                ref[0] += margin
+            else:
+                ref[0] -= margin
+            if loc in [1,2]:
+                ref[1] += margin
+            else:
+                ref[1] -= margin
+        else:
+            assert type(loc) in [tuple, list]
+            assert len(loc)==2
+            ref = ax.transData.transform(loc) + ax.transAxes.transform((-fL/2,-fH/2)) - ax.transAxes.transform((0,0))
+        inv = ax.transData.inverted()
+        ref = inv.transform(ref)
+        WH = inv.transform(ax.transAxes.transform((fL,fH)))-inv.transform(ax.transAxes.transform((0,0)))
+        rect = ax.add_patch(matplotlib.patches.Rectangle(ref, width=WH[0], height=WH[1], color=color))
+            
         if text:
             r = funit(length, self.size['real']['unit'])
             if r['unit'][0] == 'u':
                 r['unit'] = '$\\mu$' + r['unit'][1:]
-            ax.annotate("{value:.01f} {unit}".format(**r),
-                        (ref[0]+L/2, ref[1]), color=color,
-                        fontsize=fontsize, va="bottom", ha="center")
-
+            if loc in [3,4]:
+                label_ref = [ref[0]+WH[0]/2, ref[1]]
+                ann = ax.annotate("{value:.01f} {unit}".format(**r),
+                    label_ref, color=color,
+                    fontsize=fontsize, va="top", ha="center")
+            else:
+                label_ref = [ref[0]+WH[0]/2, ref[1]+WH[1]]
+                ann = ax.annotate("{value:.01f} {unit}".format(**r),
+                    label_ref, color=color,
+                    fontsize=fontsize, va="bottom", ha="center")
+        
     def offset(self, profiles, width=1, ax=None, col='w', inline=True, **kargs):
         """
         Correct an image by offsetting each row individually in order that the lines passed as argument in "profiles" becomes flat.

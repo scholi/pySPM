@@ -20,7 +20,9 @@ import matplotlib as mpl
 from matplotlib import cm
 from pySPM import collection
 import re
+from .utils.misc import aliased, alias, deprecated
 
+@aliased
 class PCA:
     def __init__(self, data):
         self.data = data
@@ -35,7 +37,8 @@ class PCA:
         corrmat = self.data.corr()
         return corrmat
 
-    def corrShow(self):
+    @alias("corrShow")
+    def show_corr(self):
         import seaborn as sns
         corrmat = self.corr()
         sns.heatmap(corrmat).xaxis.tick_top()
@@ -88,14 +91,15 @@ class PCA:
             scale(self.data, with_mean=meanCentering), index=self.data.index, columns=self.data.columns)
         return self.standX
 
-    def runPCA(self, meanCentering=True):
+    @alias("runPCA")
+    def run_pca(self, meanCentering=True):
         if self.standX is None:
             self.standardized(meanCentering=meanCentering)
         self.pca = PCA1().fit(self.standX)
 
     def pca_summary(self):
         if self.pca is None:
-            self.runPCA()
+            self.run_pca()
         names = ["PC"+str(i)
                  for i in range(1, len(self.pca.explained_variance_ratio_)+1)]
         a = list(np.std(self.pca.transform(self.standX), axis=0))
@@ -110,7 +114,7 @@ class PCA:
 
     def screeplot(self, ax=None, num=None):
         if self.pca is None:
-            self.runPCA()
+            self.run_pca()
         ax = ax if ax is not None else plt.gca()
         
         y = np.std(self.pca.transform(self.standX), axis=0)**2
@@ -127,28 +131,30 @@ class PCA:
         # find the number of samples in the data set and the number of
         # variables
         if self.pca is None:
-            self.runPCA()
+            self.run_pca()
         pc = np.matmul(self.standX.values, self.pca.components_[id].T)
         return pc
 
     def loadings(self, id=None):
         if self.pca is None:
-            self.runPCA()
+            self.run_pca()
         if id is not None:
             return pd.DataFrame(self.pca.components_[id, None], columns=self.data.columns)
         return pd.DataFrame(self.pca.components_, columns=self.data.columns, index=["PC{0}".format(i+1) for i in range(len(self.pca.components_))])
 
-    def getPCAtransf(self):
+    @alias("getPCAtransf")
+    def get_pca_transf(self):
         if self.pca is None:
-            self.runPCA()
+            self.run_pca()
         return self.pca.transform(self.standX)
 
-    def showStand(self):
+    @alias("showStand")
+    def show_stand(self):
         return pd.DataFrame([self.standX.apply(np.mean), self.standX.apply(np.std)], index=['Mean', 'Std'])
 
     def pca_scatter(self, classifs=None, light=False):
         import seaborn as sns
-        foo = self.getPCAtransf()
+        foo = self.get_pca_transf()
         if classifs is None:
             if light:
                 plt.scatter(foo[:, 0], foo[:, 1])
@@ -174,8 +180,9 @@ class ITA_PCA(PCA):
         mul = self.col.get_multivariate(channels)
         PCA.__init__(self, mul)
 
-    def showPCA(self, num=None, ax=None, pn=False, cmap=None, symmetric=True, loadings=True, **kargs):
-        c = self.getPCAcol(num, pn)
+    @alias("showPCA")
+    def show_pca(self, num=None, ax=None, pn=False, cmap=None, symmetric=True, loadings=True, **kargs):
+        c = self.get_pca_col(num, pn)
         if cmap is None:
             if pn:
                 cmap = 'viridis'
@@ -199,14 +206,15 @@ class ITA_PCA(PCA):
         c.show(ax=ax, cmap=cmap, symmetric=symmetric, **kargs)
         return L
 
-    def getPCAcol(self, num=None, pn=False):
+    @alias("getPCAcol")
+    def get_pca_col(self, num=None, pn=False):
         if num is None:
             num = self.data.shape[1]
         assert num <= self.data.shape[1]
         PCA_col = collection.Collection(
             cls=self.col, name=self.col.name+"[PCA]")
         for i in range(num):
-            PC = self.getPCA(i)
+            PC = self.get_pca(i)
             if pn:
                 PCA_col.add(PC*(PC>=0), 'PC{0}+'.format(i+1))
                 PCA_col.add(-PC*(PC<=0), 'PC{0}-'.format(i+1))
@@ -214,7 +222,8 @@ class ITA_PCA(PCA):
                 PCA_col.add(PC, 'PC{0}'.format(i+1))
         return PCA_col
 
-    def getPCA(self, id=0):
+    @alias("getPCA")
+    def get_pca(self, id=0):
         s = list(self.col.channels.values())[0].pixels.shape
         PC = self.pc(id).reshape(s)
         return PC

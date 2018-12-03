@@ -64,19 +64,6 @@ You can navigate with the scroll of the mouse to zoom in & out. You can use the 
 
 see the [wiki](../../wiki/spectra) for more info
 
-### pySPM is now availabe on pypi
-The installation for end-user is now very easy. If you have [pip](https://pypi.org/project/pip/), then you can install the library in a single line:
-
-```bash
-pip install pySPM
-```
-
-and to upgrade an old version:
-
-```bash
-pip install -U pySPM
-```
-
 ### Toy dataset
 As the data are big and not necessary for the library another package [pySPM_data](https://sftpweb.empa.ch/main.html?download&weblink=f5cddf602b6e8b20325b49a9ec61c48c&realfilename=pySPM_data-0.2.4-py3-none-any.whl) was created with several AFM and ToF-SIMS data. You can install it with pip
 
@@ -89,23 +76,6 @@ or update it with
 ```bash
 pip install -U pySPM_data-0.2.4-py3-none-any.whl
 ```
-
-### Structure reformatting
-A setup.py is present in order to install the package easily. => in order to use the library do ```pip install -e . ```
-
-### Nice Spectra Plotting
-```python
-import pySPM
-
-filename = "..."
-TOF = pySPM.ITA(filename)
-TOF.showSpectrumAround(pySPM.utils.get_mass('C2H3NO'), pretty=True, formula=True)
-```
-
-![Spectra](../master/doc/Spectra.png)
-
-### Python 2.7 compatible
-The library is now compatible with Python 3 and Python 2.7
 
 ## Dependencies
 This library requires the following packages
@@ -122,24 +92,10 @@ This library requires the following packages
     * tqdm
     
 ## Installation
-### for regular users
-#### With pip (easiest)
 Just open a terminal (on Windows hit key `[WINDOWS]+R`, then type cmd, then
 `[ENTER]`)
 ```bash
 pip install pySPM
-```
-
-#### By manual installing
-Download the library (zip) or git file. Unzip it and run
-```bash
-python setup.py install
-```
-
-#### For developers and hackers
-If you wish to adjust the library to your need, the best is to install it in editable mode as follow from the root pySPM directory:
-```bash
-pip install -e .
 ```
 
 ## Documentation

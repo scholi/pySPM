@@ -48,10 +48,8 @@ class ITA(ITM):
         """
         ITM.__init__(self, filename, readonly=readonly)
         try:
-            self.sx = self.root.goto(
-                'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').getLong()
-            self.sy = self.root.goto(
-                'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize').getLong()
+            self.sx = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').get_ulong()
+            self.sy = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize').get_ulong()
         except MissingBlock:
             self.sx = self.size['pixels']['x']
             self.sy = self.size['pixels']['y']
@@ -59,17 +57,37 @@ class ITA(ITM):
             # self.Nscan = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'\
             #    '/ImageStackScans/Image.NumberOfScans').getLong())
             self.Nimg = int(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'
-                                           '/ImageStackScans/Image.NumberOfImages').getLong())
+                                           '/ImageStackScans/Image.NumberOfImages').get_ulong())
         except:
             self.Nimg = 0
         
-        self.img = self.getIntensity()
+        self.img = self.get_intensity()
         
         try:
-            self.fov = self.root.goto('Meta/SI Image[0]/fieldofview').getDouble()
+            self.fov = self.root.goto('Meta/SI Image[0]/fieldofview').get_double()
         except MissingBlock:
-            self.fov = self.getValue("Registration.Raster.FieldOfView")['float']
-
+            self.fov = self.get_set_value("Registration.Raster.FieldOfView")['float']
+            
+    @alias("getIntensity")
+    def get_intensity(self):
+        """
+        Retrieve the total Ion image
+        """
+        try:
+            X, Y = self.size['pixels']['x'], self.size['pixels']['y']
+            img = self.image(np.flipud(np.array(self.root.goto('Meta/SI Image/intensdata').get_data("f"), dtype=np.float32).reshape((Y, X))), channel="SI count")
+        except Exception as e:
+            try:
+                img = self.get_added_image(0).pixels
+            except:
+                try:
+                    img = self.get_added_image_by_SN(self.get_channel_SN("total"))
+                except:
+                    import warnings
+                    warn.warnings("SI image cannot be retrieved")
+                    return None
+        return img
+        
     def get_channel_SN(self, channel):
         """
         New ITA fileformat assign a serial number (SN) in the form of a UUID for each channel.
@@ -82,14 +100,14 @@ class ITA(ITM):
         """
         for x in  self.root.goto("MassIntervalList"):
             if x.name == 'mi':
-                l = x.dictList()
+                l = x.dict_list()
                 if l['assign']['utf16'] == channel or l['desc']['utf16'] == channel:
                     return l['SN']['utf16']
 
         raise Exception("Channel name \"{channel}\" not found".format(channel=channel))
     
-    @alias("get_channels_by_name")
-    def getChannelsByName(self, name, strict=False):
+    @alias("getChannelsByName")
+    def get_channels_by_name(self, name, strict=False):
         """
         Retrieve the channels for a given assignment name in the form of a list of dictionaries.
         The output can be formatted in a human readable way with the pySPM.ITA.showChannels function (see examples).
@@ -181,8 +199,8 @@ class ITA(ITM):
                   .format(desc=z['desc']['utf16'], name=z['assign']['utf16'],
                           lower=z['lmass']['float'], upper=z['umass']['float']))
 
-    @alias("get_channels_by_mass")
-    def getChannelByMass(self, mass, full=False):
+    @alias("getChannelByMass")
+    def get_channels_by_mass(self, mass, full=False):
         """
         Retrieves the first channel ID which has a mass range containing a given mass.
 
@@ -209,8 +227,8 @@ class ITA(ITM):
                 return p['id']['long']
         raise ValueError('Mass {:.2f} Not Found'.format(mass))
 
-    alias("get_shift_corrected_image_by_name")
-    def getShiftCorrectedImageByName(self, names, **kargs):
+    @alias("getShiftCorrectedImageByName")
+    def get_shift_corrected_image_by_name(self, names, **kargs):
         """
         Retrieve the drift corrected (or shift corrected) image for the sum of all channels matching a given name. The shift correction applied is the one saved in the ITA file.
 
@@ -227,9 +245,9 @@ class ITA(ITM):
             The list of all the channels selected. This list can be displayed in a human readable form by the pySPM.ITA.showChannels function
 
         """
-        return self.getSumImageByName(names, Shifts=[(-x,-y) for x,y in self.getSavedShift()],**kargs)
+        return self.get_sum_image_by_name(names, Shifts=[(-x,-y) for x,y in self.get_saved_shift()],**kargs)
         
-    def __getSumImage(self, scans, channels, **kargs):
+    def __get_sum_image(self, scans, channels, **kargs):
         """
         An internal function to retrieve the sum of several scans for several channel ID.
         """
@@ -237,14 +255,14 @@ class ITA(ITM):
         if 'Shifts' in kargs:
             Shifts = kargs['Shifts']
         else:
-            Shifts = [(-x,-y) for x,y in self.getSavedShift()]            
+            Shifts = [(-x,-y) for x,y in self.get_saved_shift()]            
         for ch in channels:
             ID = ch['id']['long']
-            Z += self.fastGetImage(ID, scans, Shifts)
+            Z += self.fast_get_image(ID, scans, Shifts)
         return Z
 
-    @alias("get_sum_image_by_sn")
-    def getSumImageBySN(self, SN, scans=None, prog=False, raw=False, **kargs):
+    @alias("getSumImageBySN")
+    def get_sum_image_by_sn(self, SN, scans=None, prog=False, raw=False, **kargs):
         """
         Retrieve the image for the sum of several scans for a given channel SN.
         """
@@ -267,11 +285,11 @@ class ITA(ITM):
             Z += np.array(data, dtype=np.float).reshape((self.sy, self.sx))
         if raw:
             return Z
-        channel = self.getChannelBySN(SN)
+        channel = self.get_channel_by_sn(SN)
         return self.image(np.flipud(Z), channel=channel)
 
-    @alias("get_sum_image_by_name")
-    def getSumImageByName(self, names, scans=None, strict=False, prog=False, raw=False, **kargs):
+    @alias("getSumImageByName")
+    def get_sum_image_by_name(self, names, scans=None, strict=False, prog=False, raw=False, **kargs):
         """
         Retrieve the image for the sum of several scans and channels selected by their channel name.
 
@@ -293,14 +311,14 @@ class ITA(ITM):
         if type(scans) == int:
             scans = [scans]
         
-        channels = self.getChannelsByName(names, strict)
+        channels = self.get_added_image_by_name(names, strict)
         if prog:
             try:
                 from tqdm import tqdm_notebook as tqdm
             except:
                 from tqdm import tqdm
             scans = tqdm(scans)
-        Z = self.__getSumImage(scans, channels)
+        Z = self.__get_sum_image(scans, channels)
         if raw:
             return Z, channels
         channel_title = ",".join([z['assign']['utf16'] for z in channels])
@@ -327,21 +345,21 @@ class ITA(ITM):
         ax.set_xlabel("x [$\mu$m]")
         ax.set_ylabel("y [$\mu$m]")
 
-    @alias("get_shifts_by_mass")
-    def getShiftsByMass(self, masses, centered=True, prog=False, Filter=None):
+    @alias("getShiftsByMass")
+    def get_shifts_by_mass(self, masses, centered=True, prog=False, Filter=None):
         """
         Deprecated. A relic function that the developer is not even sure what it was supposed to do ;)
         """
         Shifts = [(0, 0)]
         if Filter is None:
             Filter = lambda z: z
-        S0 = Filter(self.getSumImageByMass(masses, 0))
+        S0 = Filter(self.get_added_image_by_mass(masses, 0))
         Y = range(1, self.Nscan)
         if prog:
             from tqdm import tqdm
             Y = tqdm(Y)
         for i in Y:
-            S = Filter(self.getSumImageByMass(masses, i))
+            S = Filter(self.get_sum_image_by_mass(masses, i))
             Shift = np.real(np.fft.fftshift(np.fft.ifft2(
                 np.conj(np.fft.fft2(S0)) * np.fft.fft2(S))))
             cord = np.unravel_index(np.argmax(Shift), S0.shape)
@@ -353,8 +371,8 @@ class ITA(ITM):
             Shifts = [(z[0]-avSx, z[1]-avSy) for z in Shifts]
         return Shifts
 
-    @alias("get_xsection_by_mass")
-    def getXsectionByMass(self, x1, y1, x2, y2, masses, N=None, prog=False, ax=None, flip=False, col='w-', **kargs):
+    @alias("getXsectionByMass")
+    def get_xsection_by_mass(self, x1, y1, x2, y2, masses, N=None, prog=False, ax=None, flip=False, col='w-', **kargs):
         """
         Retrieves a Cross-Section for a given mass along the profile determined by coordinates (x1,y1) and (x2,y2).
         The output is a 2D image where the x-axis correspond to the position along the profile and the y-axis the scan number.
@@ -406,13 +424,13 @@ class ITA(ITM):
             Y = tqdm(Y)
         from scipy.ndimage import map_coordinates
         for s in Y:
-            Z = self.getSumImageByMass(masses, s, **kargs)
+            Z = self.get_sum_image_by_mass(masses, s, **kargs)
             P = map_coordinates(Z.pixels, np.vstack((y, x)))
             out[s, :] = P
         return out
 
-    @alias("get_added_image_by_name")
-    def getAddedImageByName(self, names, strict=False, raw=False, **kargs):
+    @alias("getAddedImageByName")
+    def get_added_image_by_name(self, names, strict=False, raw=False, **kargs):
         """
         Retrieve the image for the sum of all scan (precomputed by iontof, but not shift-corrected) for given names
 
@@ -436,17 +454,17 @@ class ITA(ITM):
             Note: Pass this list to pySPM.ITA.showChannels in order to print a human readable representation of it.
         """
         Z = np.zeros((self.sy, self.sx))
-        channels = self.getChannelsByName(names, strict)
+        channels = self.get_channels_by_name(names, strict)
         for ch in channels:
             ID = ch['id']['long']
-            Z += self.getAddedImage(ID, **kargs)
+            Z += self.get_added_image(ID, **kargs)
         ch = self.get_masses(channels)
         if raw:
             return Z, ch
         return self.image(np.flipud(Z), channel=",".join([z['assign'] for z in ch])), ch
 
-    @alias("get_saved_shift")
-    def getSavedShift(self):
+    @alias("getSavedShift")
+    def get_saved_shift(self):
         """
         getSavedShift returns the shifts saved with the file. Usually this is the shift correction you perform with the IonToF software.
 
@@ -465,15 +483,15 @@ class ITA(ITM):
         dy = D[1::2]
         return list(zip(dx, dy))
         
-    @alias("get_shift_corrected_image_by_mass")
-    def getShiftCorrectedImageByMass(self, masses, **kargs):
+    @alias("getShiftCorrectedImageByMass")
+    def get_shift_corrected_image_by_mass(self, masses, **kargs):
         """
-        Shortcut function for pySPM.ITA.getSumImageByMass using the saved shift corrections.
+        Shortcut function for pySPM.ITA.get_sum_image_by_mass using the saved shift corrections.
         """
-        return self.getSumImageByMass(masses, Shifts=[(-x,-y) for x,y in self.getSavedShift()], **kargs)
+        return self.get_sum_image_by_mass(masses, Shifts=[(-x,-y) for x,y in self.get_saved_shift()], **kargs)
         
-    @alias("get_sum_image_by_mass")
-    def getSumImageByMass(self, masses, scans=None, prog=False, raw=False, **kargs):
+    @alias("getSumImageByMass")
+    def get_sum_image_by_mass(self, masses, scans=None, prog=False, raw=False, **kargs):
         """
         Similar to pySPM.ITA.getSumImageByName but instead of the names, the mass or list of mass is provided
         see pySPM.ITA.getSumImageByName for more details
@@ -493,15 +511,15 @@ class ITA(ITM):
             else:
                 from tqdm import tqdm
             scans = tqdm(scans, leave=False)
-        channels = [self.getChannelByMass(m, full=True) for m in masses]
-        Z = self.__getSumImage(scans, channels, **kargs)
+        channels = [self.get_channels_by_mass(m, full=True) for m in masses]
+        Z = self.__get_sum_image(scans, channels, **kargs)
         if raw:
             return Z, channels
         channels_name = [["{:.2f}u".format(m['cmass']['float']),m['assign']['utf16']][m['assign']['utf16']!=''] for m in channels]
         return self.image(np.flipud(Z), channel="Masses: "+",".join(channels_name))
 
-    @alias("get_added_image_by_mass")
-    def getAddedImageByMass(self, masses, raw=False, **kargs):
+    @alias("getAddedImageByMass")
+    def get_added_image_by_mass(self, masses, raw=False, **kargs):
         """
         Retrieve the image for the sum of all scan (precomputed by iontof, but not shift-corrected) for (a) given masse(s)
 
@@ -528,22 +546,22 @@ class ITA(ITM):
         Z = np.zeros((self.sy, self.sx))
         channels = []
         for m in masses:
-            ch = self.getChannelByMass(m)
+            ch = self.get_channels_by_mass(m)
             m = self.get_masses()[ch]
             if m['assign'] != '':
                 channels.append(m['assign'])
             else:
                 channels.append("{cmass:.2f}u".format(**m))
-            Z += self.getAddedImage(ch, **kargs)
+            Z += self.get_added_image(ch, **kargs)
         if raw:
             return Z, channels
         return self.image(np.flipud(Z), channel=",".join(channels))
 
-    @alias("get_channel_by_sn","get_channel_by_SN")
-    def getChannelBySN(self, SN):
+    @alias("get_channel_by_sn","getChannelBySN")
+    def get_channel_by_SN(self, SN):
         for node in self.root.goto("MassIntervalList"):
             if node.name == "mi":
-                l = node.dictList()
+                l = node.dict_list()
                 if l['SN']['utf16']==SN:
                     name = l['assign']['utf16']
                     if not name:
@@ -552,8 +570,8 @@ class ITA(ITM):
                         name = '{:.2f}u'.format(l['cmass']['float'])
                     return name
 
-    @alias("get_added_image_by_sn","get_added_image_by_SN")
-    def getAddedImageBySN(self, SN, raw=False):
+    @alias("get_added_image_by_sn","getAddedImageBySN")
+    def get_added_image_by_SN(self, SN, raw=False):
         """
         New ITA fileformat save images with their respective serial number (SN).
         This function return the image for a given SN.
@@ -569,11 +587,11 @@ class ITA(ITM):
         img = np.array(data, dtype=np.float).reshape((self.sy, self.sx))
         if raw:
             return img
-        channel = self.getChannelBySN(SN)
+        channel = self.get_channel_by_SN(SN)
         return self.image(np.flipud(img), channel=channel)
 
-    @alias("get_added_image")
-    def getAddedImage(self, channel, **kargs):
+    @alias("getAddedImage")
+    def get_added_image(self, channel, **kargs):
         """
         Retrieve the numpy 2D array of a given channel ID for the sum of all scan (precomputed by iontof, but not shift-corrected)
         Note: It is preferable to use the pySPM.ITA.getAddedImageByMass or pySPM.ITA.getAddedImageByName
@@ -587,8 +605,8 @@ class ITA(ITM):
                      dtype=np.float).reshape((self.sy, self.sx))
         return V
     
-    @alias("fast_get_image")
-    def fastGetImage(self, channel, scans, Shifts=False, prog=False):
+    @alias("fastGetImage")
+    def fast_get_image(self, channel, scans, Shifts=False, prog=False):
         """
         Retieve a 2D numpy array corresponding to a given channel ID for given scan(s) and return their sum.
 
@@ -625,7 +643,7 @@ class ITA(ITM):
         im_root =  self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image['+str(channel)+']')
         for scan in scans:
             c = im_root.goto('ImageArray.Long['+str(scan)+']')
-            V = np.array(c.getData('I'), dtype=np.float).reshape((self.sy, self.sx))
+            V = np.array(c.get_data('I'), dtype=np.float).reshape((self.sy, self.sx))
             if Shifts:
                 r = [int(z) for z in Shifts[scan]]
                 V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)
@@ -636,8 +654,8 @@ class ITA(ITM):
                 Z += V
         return Z
         
-    @alias("get_image")
-    def getImage(self, channel, scan, Shifts=None, ShiftMode='roll', const=0):
+    @alias("getImage")
+    def get_image(self, channel, scan, shifts=None, shift_mode='roll', const=0, **kargs):
         """
         getImage retrieve the image of a specific channel (ID) and a specific scan.
 
@@ -657,18 +675,24 @@ class ITA(ITM):
         const : float
             if ShiftMode is 'const' then this parameter defines the constant used (default 0)
         """
+        # Compatibility with old parameter names
+        if 'Shifts' in kargs:
+            shifts = kargs.pop("Shifts")
+        if 'ShiftMode' in kargs:
+            shift_mode = kargs.pop("ShiftMode")
+            
         assert type(channel) is int
         assert type(scan) is int
         assert channel >= 0 and channel < self.Nimg
         assert scan >= 0 and scan < self.Nscan
         c = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans'
                            '/Image['+str(channel)+']/ImageArray.Long['+str(scan)+']')
-        V = np.array(c.getData(), dtype=np.float).reshape((self.sy, self.sx))
-        if not Shifts is None:
-            r = [int(z) for z in Shifts[scan]]
+        V = np.array(c.get_data(), dtype=np.float).reshape((self.sy, self.sx))
+        if not shifts is None:
+            r = [int(z) for z in shifts[scan]]
             V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)
-            if ShiftMode == 'const' or ShiftMode == 'NaN':
-                if ShiftMode == 'NaN':
+            if shift_mode == 'const' or shift_mode == 'NaN':
+                if shift_mode == 'NaN':
                     const = np.nan
                 if r[1] < 0:
                     V[:-r[1], :] = const
@@ -679,96 +703,77 @@ class ITA(ITM):
                 elif r[0] > 0:
                     V[:, -r[0]:] = const
         return V
-    
-    @alias("show_spectrum_around")
-    def showSpectrumAround(self, m0, delta=None, sf=None, k0=None, **kargs):
-        """
-        Display the Spectrum around a given mass.
-
-        Parameters
-        ----------
-        m0 : float
-            The central mass around which the spectrum will be plotted (in u)
-        delta : float
-            The spectrum will be plotted between m0-delta and m0+delta
-        sf : float or None
-        k0 : float or None
-            sf and k0 are the mass calibration parameters. If None values saved with the file will be used.
-        **kargs : supplementary arguments
-            Passed to pySPM.utils.showPeak
-        """
-        polarity = '+'
-        if self.getValue('Instrument.Analyzer_Polarity_Switch')['string'] == 'Negative':
-            polarity = '-'
-        from . import utils
-        m, D = self.getSpectrum(sf=sf, k0=k0)
-        return utils.showPeak(m, D, m0, delta, polarity=polarity, sf=sf, k0=k0, **kargs)
         
-    @alias("get_opertion")
-    def getOperation(self, OpID):
+    @alias("getOperation")
+    def get_opertion(self, OpID):
         """
         Test function to retrieve the operations used in the Worksheet.
         """
-        Nop = self.root.goto('Presentation/Imaging Worksheet/Worksheet/OPERATIONS/OpCount').getLong()
+        Nop = self.root.goto('Presentation/Imaging Worksheet/Worksheet/OPERATIONS/OpCount').get_ulong()
         for i in range(Nop):
             blk = self.root.goto('Presentation/Imaging Worksheet/Worksheet/OPERATIONS/Operation[{}]'.format(i))
-            if blk.gotoItem('OpID').getLong() == OpID:
+            if blk.goto_item('OpID').get_ulong() == OpID:
                 return blk
         return None
         
-    @alias("show_worksheet")
-    def showWorksheet(self, page=0):
+    @alias("showWorksheet")
+    def show_worksheet(self, page=0):
         """
         In Dev. function to display the worksheet
         """
         import matplotlib as mpl
         from .utils import sp
-        NumPages = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/COUNT').getLong()
-        assert page < NumPages
-        Nitems = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/ItemCount'.format(page)).getLong()
-        sett = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/SETTINGS'.format(page)).dictList()
-        print("Name", sett['Name']['utf16'])
-        Nx = sett['Xsize']['long']
-        Ny = sett['Ysize']['long']
-        items = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/Items'.format(page)).getData()
+        num_pages = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/COUNT').get_ulong()
+        assert page < num_pages
+        Nitems = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/ItemCount'.format(page)).get_ulong()
+        sett = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/SETTINGS'.format(page)).dict_list()
+        Nx = sett['Xsize']['ulong']
+        Ny = sett['Ysize']['ulong']
+        items = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/Items'.format(page)).get_data()
         ax = sp(len(items))
         IntV = {}
         for x in self.root.goto("MassIntervalList"):
             if x.name == 'mi':
-                d = x.dictList()
+                d = x.dict_list()
                 IntV[d['id']['long']] = d['desc']['utf16']+d['assign']['utf16']
         for i, it in enumerate(items):
-            blk = self.getOperation(it)
-            OPTYPE = blk.gotoItem('OPTYPE').getLong()
+            blk = self.get_operation(it)
+            OPTYPE = blk.goto_item('OPTYPE').get_ulong()
             while OPTYPE !=3:
-                OPTYPE = blk.gotoItem('OPTYPE').getLong()
+                OPTYPE = blk.goto_item('OPTYPE').get_ulong()
                 if OPTYPE == 4:
-                    blk = self.getOperation(blk.gotoItem('ArgOpIDs').getLong())
+                    blk = self.getOperation(blk.goto_item('ArgOpIDs').get_ulong())
                 elif OPTYPE==3:
-                    palette = np.array(blk.gotoItem('BMP-Palette').getData('B')).reshape((256, 4))
-                    B,G,R = palette[:,0],palette[:,1],palette[:,2]
-                    dimx = blk.goto('Cache/IImage-Cache-DimX').getLong()
-                    dimy = blk.goto('Cache/IImage-Cache-DimY').getLong()
-                    img = np.array(blk.goto('Cache/IImage-Cache-Intensities').getData('d')).reshape((dimy, dimx))
-                    RGB = np.hstack([R[:,None],G[:,None],B[:,None]])/256
+                    palette = np.array(blk.goto_item('BMP-Palette').get_data('B')).reshape((256, 4))
+                    B, G, R = palette[:, 0], palette[:, 1], palette[:, 2]
+                    dimx = blk.goto('Cache/IImage-Cache-DimX').get_ulong()
+                    dimy = blk.goto('Cache/IImage-Cache-DimY').get_ulong()
+                    img = np.array(blk.goto('Cache/IImage-Cache-Intensities').get_data('d')).reshape((dimy, dimx))
+                    RGB = np.hstack([R[:, None], G[:, None], B[:, None]])/256
                     cm = mpl.colors.ListedColormap(RGB)
                     ax[i].imshow(img, cmap=cm)
 
-    def add_new_images(self, miblock, Scans=None, Added=None, prog=False):
-        assert Scans is not None or Added is not None
+    def add_new_images(self, miblock, scans=None, added=None, prog=False, **kargs):
+        # Compatibility with old parameter names
+        if 'Scans' in kargs:
+            scans = kargs.pop("Scans")
+        if 'Added' in kargs:
+            added = kargs.pop("Added")
+            
+        assert scans is not None or added is not None
         lvl = 3 # zlib encoding level
         sy, sx = self.size['pixels']['y'], self.size['pixels']['x']
-        SN = miblock.goto("SN").getString()
-        if Added is None:
-            AddedImg = np.zeros((sy, sx), dtype=np.uint32)
-        chID = miblock.goto("id").getLong()
-        if Scans is not None:
-            N = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfImages").getLong()
-        AN = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image.NumberOfImages").getLong()
+        SN = miblock.goto("SN").get_string()
+        if added is None:
+            added_img = np.zeros((sy, sx), dtype=np.uint32)
+        chID = miblock.goto("id").get_ulong()
+        if scans is not None:
+            N = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfImages").get_ulong()
+        AN = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image.NumberOfImages").get_ulong()
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MassIntervalSN", SN.encode('utf8'))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.XSize", struct.pack("<I", sx))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.YSize", struct.pack("<I", sy))
-        if Scans is not None:
+        if scans is not None:
             RS = range(self.Nscan)
             if prog:
                 try:
@@ -777,26 +782,26 @@ class ITA(ITM):
                     from tqdm import tqdm
                 RS = tqdm(RS)
             for i in RS:
-                img = np.flipud(Scans[i].astype(np.uint32, casting='unsafe'))
+                img = np.flipud(scans[i].astype(np.uint32, casting='unsafe'))
                 data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(img)), level=lvl)
                 self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image[{}]".format(N), "ImageArray.Long", data, id=i, _type=128)
-                if Added is None:
-                    AddedImg += img
+                if added is None:
+                    added_img += img
 
-        if Added is None:
-            Added = AddedImg
+        if added is None:
+            added = added_img
         else:
-            Added = np.flipud(Added)
-        data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(Added.astype(np.uint32, casting='unsafe'))), level=lvl)
+            added = np.flipud(added)
+        data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(added.astype(np.uint32, casting='unsafe'))), level=lvl)
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "ImageArray.Long", data, _type=128)
         
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.PulsesPerPixel", struct.pack("<I", self.spp*self.Nscan))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MaxCountsPerPixel", struct.pack("<I", int(np.max(Added))))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MinCountsPerPixel", struct.pack("<I", int(np.min(Added))))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCountsDbl", struct.pack("<d", np.sum(Added)))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCounts", struct.pack("<I", int(np.sum(Added))))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MaxCountsPerPixel", struct.pack("<I", int(np.max(added))))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MinCountsPerPixel", struct.pack("<I", int(np.min(added))))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCountsDbl", struct.pack("<d", np.sum(added)))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCounts", struct.pack("<I", int(np.sum(added))))
         
-        if Scans is not None:
+        if scans is not None:
             self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans", "Image.NumberOfImages", struct.pack("<I", N+1))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded", "Image.NumberOfImages", struct.pack("<I", AN+1))
         self.Nimg += 1
@@ -852,7 +857,7 @@ class ITA_collection(Collection):
                 for x in channels:
                     if mass:
                         try:
-                            I = self.ita.getAddedImageByMass(x)
+                            I = self.ita.get_added_image_by_mass(x)
                             m = masses[2+channels1.index(x)]
                             if m['assign'] != '':
                                 self.add(I, m['assign'])
@@ -861,7 +866,7 @@ class ITA_collection(Collection):
                         except:
                             pass
                     else:
-                        Z, ch = self.ita.getAddedImageByName(x, strict)
+                        Z, ch = self.ita.get_added_image_by_name(x, strict)
                         self.msg += "{0}\n".format(x)
                         for z in ch:
                             self.msg += "\t{name} ({desc}), mass: {lower:.2f} - {upper:.2f}\n"\
@@ -871,9 +876,9 @@ class ITA_collection(Collection):
             elif type(channels) is dict:
                 for x in channels:
                     if mass:
-                        self.add(self.ita.getAddedImageByMass(channels[x]), x)
+                        self.add(self.ita.get_added_image_by_mass(channels[x]), x)
                     else:
-                        Z, ch = self.ita.getAddedImageByName(
+                        Z, ch = self.ita.get_added_image_by_name(
                             channels[x], strict)
                         self.msg += "{0}\n".format(x)
                         for z in ch:
@@ -899,8 +904,8 @@ class ITA_collection(Collection):
             return None
         return self.channels[key]
 
-    @alias("run_pca")
-    def runPCA(self, channels=None):
+    @alias("runPCA")
+    def run_pca(self, channels=None):
         """
         Perform a Principle Component Analysis (PCA) on the channels
 
@@ -914,8 +919,8 @@ class ITA_collection(Collection):
             channels = self.channels.keys()
         self.PCA = ITA_PCA(self, channels)
     
-    @alias("show_pca")
-    def showPCA(self, num=None, loadings=True, **kargs):
+    @alias("showPCA")
+    def show_pca(self, num=None, loadings=True, **kargs):
         """
         Run PCA if not already done and display the PCA images.
 
@@ -933,8 +938,8 @@ class ITA_collection(Collection):
 
         """
         if self.PCA is None:
-            self.runPCA()
-        self.PCA.showPCA(num=num, loadings=loadings, **kargs)
+            self.run_pca()
+        self.PCA.show_pca(num=num, loadings=loadings, **kargs)
 
     def loadings(self, num=None, ax=None):
         """
@@ -955,7 +960,7 @@ class ITA_collection(Collection):
         The size of each square is proportional to the absolute value of each loading.
         """
         if self.PCA is None:
-            self.runPCA()
+            self.run_pca()
         if num is None:
             L = self.PCA.loadings()
         else:

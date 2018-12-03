@@ -18,7 +18,7 @@ from .SXM import SXM
 from .utils import constants as const
 
 __all__ = ["ITA", "ITAX", "ITS", "ITM", "PCA", "Block", "SPM", "Bruker", "nanoscan", "utils", "SXM"]
-__version__ = '0.2.18'
+__version__ = '0.2.19'
 __author__ = 'Olivier Scholder'
 __copyright__ = "Copyright 2018, O. Scholder, Zürich, Switzerland"
 __email__ = "o.scholder@gmail.com"

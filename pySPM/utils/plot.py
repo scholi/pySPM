@@ -109,8 +109,8 @@ def Ydist(ax, down, up, x, color='r', linestyle=':', fmt="{dist:.2f}{unit}", ytr
     arr.update({k[4:]:kargs[k] for k in kargs if k.startswith('arr_')})
     ax.annotate("", (x, down), (x, up), arrowprops=arr)
 
-@alias("dual_plot")    
-def DualPlot(ax, col1='C0',col2='C1'):
+@alias("DualPlot")    
+def dual_plot(ax, col1='C0',col2='C1'):
     """
     Create a dual axis from ax and tune the color of the left/right axes to col1, col2 resp.
     """

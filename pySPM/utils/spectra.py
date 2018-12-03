@@ -80,6 +80,9 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
     import copy
     import matplotlib.pyplot as plt
 
+    if "show_elts" in kargs:
+        showElts = kargs.pop("show_elts")
+        
     if include is None:
         include = []
         

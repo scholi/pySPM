@@ -14,6 +14,7 @@ from .plot import *
 from . import fit, misc, colors
 from .save import *
 from .restoration import *
+from .misc import alias
 
 def funit(value, unit=None):
     """
@@ -86,8 +87,9 @@ def time2hms(s, string=True):
     if string:
         return "{:02d}:{:02d}:{:02.2f}".format(h,m,s)
     return (h,m,s)
-    
-def fitSpectrum(t, m, error=False):
+
+@alias("fitSpectrum")
+def fit_spectrum(t, m, error=False):
     """
     fit and return the sf and k0 parameters for given known times t and masses m
     """
