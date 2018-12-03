@@ -169,7 +169,7 @@ class ITM:
             
         return {
             'pixels': self.size['pixels'],
-            'fov': self.root.goto('Meta/SI Image[0]/fieldofview').getDouble(),
+            'fov': self.root.goto('Meta/SI Image[0]/fieldofview').get_double(),
             'LMIG': {
                 'Extractor': Get("Instrument.LMIG.Extractor"),
                 'Lens_Source': Get("Instrument.LMIG.Lens_Source")},

@@ -167,7 +167,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
             print("Max element:", Et[i], mp, ms[i], Dt[j], idx)
         p0[2+2*idx] = kargs.get('sig0',0.002)
         p0[3+2*idx] = Aredux*Dt[j]
-        Dt -= LG(mt, ms[i], p0[2+2*idx], Amp=p0[3+2*idx], asym=p0[0], lg=0)
+        Dt -= LG(mt, ms[i], p0[2+2*idx], amp=p0[3+2*idx], asym=p0[0], lg=0)
         Dt[Dt<0] = 0
         del Et[i]
     
@@ -175,7 +175,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
         y = x*0
         for i in range((len(p)-2)//2):
             x0 = m0s[i]+p[1]
-            y += LG(x, x0, p[2+2*i], Amp=p[3+2*i], asym=p[0], lg=0)
+            y += LG(x, x0, p[2+2*i], amp=p[3+2*i], asym=p[0], lg=0)
         return y
         
     ax = kargs.pop('ax', plt.gca())
@@ -323,10 +323,16 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
     return res
 
 
-def plot_isotopes(elt, Amp=None, main=None, ax=None, sig=None, asym=None, lg=0, limit=1, color='C1', showElts=False, debug=False, **kargs):
+def plot_isotopes(elt, amp=None, main=None, ax=None, sig=None, asym=None, lg=0, limit=1, color='C1', showElts=False, debug=False, **kargs):
     """
     plot the isotopes of a given element on a spectral profile plot
     """
+    # Old parameter name compatibility
+    if 'Amp' in kargs:
+        from warnings import warn
+        warn("Parameter Amp is deprecated. Please use amp in order to set the amplitude!")
+        amp = kargs.pop("Amp")
+        
     from . import get_isotopes, LG, get_mass, get_abund, Molecule
     import matplotlib.pyplot as plt
     import numpy as np
@@ -345,26 +351,26 @@ def plot_isotopes(elt, Amp=None, main=None, ax=None, sig=None, asym=None, lg=0, 
     if hasattr(ax, 'log') and ax.log:
         y = 10**y
     mask = np.abs(m-main_iso[1])<.1
-    if Amp is None:
+    if amp is None:
         i = np.argmin(np.abs(m-main_iso[1]))
-        Amp = np.max(y[i-10:i+10])/main_iso[2]
+        amp = np.max(y[i-10:i+10])/main_iso[2]
     if sig is None and asym is None:
         def fit(x, s, a):
-            return LG(x, main_iso[1], s, Amp=Amp*main_iso[2], lg=lg, asym=a)
+            return LG(x, main_iso[1], s, amp=amp*main_iso[2], lg=lg, asym=a)
         (sig, asym),_ = curve_fit(fit, m[mask], y[mask], (0.005, 1))
     elif sig is None:
         def fit(x, s):
-            return LG(x, main_iso[1], s, Amp=Amp*main_iso[2], lg=lg, asym=asym)
+            return LG(x, main_iso[1], s, amp=amp*main_iso[2], lg=lg, asym=asym)
         s,_ = curve_fit(fit, m[mask], y[mask], (0.005))
         sig = s[0]
     elif asym is None:
         def fit(x, a):
-            return LG(x, main_iso[1], sig, Amp=Amp*main_iso[2], lg=lg, asym=a)
+            return LG(x, main_iso[1], sig, amp=amp*main_iso[2], lg=lg, asym=a)
         a, _ = curve_fit(fit, m[mask], y[mask], (1))
         asym = a[0]
     if debug:
         print(sig, asym)
-    isos = get_isotopes(elt, min_abund=limit/Amp)
+    isos = get_isotopes(elt, min_abund=limit/amp)
     L = ax.lines[0]
     m, y = L.get_xdata(), L.get_ydata()
     if hasattr(ax, 'log') and ax.log:
@@ -373,9 +379,9 @@ def plot_isotopes(elt, Amp=None, main=None, ax=None, sig=None, asym=None, lg=0, 
     s = m*0
     
     for iso in isos:
-        s += LG(m, iso[1], sig, Amp=Amp*iso[2], lg=lg, asym=asym)
+        s += LG(m, iso[1], sig, amp=amp*iso[2], lg=lg, asym=asym)
         if showElts:
-            ax.annotate(iso[0], (iso[1], Amp*iso[2]), (0,5), textcoords='offset pixels', ha='center')
+            ax.annotate(iso[0], (iso[1], amp*iso[2]), (0,5), textcoords='offset pixels', ha='center')
     if hasattr(ax, 'log') and ax.log:
         s[s>=1] = np.log10(s[s>=1])
         s[s<1] = 0
