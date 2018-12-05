@@ -163,11 +163,11 @@ class SpectraViewer(QMainWindow):
         self.sat_level = self.ax.axhline(SatLevel, color='r')
         if 'pySPM' in self.ita.root.goto("MassScale"):
             self.MassCal = []
-            N = self.ita.root.goto("MassScale/pySPM/N").getLong()
+            N = self.ita.root.goto("MassScale/pySPM/N").get_ulong()
             for i in range(N):
                 elt = self.ita.root.goto("MassScale/pySPM/"+str(i)+"/elt").value.decode('utf8')
-                mass = self.ita.root.goto("MassScale/pySPM/"+str(i)+"/mass").getDouble()
-                time = self.ita.root.goto("MassScale/pySPM/"+str(i)+"/time").getDouble()
+                mass = self.ita.root.goto("MassScale/pySPM/"+str(i)+"/mass").get_double()
+                time = self.ita.root.goto("MassScale/pySPM/"+str(i)+"/time").get_double()
                 self.MassCal.append(dict(elt=elt, mass=mass, time=time))
         else:
             self.MassCal = []

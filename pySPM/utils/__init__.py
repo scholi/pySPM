@@ -14,7 +14,7 @@ from .plot import *
 from . import fit, misc, colors
 from .save import *
 from .restoration import *
-from .misc import alias
+from .misc import alias, PB
 
 def funit(value, unit=None):
     """
@@ -69,6 +69,26 @@ def funit(value, unit=None):
     if unit_prefix == '1':
         unit_prefix = ''
     return {'value': value, 'unit': u'{mag}{unit}'.format(mag=unit_prefix, unit=unit)}
+    
+def get_shifts_bbox(shifts, shape):
+    """
+    Return the bounding-box of the overlapping area of scans which have a thermal drift given by shifts.
+    Return: dictionary with the top, left, right, bottom position
+    
+    Parameters
+    ----------
+    shifts: list of tuple [(dx0, dy0), (dx1, dy1), ..., (dxN, dyN)]
+        list of tuple given the shift for each scan in pixel in the x- and y-direction.
+        The number of element should equal the number of scans (so N=Nscan-1)
+    shape: tuple (Height, Width)
+        shape of the image.
+    """
+    from .geometry import Bbox
+    right = shape[1]+min(0,np.min([x[0] for x in shifts]))
+    left = np.max([x[0] for x in shifts])
+    top = shape[0]+min(0,np.min([x[1] for x in shifts]))
+    bottom = np.max([x[1] for x in shifts])
+    return Bbox(right=right, left=left, top=top, bottom=bottom)
     
 def s2hms(s):
     """Convert seconds to hour, minutes or seconds"""
@@ -199,16 +219,6 @@ def zfit_level(A, processes=4):
     level = np.array(mp.Pool(processes).map(fitCDF1line, (A[:,i,:] for i in range(A.shape[1]))))
     return level
 
-def in_ipynb():
-    try:
-        cfg = get_ipython().config 
-        if 'IPKernelApp' in cfg:
-            return True
-        else:
-            return False
-    except NameError:
-        return False
-
 def getToFimg(I, N=100, prog=False):
     """
     Simulate obtained counts for N scans from an image
@@ -216,8 +226,7 @@ def getToFimg(I, N=100, prog=False):
     R = np.zeros(I.shape)
     L = range(N)
     if prog:
-        from tqdm import tqdm_notebook as tqdm
-        L = tqdm(L)
+        L = PB(L)
     for i in L:
         R += (np.random.rand(*I.shape)<(1-np.exp(-I)))
     return R

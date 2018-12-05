@@ -10,7 +10,7 @@ import os.path
 import zlib
 import re
 import os
-from .utils.misc import deprecated, aliased, alias
+from .utils.misc import deprecated, aliased, alias, PB
 
 class InvalidRAWdataformat(Exception):
     def __init__(self, block, msg):
@@ -327,7 +327,7 @@ class ITM:
         return self.root.goto('prop{}/{name}'.format(['start','end'][end],name=name)).get_key_value()
     
     @alias("getValues")
-    def get_values(self, pb=False, start=False, end=True, names=[], startsWith="", nest=False, hidePrefix=True, numeric=False):
+    def get_values(self, prog=False, start=False, end=True, names=[], startsWith="", nest=False, hidePrefix=True, numeric=False):
         """
         Beta function: Retrieve a list of the values
         """
@@ -339,9 +339,8 @@ class ITM:
             startEnd.append(False)
         for start in startEnd:
             List = self.root.goto(['propend', 'propstart'][start]).get_list()
-            if pb:
-                import tqdm
-                List = tqdm.tqdm(List)
+            if prog:
+                List = PB(List)
             for l in List:
                 Node = self.root.goto(['propend', 'propstart'][
                                       start]).goto_item(l['name'], l['id'])
@@ -522,14 +521,7 @@ class ITM:
             i += 1
         max_index = L[-i]['id']
         if prog:
-            try:
-                from tqdm import tqdm_notebook as tqdm
-            except:
-                from tqdm import tqdm as tqdm
-            if prog is True:
-                T = tqdm(L)
-            else:
-                T = prog(L)
+            T = PB(L)
         else:
             T = L
         for i, elt in enumerate(T):
@@ -658,12 +650,8 @@ class ITM:
             peak_lim = 0
             
         if prog:
-            try:
-                from tqdm import tqdm_notebook as tqdm
-            except:
-                from tqdm import tqdm
-            PB = tqdm(total=3, postfix={'task':"Calculating total spectrum"})
-            IT = lambda x: tqdm(x, leave=False)
+            pb = PB(total=3, postfix={'task':"Calculating total spectrum"})
+            IT = lambda x: PB(x, leave=False)
         else:
             IT = lambda x: x
             
@@ -691,8 +679,8 @@ class ITM:
         max_count = np.max(m)
         
         if prog:
-            PB.update(1)
-            PB.set_postfix({'task':"calculating aggregated spectrum"})
+            pb.update(1)
+            pb.set_postfix({'task':"calculating aggregated spectrum"})
 
         # Select the peaks which are higher that peak_lim counts
         t = np.arange(channels)
@@ -734,8 +722,8 @@ class ITM:
                         spec[i][j2] += fp
                         
         if prog:
-            PB.update(1)
-            PB.set_postfix({'task':'smooth spectra'})
+            pb.update(1)
+            pb.set_postfix({'task':'smooth spectra'})
 
         if smooth:
             if smooth is True:
@@ -748,8 +736,8 @@ class ITM:
                 spec[i] = s[m>peak_lim]
             
         if prog:
-            PB.update(1)
-            PB.set_postfix({'task':'done'})
+            pb.update(1)
+            pb.set_postfix({'task':'done'})
             
         return m>peak_lim, spec
             
@@ -883,11 +871,7 @@ class ITM:
             / self.root.goto('propend/Registration.TimeResolution').get_key_value()['float']))
         
         if kargs.get('prog',False):
-            try:
-                from tqdm import tqdm_notebook as tqdm
-            except:
-                from tqdm import tqdm as tqdm
-            T = tqdm(scans)
+            T = PB(scans)
         else:
             T = scans
             
@@ -896,7 +880,7 @@ class ITM:
             for s in T:
                 Data = self.get_raw_data(s)[2]
                 if kargs.get('prog', False):
-                    LData = tqdm(Data, leave=False)
+                    LData = PB(Data, leave=False)
                 else:
                     LData = Data
                 for xy in LData:
@@ -912,7 +896,7 @@ class ITM:
             for s in T:
                 Data = self.get_raw_data(s)[2]
                 if kargs.get('prog', False):
-                    LData = tqdm(Data, leave=False)
+                    LData = PB(Data, leave=False)
                 else:
                     LData = Data
                 for xy in LData:
@@ -1129,11 +1113,7 @@ class ITM:
         if scans is None:
             scans = range(self.Nscan)
         if prog:
-            try:
-                from tqdm import tqdm_notebook as tqdm
-            except:
-                from tqdm import tqdm as tqdm
-            scans = tqdm(scans)
+            scans = PB(scans)
         left = np.array([x[0] for x in channels])
         right = np.array([x[1] for x in channels])
         if not time:

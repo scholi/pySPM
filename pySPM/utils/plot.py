@@ -345,3 +345,23 @@ def stdplot(x, y, Nsig=2, ax=None, color='b', axis=1, **kargs):
     ax.plot(x, mean, color=color, **kargs)
     for i in range(1, Nsig+1):
         ax.fill_between(x, mean-i*dy, mean+i*dy, color=color, alpha=.2)
+        
+def pixel2img(xy, ax=None):
+    """
+    Plot create by SPM.show can be either in pixels or real unit.
+    This function return the input in case the plot is in pixels
+    or calculate and return the real unit coordinate of the corresponding pixel.
+    """
+    import matplotlib.pyplot as plt
+    if ax is None:
+        ax = plt.gca()
+
+    if hasattr(ax, 'isPixel'):
+        if not ax.isPixel:
+            pixel_shape = ax.images[0].get_array().shape
+            extent = ax.images[0].get_extent()
+            eW = extent[1]-extent[0]
+            eH = extent[3]-extent[2]
+            return (xy[0]*eW/pixel_shape[1], xy[1]*eH/pixel_shape[0])
+    return xy
+        

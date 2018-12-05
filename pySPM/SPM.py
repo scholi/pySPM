@@ -19,18 +19,10 @@ import scipy.interpolate
 from skimage import transform as tf
 import copy
 from .utils import CDF, funit
-import sys
-
-try:
-    from tqdm import tqdm_notebook as tqdm
-except:
-    try:
-        from tqdm import tqdm
-    except:
-        tqdm = lambda x: x
-        
+import sys       
 import matplotlib as mpl
 import warnings
+from .utils.misc import PB
 
 try:
     from skimage.filters import threshold_local
@@ -986,7 +978,7 @@ class SPM_image:
                 raise ValueError(
                     "The output parameter should be either 'img' or 'spline'")
 
-    def get_shadow_mask(self, angle, BIN=None, pb=False):
+    def get_shadow_mask(self, angle, BIN=None, prog=False):
         """
         If an image is recorded with a beam incident with a certain angle, the topography will shadow the data.
         This function generates the shadow mask for a given topography and a given incident angle.
@@ -997,7 +989,7 @@ class SPM_image:
             The incidence angle in degrees
         BIN : numpy array
             Data. If given will move the recorded pixels at the correct x,y positions
-        pb : bool
+        prog : bool
             display a progressbar ?
 
         Note
@@ -1024,8 +1016,8 @@ class SPM_image:
         mask = np.zeros(self.pixels.shape)
         AFM_bin_shadow = np.zeros(self.pixels.shape)
         Y = range(self.pixels.shape[0])
-        if pb:
-            Y = tqdm(Y)
+        if prog:
+            Y = PB(Y)
         for yi in Y:
             for xi in range(self.pixels.shape[1]):
                 cut = self.pixels.shape[1]-2
@@ -1279,10 +1271,13 @@ def cut(img, c, **kargs):
     img : 2D numpy array
         The input image array
     c : list [llx, lly, urx, ury]
-        the lower-left (ll) and upper-right (ur) coordinates used for the clippings2 = pySPM.Nanoscan("%s/CyI5b_PCB_ns.xml"%(Path))
+        the lower-left (ll) and upper-right (ur) coordinates used for the cropping
     """
+    from .utils.geometry import Bbox
     if kargs.get('debug',False):
         print("cut in x", c[0], "->", c[2], " - in y", c[1], "->", c[3])
+    if isinstance(c, Bbox):
+        c = [c.left, c.bottom, c.right, c.top]        
     if c[3] < c[1]:
         c = [c[0],c[3],c[2],c[1]]
     if c[2] < c[0]:

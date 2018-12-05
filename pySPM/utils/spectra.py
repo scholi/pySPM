@@ -21,8 +21,8 @@ def get_dm(m, sf, k0, dsf, dk0):
     import numpy as np
     return 2*np.sqrt(m)*np.sqrt((dk0**2/(sf**2))+m*(dsf**2/(sf**2)))
 
-@alias("show_peak")    
-def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=True,
+@alias("showPeak")
+def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=True,
     debug=False, Aredux=1, label=None, include=None, include_only=None, exclude=[],
     polarity="+", colors='rgb', pretty=True, formula=True, auto_scale=True, fakefit=False, zero_axis=True, **kargs):
     """
@@ -43,7 +43,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
         If true will include the fitting errors (if dofit is True)
     dofit : boolean
         If True will fit the peaks for the elements found
-    showElts : boolean
+    show_elts : boolean
         If True will display a list of all elements for the plotted region. The basic elements comes from a database, but they can be adjusted with the include, include_only and exclude parameters.
     include : list
         List of elements to be included to the plotting elements
@@ -80,8 +80,10 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
     import copy
     import matplotlib.pyplot as plt
 
-    if "show_elts" in kargs:
-        showElts = kargs.pop("show_elts")
+    if "showElts" in kargs:
+        from warnings import warn
+        warn("Parameter showElts is deprecated. Please use show_elts")
+        show_elts = kargs.pop("showElts")
         
     if include is None:
         include = []
@@ -119,7 +121,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
     negative = False
     if polarity in ['-', 'Negative', 'negative', 'neg', 'Neg', 'NEG']:
         negative = True
-    if showElts:
+    if show_elts:
         if include_only is not None:
             if type(include_only) is str:
                 E = include_only.split(",")
@@ -256,7 +258,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
                 'dm': (popt[1]*1e6/m0s[i],err[1]*1e6/m0s[i]),
                 'fit': fit_type
                 }
-    if showElts and ax is not None:
+    if show_elts and ax is not None:
         if do_debug(debug):
             print("put labels")
             t2 = time.time()
@@ -323,7 +325,7 @@ def showPeak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, showElts=Tr
     return res
 
 
-def plot_isotopes(elt, amp=None, main=None, ax=None, sig=None, asym=None, lg=0, limit=1, color='C1', showElts=False, debug=False, **kargs):
+def plot_isotopes(elt, amp=None, main=None, ax=None, sig=None, asym=None, lg=0, limit=1, color='C1', show_elts=False, debug=False, **kargs):
     """
     plot the isotopes of a given element on a spectral profile plot
     """
@@ -332,7 +334,10 @@ def plot_isotopes(elt, amp=None, main=None, ax=None, sig=None, asym=None, lg=0, 
         from warnings import warn
         warn("Parameter Amp is deprecated. Please use amp in order to set the amplitude!")
         amp = kargs.pop("Amp")
-        
+    if 'showElts' in kargs:
+        from warnings import warn
+        warn("Parameter showElts is deprecated. Please use show_elts")
+        show_elts = kargs.pop("showElts")
     from . import get_isotopes, LG, get_mass, get_abund, Molecule
     import matplotlib.pyplot as plt
     import numpy as np
@@ -380,7 +385,7 @@ def plot_isotopes(elt, amp=None, main=None, ax=None, sig=None, asym=None, lg=0, 
     
     for iso in isos:
         s += LG(m, iso[1], sig, amp=amp*iso[2], lg=lg, asym=asym)
-        if showElts:
+        if show_elts:
             ax.annotate(iso[0], (iso[1], amp*iso[2]), (0,5), textcoords='offset pixels', ha='center')
     if hasattr(ax, 'log') and ax.log:
         s[s>=1] = np.log10(s[s>=1])

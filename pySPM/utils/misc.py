@@ -113,3 +113,32 @@ def getBAM(x, x0, N=10, least_one=False):
         P[((x-x0)>=pos)*((x-x0)<=pos+width)] = 1
         if least_one: P[np.argmin(abs(x-x0-pos))] = 1 # At least 1 pixel set ?
     return P
+
+def in_ipynb():
+    try:
+        cfg = get_ipython().config 
+        if 'IPKernelApp' in cfg:
+            return True
+        else:
+            return False
+    except NameError:
+        return False
+        
+if in_ipynb():
+    try:
+        from tqdm import tqdm_notebook as tqdm
+    except:
+        try:
+            from tqdm import tqdm
+        except:
+            from warnings import warn
+            warn("the library tqdm cannot be found. All progressbar will be disabled.")
+            tqdm = lambda x: x
+    PB = tqdm
+else:
+    try:
+        from tqdm import tqdm
+    except:
+        warn("the library tqdm cannot be found. All progressbar will be disabled.")
+        tqdm = lambda x: x
+    PB = tqdm

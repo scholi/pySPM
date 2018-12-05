@@ -19,9 +19,8 @@ from .ITM import ITM
 from .collection import Collection
 from .SPM import SPM_image
 from .Block import MissingBlock
-from .utils import in_ipynb
 from .PCA import ITA_PCA
-from .utils.misc import deprecated, aliased, alias
+from .utils.misc import deprecated, aliased, alias, PB
 import warnings
 
 @aliased
@@ -200,7 +199,7 @@ class ITA(ITM):
                           lower=z['lmass']['float'], upper=z['umass']['float']))
 
     @alias("getChannelByMass")
-    def get_channels_by_mass(self, mass, full=False):
+    def get_channel_by_mass(self, mass, full=False):
         """
         Retrieves the first channel ID which has a mass range containing a given mass.
 
@@ -245,20 +244,22 @@ class ITA(ITM):
             The list of all the channels selected. This list can be displayed in a human readable form by the pySPM.ITA.showChannels function
 
         """
-        return self.get_sum_image_by_name(names, Shifts=[(-x,-y) for x,y in self.get_saved_shift()],**kargs)
+        return self.get_sum_image_by_name(names, shifts=[(-x, -y) for x, y in self.get_saved_shift()], **kargs)
         
     def __get_sum_image(self, scans, channels, **kargs):
         """
         An internal function to retrieve the sum of several scans for several channel ID.
         """
         Z = np.zeros((self.sy, self.sx))
-        if 'Shifts' in kargs:
-            Shifts = kargs['Shifts']
+        if 'shifts' in kargs:
+            shifts = kargs['shifts']
+        elif 'Shifts' in kargs:
+            shifts = kargs['Shifts']
         else:
-            Shifts = [(-x,-y) for x,y in self.get_saved_shift()]            
+            shifts = [(-x,-y) for x,y in self.get_saved_shift()]            
         for ch in channels:
             ID = ch['id']['long']
-            Z += self.fast_get_image(ID, scans, Shifts)
+            Z += self.fast_get_image(ID, scans, shifts)
         return Z
 
     @alias("getSumImageBySN")
@@ -271,11 +272,7 @@ class ITA(ITM):
         if type(scans) == int:
             scans = [scans]
         if prog:
-            try:
-                from tqdm import tqdm_notebook as tqdm
-            except:
-                from tqdm import tqdm
-            scans= tqdm(scans)
+            scans= PB(scans)
 
         Z = np.zeros((self.sy, self.sx))
         for s in scans:
@@ -313,11 +310,7 @@ class ITA(ITM):
         
         channels = self.get_added_image_by_name(names, strict)
         if prog:
-            try:
-                from tqdm import tqdm_notebook as tqdm
-            except:
-                from tqdm import tqdm
-            scans = tqdm(scans)
+            scans = PB(scans)
         Z = self.__get_sum_image(scans, channels)
         if raw:
             return Z, channels
@@ -356,8 +349,7 @@ class ITA(ITM):
         S0 = Filter(self.get_added_image_by_mass(masses, 0))
         Y = range(1, self.Nscan)
         if prog:
-            from tqdm import tqdm
-            Y = tqdm(Y)
+            Y = PB(Y)
         for i in Y:
             S = Filter(self.get_sum_image_by_mass(masses, i))
             Shift = np.real(np.fft.fftshift(np.fft.ifft2(
@@ -417,11 +409,7 @@ class ITA(ITM):
             if not flip:
                 ax.plot([x1, x2], [self.sy-1-y1, self.sy-1-y2], col)
         if prog:
-            try:
-                from tqdm import tqdm_notebook as tqdm
-            except:
-                from tqdm import tqdm as tqdm
-            Y = tqdm(Y)
+            Y = PB(Y)
         from scipy.ndimage import map_coordinates
         for s in Y:
             Z = self.get_sum_image_by_mass(masses, s, **kargs)
@@ -488,7 +476,7 @@ class ITA(ITM):
         """
         Shortcut function for pySPM.ITA.get_sum_image_by_mass using the saved shift corrections.
         """
-        return self.get_sum_image_by_mass(masses, Shifts=[(-x,-y) for x,y in self.get_saved_shift()], **kargs)
+        return self.get_sum_image_by_mass(masses, shifts=[(-x,-y) for x,y in self.get_saved_shift()], **kargs)
         
     @alias("getSumImageByMass")
     def get_sum_image_by_mass(self, masses, scans=None, prog=False, raw=False, **kargs):
@@ -503,15 +491,8 @@ class ITA(ITM):
         if type(masses) is int or type(masses) is float:
             masses = [masses]
         if prog:
-            if in_ipynb():
-                try:
-                    from tqdm import tqdm_notebook as tqdm
-                except:
-                    from tqdm import tqdm
-            else:
-                from tqdm import tqdm
-            scans = tqdm(scans, leave=False)
-        channels = [self.get_channels_by_mass(m, full=True) for m in masses]
+            scans = PB(scans, leave=False)
+        channels = [self.get_channel_by_mass(m, full=True) for m in masses]
         Z = self.__get_sum_image(scans, channels, **kargs)
         if raw:
             return Z, channels
@@ -546,7 +527,7 @@ class ITA(ITM):
         Z = np.zeros((self.sy, self.sx))
         channels = []
         for m in masses:
-            ch = self.get_channels_by_mass(m)
+            ch = self.get_channel_by_mass(m)
             m = self.get_masses()[ch]
             if m['assign'] != '':
                 channels.append(m['assign'])
@@ -606,7 +587,7 @@ class ITA(ITM):
         return V
     
     @alias("fastGetImage")
-    def fast_get_image(self, channel, scans, Shifts=False, prog=False):
+    def fast_get_image(self, channel, scans, shifts=False, prog=False, **kargs):
         """
         Retieve a 2D numpy array corresponding to a given channel ID for given scan(s) and return their sum.
 
@@ -627,25 +608,20 @@ class ITA(ITM):
         2D numpy array
             array data of the image
         """
+        # Old parameter name compatibility
+        if 'Shifts' in kargs:
+            shifts = kargs.pop("Shifts")
+            
         Z = np.zeros((self.sy, self.sx))
         if prog:
-            try:
-                from tqdm import tqdm_notebook as tqdm
-                scans = tqdm(scans)
-            except:
-                warning.warn("tqdm_notebook not available")
-                try:
-                    from tqdm import tqdm
-                    scans = tqdm(scans)
-                except:
-                    warning.warn("cannot load tqdm library")
+            scans = PB(scans)
             
         im_root =  self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image['+str(channel)+']')
         for scan in scans:
             c = im_root.goto('ImageArray.Long['+str(scan)+']')
             V = np.array(c.get_data('I'), dtype=np.float).reshape((self.sy, self.sx))
-            if Shifts:
-                r = [int(z) for z in Shifts[scan]]
+            if shifts:
+                r = [int(z) for z in shifts[scan]]
                 V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)
                 rx = [max(0,-r[0]), self.sx-max(1,r[0])]
                 ry = [max(0,-r[1]), self.sy-max(1,r[1])]
@@ -776,11 +752,7 @@ class ITA(ITM):
         if scans is not None:
             RS = range(self.Nscan)
             if prog:
-                try:
-                    from tqdm import tqdm_notebook as tqdm
-                except:
-                    from tqdm import tqdm
-                RS = tqdm(RS)
+                RS = PB(RS)
             for i in RS:
                 img = np.flipud(scans[i].astype(np.uint32, casting='unsafe'))
                 data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(img)), level=lvl)

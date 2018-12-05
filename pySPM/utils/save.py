@@ -89,11 +89,20 @@ def load(filename, *keys):
     elif len(keys) == 1 and ',' in keys[0]:
         keys = keys[0].split(',')
     f = zipfile.ZipFile(filename, 'r')
+    
     res = []
     for key in keys:
         if type(key) is int:
             key = str(key)
-        res.append(pickle.loads(f.read(key)))
+        try: 
+            raw = f.read(key)
+        except Exception as e:
+            raise KeyError("There is no key {} found in the data {}".format(key, filename))
+        try:
+            res.append(pickle.loads(raw))
+        except:
+            raise Exception("Cannot pickle recorded data for key {}".format(key))
+        
     f.close()
     if len(keys)==1:
         return res[0]
