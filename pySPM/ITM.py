@@ -11,6 +11,7 @@ import zlib
 import re
 import os
 from .utils.misc import deprecated, aliased, alias, PB
+from warnings import warn
 
 class InvalidRAWdataformat(Exception):
     def __init__(self, block, msg):
@@ -22,7 +23,7 @@ class InvalidRAWdataformat(Exception):
 
 @aliased
 class ITM:
-    def __init__(self, filename, debug=False, readonly=False):
+    def __init__(self, filename, debug=False, readonly=False, precond=False, label=None):
         """
         Create the ITM object out of the filename.  Note that this works for
         all .ITA,.ITM, .ITS files as they have the same structure
@@ -51,8 +52,24 @@ class ITM:
         the same information everywhere). The rest are the detected peaks
         measured in channel unit for that specific pixel. In order to get the
         mass see the channel2mass function
+        
+        Parameters
+        ----------
+        filename : string
+            Path of the ITA/ITM/ITS file
+        debug : bool
+            if True display some debug message.
+        readonly : bool
+            The pySPM library can now EDIT ITM/ITA files. In case you want to avoid that, please set readonly=True.
+            This might be also useful in case the file is open by another program which locks the file.
+        precond : bool
+            If True will run the preconditioner (adjust k0 so that H peak is correct and adjust scaling factor on the H peak)
         """
         self.filename = filename
+        if label is None:
+            self.label = os.path.basename(filename)
+        else:
+            self.label = label
         if not os.path.exists(filename):
             print("ERROR: File \"{}\" not found".format(filename))
             raise FileNotFoundError
@@ -108,6 +125,10 @@ class ITM:
         except Exception as e:
             if debug:
                 raise e
+        self.sf, self.k0 = self.get_mass_cal()
+        self.scale = 1
+        if precond:
+            self.precond()
     
     @alias("getPeakList")
     def get_peak_list(self, name):
@@ -414,6 +435,8 @@ class ITM:
         if apply:
             self.set_sf(sf)
             self.set_k0(k0)
+        self.sf = sf
+        self.k0 = k0
         if debug:
             return sf, k0, dsf, dk0, ts, ms
         if error:
@@ -479,15 +502,80 @@ class ITM:
         For information the channel width is 50ps and can be retrieved by pySPM.ITM.get_value("Registration.TimeResolution")
         """
         if sf is None or k0 is None:
-            sf0, k00 = self.get_mass_cal()
+            sf0, k00 = self.sf, self.k0
         if sf is None:
             sf = sf0
         if k0 is None:
             k0 = k00
         return ((binning*channels-k0)/(sf))**2
 
+    def shift_sf(self, dsf):
+        """
+        This function adjust the value of sf by adding the value given as parameter and recalculate k0 such that the H peak does not move.
+        """
+        from .utils import get_mass
+        self.k0 = self.k0-dsf*np.sqrt(get_mass("H+"))
+        self.sf += dsf
+        
+    def rescale(self, elt, amp=10000, delta=.02):
+        from .utils.fit import peak_fit
+        m, s = self.get_spectrum(scale=1)
+        p0 = peak_fit(m, s, elt, delta=delta)
+        self.scale = amp / p0[2]
+        return p0
+        
+    def adjust_sf(self, elt, delta=0.02):
+        from .utils import LG, get_mass
+        from .utils.fit import peak_fit
+        m, s = self.get_spectrum()
+        mH = get_mass("H"+"+-"[self.polarity=='Negative'])
+        p0 = peak_fit(m, s, mH, delta=.02)
+        tH = 2*np.argmin(abs(m-p0[0]))
+        
+        mX = get_mass(elt)
+        p0 = peak_fit(m, s, mX, delta=delta)
+        tX = 2*np.argmin(abs(m-p0[0]))
+        self.sf = (tX-tH)/(np.sqrt(mX)-np.sqrt(mH))
+        self.k0 = tH-self.sf*np.sqrt(mH)
+    
+    def precond(self, amp=10000, apply=False, do_mass_cal=False):
+        """
+        This is a pre-conditioner function which adjust k0 so that the H peak is exactly centered on the correct mass and it adjusts the scale factor so that the H peak is exactly equivalent to amp (10'000 by default).
+        
+        This function is useful in case people want to compare several measurements together.
+        
+        Parameters
+        ----------
+        amp : float, int
+            The amplitude of the H peak after scaling
+        apply : bool
+            Appy the changes of k0 and sf to the file
+        """
+        from .utils import get_mass, LG
+        from .utils.fit import peak_fit
+        
+        m, s  = self.getSpectrum()
+        mask = (m>.98)*(m<1.02)
+        amp0 = np.max(s[mask])
+        mH = get_mass("H"+"+-"[self.polarity=='Negative'])
+        if do_mass_cal or amp0 < .1*self.size['pixels']['x']*self.size['pixels']['y']:
+            warn("the initial mass calibration seems to be wrong, let's try to perform it from scratch")
+            self.sf, self.k0 = self.auto_mass_cal(sf=72000, k0=0)
+            m, s  = self.getSpectrum()
+            mask = (m>.98)*(m<1.02)
+            amp0 = np.max(s[mask])
+        try:
+            p0 = peak_fit(m, s, mH)
+        except:
+            if not do_mass_cal:
+                return self.precond(amp=amp, apply=apply, do_mass_cal=True)
+        tH = 2*np.argmin(abs(m-p0[0]))
+        self.k0 = tH - self.sf*np.sqrt(mH)
+        if p0[2]>0:
+            self.scale = amp / p0[2]
+    
     @alias("getSpectrum")
-    def get_spectrum(self, sf=None, k0=None, time=False, error=False, **kargs):
+    def get_spectrum(self, sf=None, k0=None, scale=None, time=False, error=False, **kargs):
         """
         Retieve a mass,spectrum array
         This only works for .ita and .its files.
@@ -495,7 +583,9 @@ class ITM:
         """
         RAW = zlib.decompress(self.root.goto(
             'filterdata/TofCorrection/Spectrum/Reduced Data/IITFSpecArray/'+['CorrectedData','Data'][kargs.get('uncorrected',False)]).value)
-        D = np.array(struct.unpack("<{0}f".format(len(RAW)//4), RAW))
+        if scale is None:
+            scale = self.scale
+        D = scale*np.array(struct.unpack("<{0}f".format(len(RAW)//4), RAW))
         ch = 2*np.arange(len(D)) # We multiply by two because the channels are binned.
         if time:
             return ch, D
@@ -587,7 +677,7 @@ class ITM:
         return p
         
     @alias("showSpectrumAround")
-    def show_spectrum_around(self, m0, delta=None, sf=None, k0=None, **kargs):
+    def show_spectrum_around(self, m0, delta=None, amp_scale=1, sf=None, k0=None, **kargs):
         """
         Display the Spectrum around a given mass.
 
@@ -608,7 +698,9 @@ class ITM:
             polarity = '-'
         from . import utils
         m, D = self.get_spectrum(sf=sf, k0=k0)
-        return utils.show_peak(m, D, m0, delta, polarity=polarity, sf=sf, k0=k0, **kargs)
+        if 'label' not in kargs:
+            kargs['label'] = self.label
+        return utils.show_peak(m, D*amp_scale, m0, delta, polarity=polarity, sf=sf, k0=k0, **kargs)
         
     @deprecated("SpectraPerPixel")
     def spectra_per_pixel(self, pixel_aggregation=None, peak_lim=0, scans=None, prog=False, safe=True, FOVcorr=True, smooth=False):
@@ -751,6 +843,7 @@ class ITM:
         """
         # old notation compatibility
         if 'showPeaks' in kargs:
+            warn("The parameter showPeaks is deprecated. Please use show_peaks")
             show_peaks = kargs.pop("showPeaks")
             
         m, s = self.get_spectrum(sf=sf, k0=k0, **kargs)
@@ -766,6 +859,8 @@ class ITM:
             ax.log = True
             S[S>=1] = np.log10(S[S>=1])
             S[S<1] = 0
+        if 'label' not in kargs:
+            kargs['label'] = self.label
         ax.plot(M, S, **kargs)
         self.get_masses()
         if show_peaks:

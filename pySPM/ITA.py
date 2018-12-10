@@ -25,7 +25,7 @@ import warnings
 
 @aliased
 class ITA(ITM):
-    def __init__(self, filename, readonly=False):
+    def __init__(self, filename, *args, **kargs):
         """
         Open an ITA file.
         
@@ -45,7 +45,7 @@ class ITA(ITM):
         >>> filename = "myfile.ita"
         >>> A = pySPM.ITA(filename)
         """
-        ITM.__init__(self, filename, readonly=readonly)
+        ITM.__init__(self, filename, *args, **kargs)
         try:
             self.sx = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').get_ulong()
             self.sy = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize').get_ulong()

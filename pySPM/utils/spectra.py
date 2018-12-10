@@ -130,7 +130,7 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
         else:
             E = [x for NM in range(int(round(m0-delta)), int(round(m0+delta))+1) for x in get_peaklist(NM, negative)]
             E = [x for x in E if x not in exclude] + include
-        E = list(set(E))
+        E = [x+[['+','-'][negative],'']['+' in x or '-' in x] for x in set(E)]
     else:
         E = []
     m0s = [get_mass(x) for x in E]

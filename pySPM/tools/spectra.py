@@ -50,6 +50,7 @@ class SpectraViewer(QMainWindow):
     def __del__(self):
         if self.ita is not None:
             del self.ita
+        self.ita = None
 
     def removeMassCalItem(self):
         row = self.ui.tableMassCal.selectedItems()[0].row()
@@ -116,7 +117,8 @@ class SpectraViewer(QMainWindow):
             right = len(self.S)-1
         if left<self.t[-1] and right>0:
             max = np.max(self.S[left:right+1])
-            self.ax.set_ylim(0, 1.2*max)
+            if max>0:
+                self.ax.set_ylim(0, 1.2*max)
         if delta<10:
             self.ui.show_mass.setEnabled(True)
             if self.ui.show_mass.isChecked():
@@ -173,7 +175,7 @@ class SpectraViewer(QMainWindow):
             self.MassCal = []
             for x in self.ita.root.goto("MassScale/calib"):
                 if x.name == 'assign':
-                    self.MassCal.append({'elt':x.getString()})
+                    self.MassCal.append({'elt':x.get_string()})
                 if x.name == 'mcp':
                     mcp = struct.unpack("<10d", x.value)
                     self.MassCal[-1]['time'] = mcp[0]

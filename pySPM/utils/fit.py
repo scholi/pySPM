@@ -9,6 +9,21 @@ Provides useful functions for fitting with scipy.optimize.curve_fit
 from . import math
 import numpy as np
 
+def peak_fit(m, s, m0, delta=0.02):
+    from scipy.optimize import curve_fit   
+    from . import LG, get_mass
+    assert len(m)==len(s)
+    if type(m0) is str:
+        m0 = get_mass(m0)
+    assert m0<m[-1] and m0>m[0]
+    assert delta > 0
+    mask = (m>=(m0-delta))*(m<=(m0+delta))
+    amp0 = np.max(s[mask])
+    sig = abs(m[mask][np.argmin(abs(s[mask]-amp0/2))]-m0)/np.sqrt(2*np.log(2))
+    p00 = (m[mask][np.argmax(s[mask])], sig, amp0, .3, 1)
+    p0,_  = curve_fit(LG, m[mask], s[mask], p00, bounds=((-np.inf,0,0,0,0),(np.inf,np.inf,np.inf, 1, np.inf)))
+    return p0
+
 def CDF(x, bg, *args, **kargs):
     """
     Return the sum of several CDFs.
