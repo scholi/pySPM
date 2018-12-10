@@ -1,4 +1,5 @@
 import numpy as np
+from warnings import warn
 
 def dec_debug(debug):
     if debug>0:
@@ -131,7 +132,6 @@ if in_ipynb():
         try:
             from tqdm import tqdm
         except:
-            from warnings import warn
             warn("the library tqdm cannot be found. All progressbar will be disabled.")
             tqdm = lambda x: x
     PB = tqdm

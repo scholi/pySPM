@@ -392,7 +392,7 @@ class ITM:
         return Vals
 
     @alias("autoMassCal")
-    def auto_mass_cal(self, t=None, S=None, pos=True, debug=False, error=False, Range=5000, fitting_peaks = ['C','CH','CH2','CH3','Na'], sf=None, k0=None, apply=False, **kargs):
+    def auto_mass_cal(self, t=None, S=None, pos=True, debug=False, error=False, Range=5000, fitting_peaks = ['C','CH','CH2','CH3','Na'], apply=False, **kargs):
         """
         perform an auto calibration for spectrum. (in test, might be unreliable)
         """
@@ -401,7 +401,8 @@ class ITM:
             fitting_peaks = kargs['FittingPeaks']
         if type(fitting_peaks) is str:
             fitting_peaks = fitting_peaks.split(",")
-            
+        negative = self.polarity=='Negative'
+        fitting_peaks = [x+[['+','-'][negative],'']['+' in x or '-' in x] for x in fitting_peaks]
         from .utils import get_mass, time2mass, fit_spectrum, mass2time
         from scipy.optimize import curve_fit
         time_width = 1e10*self.root.goto('propend/Instrument.LMIG.Chopper.Width').get_key_value()['float']
@@ -415,10 +416,19 @@ class ITM:
         tH = times[0]
         mask = (t>=tH-time_width)*(t<=tH+time_width)
         tH = t[mask][np.argmax(S[mask])]
+        if not 'sf' in kargs:
+            sf = self.sf
+        else:
+            sf = kargs.pop('sf')
+        if not 'k0' in kargs:
+            k0 = self.k0
+        else:
+            k0 = kargs.pop('k0')
+            
         if sf is None or k0 is None:
-            sf=1e5
+            sf = 1e5
             for i in range(3):
-                k0 = tH-sf*np.sqrt(get_mass('H'))
+                k0 = tH-sf*np.sqrt(get_mass('H'+['+','-'][self.polarity=='Negative']))
                 m = time2mass(t, sf=sf, k0=k0)
                 mP = time2mass(times, sf=sf, k0=k0)
                 t0 = times[np.argmin(np.abs(mP-12))]
@@ -538,7 +548,7 @@ class ITM:
         self.sf = (tX-tH)/(np.sqrt(mX)-np.sqrt(mH))
         self.k0 = tH-self.sf*np.sqrt(mH)
     
-    def precond(self, amp=10000, apply=False, do_mass_cal=False):
+    def precond(self, amp=10000, do_mass_cal=False):
         """
         This is a pre-conditioner function which adjust k0 so that the H peak is exactly centered on the correct mass and it adjusts the scale factor so that the H peak is exactly equivalent to amp (10'000 by default).
         
@@ -571,7 +581,7 @@ class ITM:
                 return self.precond(amp=amp, apply=apply, do_mass_cal=True)
         tH = 2*np.argmin(abs(m-p0[0]))
         self.k0 = tH - self.sf*np.sqrt(mH)
-        if p0[2]>0:
+        if amp is not None:
             self.scale = amp / p0[2]
     
     @alias("getSpectrum")

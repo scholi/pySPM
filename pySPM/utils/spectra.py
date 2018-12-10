@@ -11,10 +11,10 @@ from .misc import dec_debug, do_debug, alias
 def get_substance_peaks(substance, negative=True):
     import os
     import sqlite3
-    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
+    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT Peaks.Fragment from Peaks where Peaks.Substance==(SELECT ID from substance where Name LIKE '%{name}%') and Polarity{pol}=0".format(name=substance,pol='><'[negative]))
+    c.execute("SELECT Peaks.Fragment from Peaks where Peaks.Substance==(SELECT ID from substance where Name LIKE '%{name}%') and Polarity{pol}=0".format(name=substance, pol='><'[negative]))
     return [x[0] for x in c.fetchall()]
         
 def get_dm(m, sf, k0, dsf, dk0):
@@ -130,7 +130,7 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
         else:
             E = [x for NM in range(int(round(m0-delta)), int(round(m0+delta))+1) for x in get_peaklist(NM, negative)]
             E = [x for x in E if x not in exclude] + include
-        E = [x+[['+','-'][negative],'']['+' in x or '-' in x] for x in set(E)]
+        E = list(set([x+[['+','-'][negative],'']['+' in x or '-' in x] for x in E]))
     else:
         E = []
     m0s = [get_mass(x) for x in E]
