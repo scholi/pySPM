@@ -426,7 +426,7 @@ class ITM:
             k0 = kargs.pop('k0')
             
         if sf is None or k0 is None:
-            sf = 1e5
+            sf = 72000
             for i in range(3):
                 k0 = tH-sf*np.sqrt(get_mass('H'+['+','-'][self.polarity=='Negative']))
                 m = time2mass(t, sf=sf, k0=k0)
@@ -476,6 +476,9 @@ class ITM:
                 res = html_table(Table, header=True)
                 display(HTML(res))
                 
+    def reset_mass_cal(self, alt=False):
+        self.sf, self.k0 = self.get_mass_cal(alt=alt)
+        
     def get_mass_cal(self, alt=False):
         try:
             if alt:

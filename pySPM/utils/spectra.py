@@ -108,15 +108,20 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
         dofit = True
    
     if delta is None:
-        delta0 = .5
+        delta0 = kargs.pop('delta0', .5)
         mask = (m>=m0-delta0)*(m<=m0+delta0)
         thresh = max(5, np.max(D[mask])*kargs.get('min_perc', .01))
         li = np.argmax(mask)+np.argmax(D[mask]> thresh)
         ui = np.argmax(mask)+np.sum(mask)-np.argmax(D[mask][::-1]>thresh)
-        mask = (m>=m[li]-.01)*(m<=m[ui]+.01)
-        delta = np.max([m[ui]-m0, m0-m[li]])+.01
+        upper_mass = m[ui]+.01
+        lower_mass = m[li]-.01
+        
+        delta = (upper_mass-lower_mass)/2.0+.01
     else:
-        mask = (m>=m0-delta)*(m<=m0+delta)
+        lower_mass = m0 - delta
+        upper_mass = m0 + delta
+        
+    mask = (m>=lower_mass)*(m<=upper_mass)
     
     negative = False
     if polarity in ['-', 'Negative', 'negative', 'neg', 'Neg', 'NEG']:
@@ -128,136 +133,143 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
             else:
                 E = include_only
         else:
-            E = [x for NM in range(int(round(m0-delta)), int(round(m0+delta))+1) for x in get_peaklist(NM, negative)]
+            E = [x for NM in range(int(round(lower_mass)), int(round(upper_mass))+1) for x in get_peaklist(NM, negative)]
             E = [x for x in E if x not in exclude] + include
-        E = list(set([x+[['+','-'][negative],'']['+' in x or '-' in x] for x in E]))
+        E = list(set([x+[['+', '-'][negative], '']['+' in x or '-' in x] for x in E]))
     else:
         E = []
-    m0s = [get_mass(x) for x in E]
-    E = [x for x, y in zip(E, m0s) if y>=m0-delta and y<=m0+delta]
     if negative:
         E = [x+['-', '']['-' in x] for x in E]
+    m0s = [get_mass(x) for x in E]
+    E = [x for x, y in zip(E, m0s) if y>=lower_mass and y<=upper_mass]
+    m0s = [get_mass(x) for x in E]
     if formula:
         E_labels = [formulafy(x) for x in E]
     else:
         E_labels = E
     if do_debug(debug):
         print("Elements:", ", ".join(E))
-    mp = m[mask][np.argmax(D[mask])] # mass of max peak
-    dm = dm0
-    if dm is None:
-        dm = 0
-    if len(E)>0:
-        i = np.argmin(abs(np.array([get_mass(x) for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the closest to max_peak
-        if dm0 is None:
-            dm = mp-get_mass(E[i])
-    m0s = [get_mass(x) for x in E]
-    p0 = [kargs.get('asym0', 1), dm]+[0, 0]*len(E) # delta m is estimated from the deviation of the highest peak
-    Et = copy.deepcopy(E) # copy element list
-    if do_debug(debug):
-        print(" ; ".join(E))
+    
     Dt = np.copy(D[mask])
     mt = m[mask]
     
-    while len(Et)>0:
-        mp = mt[np.argmax(Dt)] # mass of max peak
-        ms = [get_mass(x) for x in Et]
-        i = np.argmin(abs(ms-mp))
-        idx = E.index(Et[i])
-        j = np.argmin(abs(mt-ms[i]-dm))
-        if do_debug(debug):
-            print("Max element:", Et[i], mp, ms[i], Dt[j], idx)
-        p0[2+2*idx] = kargs.get('sig0',0.002)
-        p0[3+2*idx] = Aredux*Dt[j]
-        Dt -= LG(mt, ms[i], p0[2+2*idx], amp=p0[3+2*idx], asym=p0[0], lg=0)
-        Dt[Dt<0] = 0
-        del Et[i]
-    
-    def fit(x,*p):
-        y = x*0
-        for i in range((len(p)-2)//2):
-            x0 = m0s[i]+p[1]
-            y += LG(x, x0, p[2+2*i], amp=p[3+2*i], asym=p[0], lg=0)
-        return y
-        
     ax = kargs.pop('ax', plt.gca())
+    if dofit or fakefit:
+        mp = m[mask][np.argmax(D[mask])] # mass of max peak
+        dm = dm0
+        if dm is None:
+            dm = 0
+        if len(E)>0:
+            i = np.argmin(abs(np.array([get_mass(x) for x in E if type(x) is str]+[x for x in E if type(x) is float])-mp)) # which element is the closest to max_peak
+            if dm0 is None:
+                dm = mp-get_mass(E[i])
+        p0 = [kargs.get('asym0', 1), dm]+[0, 0]*len(E) # delta m is estimated from the deviation of the highest peak
+        Et = copy.deepcopy(E) # copy element list
+        if do_debug(debug):
+            print(" ; ".join(E))
     
-    fit_type = None
-    if do_debug(debug):
-        print("p0", p0)
-        t1 = time.time()
-        print("setup time: ", t1-t0)
-    if dofit:
-        try:
-            assert not fakefit
-            popt, pcov = curve_fit(fit, m[mask], D[mask], p0=p0,
-                    bounds=(
-                        [1/kargs.get('asym_max', 10), -0.015]+[0, 0]*((len(p0)-1)//2),
-                        [kargs.get('asym_max', 10), 0.015]+[kargs.get('sig_max', 0.01), np.inf]*((len(p0)-1)//2))
-                        )
-            fit_type = 0
-        except:
-            p0[1] = 0
+    
+        while len(Et)>0:
+            mp = mt[np.argmax(Dt)] # mass of max peak
+            ms = [get_mass(x) for x in Et]
+            i = np.argmin(abs(ms-mp))
+            idx = E.index(Et[i])
+            j = np.argmin(abs(mt-ms[i]-dm))
+            if do_debug(debug):
+                print("Max element:", Et[i], mp, ms[i], Dt[j], idx)
+            p0[2+2*idx] = kargs.get('sig0', 0.002)
+            p0[3+2*idx] = Aredux*Dt[j]
+            Dt -= LG(mt, ms[i], p0[2+2*idx], amp=p0[3+2*idx], asym=p0[0], lg=0)
+            Dt[Dt<0] = 0
+            del Et[i]
+        
+        def fit(x,*p):
+            y = x*0
+            for i in range((len(p)-2)//2):
+                x0 = m0s[i]+p[1]
+                y += LG(x, x0, p[2+2*i], amp=p[3+2*i], asym=p[0], lg=0)
+            return y
+            
+        fit_type = None
+        if do_debug(debug):
+            print("p0", p0)
+            t1 = time.time()
+            print("setup time: ", t1-t0)
+        if dofit:
             try:
                 assert not fakefit
                 popt, pcov = curve_fit(fit, m[mask], D[mask], p0=p0,
-                    bounds=(
-                        [1/kargs.get('asym_max', 4),-0.015]+[0, 0]*((len(p0)-1)//2),
-                        [kargs.get('asym_max', 4), 0.015]+[kargs.get('sig_max', 0.01), np.inf]*((len(p0)-1)//2))
-                        )
-                fit_type = 1
-            except Exception as e:
-                fit_type = 2
-                if do_debug(debug):
-                    raise e
-                popt = p0
-                pcov = np.zeros((len(p0), len(p0)))
-                if ax is not None:
-                    for x in ['right', 'left', 'top', 'bottom']:
-                        ax.spines[x].set_color('red')
+                        bounds=(
+                            [1/kargs.get('asym_max', 10), -0.015]+[0, 0]*((len(p0)-1)//2),
+                            [kargs.get('asym_max', 10), 0.015]+[kargs.get('sig_max', 0.01), np.inf]*((len(p0)-1)//2))
+                            )
+                fit_type = 0
+            except:
+                p0[1] = 0
+                try:
+                    assert not fakefit
+                    popt, pcov = curve_fit(fit, m[mask], D[mask], p0=p0,
+                        bounds=(
+                            [1/kargs.get('asym_max', 4),-0.015]+[0, 0]*((len(p0)-1)//2),
+                            [kargs.get('asym_max', 4), 0.015]+[kargs.get('sig_max', 0.01), np.inf]*((len(p0)-1)//2))
+                            )
+                    fit_type = 1
+                except Exception as e:
+                    fit_type = 2
+                    if do_debug(debug):
+                        raise e
+                    popt = p0
+                    pcov = np.zeros((len(p0), len(p0)))
+                    if ax is not None:
+                        for x in ['right', 'left', 'top', 'bottom']:
+                            ax.spines[x].set_color('red')
+        else:
+            popt = p0
+            popt[1] = 0
+            pcov = np.zeros((len(p0), len(p0)))
+        if fakefit:
+            popt[1] = dm0
+        res = {}
+        err = np.sqrt(np.diag(pcov))
+        for i in range((len(popt)-1)//2):
+            Y = LG(m[mask], m0s[i], popt[2+2*i], popt[3+2*i],lg=0, asym=popt[0])
+            Area = popt[2*i+3]*popt[2*i+2]*np.sqrt(2*np.pi)*(.5+.5*popt[0])
+            Area_err = np.sqrt(
+                (err[2*i+3]*popt[2*i+2]*np.sqrt(2*np.pi)*(.5+.5*popt[0]))**2+
+                (err[2*i+2]*popt[2*i+3]*np.sqrt(2*np.pi)*(.5+.5*popt[0]))**2+
+                (err[0]*popt[2*i+2]*popt[2*i+3]*np.sqrt(2*np.pi)*.5)**2
+                )
+            if not errors:
+                res[E_labels[i]] = {
+                    'm0': m0s[i],
+                    'mass': m0s[i]+popt[1],
+                    'Area' : Area,
+                    'Amp' : popt[2*i+3],
+                    'sig' : popt[2*i+2],
+                    'assym' : popt[0],
+                    'dm': popt[1]*1e6/m0s[i],
+                    'fit': fit_type
+                    }
+            else:
+                res[E_labels[i]] = {
+                    'm0': m0s[i],
+                    'mass': (m0s[i]+popt[1],err[1]),
+                    'Area' : (Area,Area_err),
+                    'Amp' : (popt[2*i+3],err[2*i+3]),
+                    'sig' : (popt[2*i+2],err[2*i+2]),
+                    'assym' : (popt[0],err[0]),
+                    'dm': (popt[1]*1e6/m0s[i],err[1]*1e6/m0s[i]),
+                    'fit': fit_type
+                    }
     else:
-        popt = p0
-        popt[1] = 0
-        pcov = np.zeros((len(p0),len(p0)))
-    if fakefit:
-        popt[1] = dm0
+        popt = [0, 0]
+        res = None
     if ax is not None:
         if label is None:
             p = ax.plot(m[mask]-popt[1], D[mask], color=kargs.get('curve_color', None))
         else:
             p = ax.plot(m[mask]-popt[1], D[mask], label=label, color=kargs.get('curve_color', None))
-    res = {}
-    err = np.sqrt(np.diag(pcov))
-    for i in range((len(popt)-1)//2):
-        Y = LG(m[mask], m0s[i], popt[2+2*i], popt[3+2*i],lg=0, asym=popt[0])
-        Area = popt[2*i+3]*popt[2*i+2]*np.sqrt(2*np.pi)*(.5+.5*popt[0])
-        Area_err = np.sqrt(
-            (err[2*i+3]*popt[2*i+2]*np.sqrt(2*np.pi)*(.5+.5*popt[0]))**2+
-            (err[2*i+2]*popt[2*i+3]*np.sqrt(2*np.pi)*(.5+.5*popt[0]))**2+
-            (err[0]*popt[2*i+2]*popt[2*i+3]*np.sqrt(2*np.pi)*.5)**2
-            )
-        if not errors:
-            res[E_labels[i]] = {
-                'm0': m0s[i],
-                'mass': m0s[i]+popt[1],
-                'Area' : Area,
-                'Amp' : popt[2*i+3],
-                'sig' : popt[2*i+2],
-                'assym' : popt[0],
-                'dm': popt[1]*1e6/m0s[i],
-                'fit': fit_type
-                }
-        else:
-            res[E_labels[i]] = {
-                'm0': m0s[i],
-                'mass': (m0s[i]+popt[1],err[1]),
-                'Area' : (Area,Area_err),
-                'Amp' : (popt[2*i+3],err[2*i+3]),
-                'sig' : (popt[2*i+2],err[2*i+2]),
-                'assym' : (popt[0],err[0]),
-                'dm': (popt[1]*1e6/m0s[i],err[1]*1e6/m0s[i]),
-                'fit': fit_type
-                }
+    
     if show_elts and ax is not None:
         if do_debug(debug):
             print("put labels")
