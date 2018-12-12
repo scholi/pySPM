@@ -568,10 +568,10 @@ class ITM:
         from .utils.fit import peak_fit
         
         m, s  = self.getSpectrum()
-        mask = (m>.98)*(m<1.02)
+        mask = (m>.5)*(m<1.5)
         amp0 = np.max(s[mask])
         mH = get_mass("H"+"+-"[self.polarity=='Negative'])
-        if do_mass_cal or amp0 < .1*self.size['pixels']['x']*self.size['pixels']['y']:
+        if do_mass_cal or amp0 < max(100, .05*self.Nscan*self.size['pixels']['x']*self.size['pixels']['y']):
             warn("the initial mass calibration seems to be wrong, let's try to perform it from scratch")
             self.sf, self.k0 = self.auto_mass_cal(sf=72000, k0=0)
             m, s  = self.getSpectrum()

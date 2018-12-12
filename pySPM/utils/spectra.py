@@ -120,7 +120,8 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
     else:
         lower_mass = m0 - delta
         upper_mass = m0 + delta
-        
+    if do_debug(debug):
+        print("Lower mass: {:.2f}\nUpper mass: {:.2f}".format(lower_mass, upper_mass))
     mask = (m>=lower_mass)*(m<=upper_mass)
     
     negative = False
@@ -140,6 +141,8 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
         E = []
     if negative:
         E = [x+['-', '']['-' in x] for x in E]
+    if do_debug(debug):
+        print("Selected Elements: "+", ".join(E))
     m0s = [get_mass(x) for x in E]
     E = [x for x, y in zip(E, m0s) if y>=lower_mass and y<=upper_mass]
     m0s = [get_mass(x) for x in E]
@@ -148,11 +151,12 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
     else:
         E_labels = E
     if do_debug(debug):
-        print("Elements:", ", ".join(E))
+        print("Displayed elements:", ", ".join(E))
     
     Dt = np.copy(D[mask])
     mt = m[mask]
-    
+    if do_debug(debug):
+        print(" ; ".join(E))
     ax = kargs.pop('ax', plt.gca())
     if dofit or fakefit:
         mp = m[mask][np.argmax(D[mask])] # mass of max peak
@@ -164,10 +168,7 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
             if dm0 is None:
                 dm = mp-get_mass(E[i])
         p0 = [kargs.get('asym0', 1), dm]+[0, 0]*len(E) # delta m is estimated from the deviation of the highest peak
-        Et = copy.deepcopy(E) # copy element list
-        if do_debug(debug):
-            print(" ; ".join(E))
-    
+        Et = copy.deepcopy(E) # copy element list    
     
         while len(Et)>0:
             mp = mt[np.argmax(Dt)] # mass of max peak
@@ -191,10 +192,6 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
             return y
             
         fit_type = None
-        if do_debug(debug):
-            print("p0", p0)
-            t1 = time.time()
-            print("setup time: ", t1-t0)
         if dofit:
             try:
                 assert not fakefit
@@ -271,10 +268,6 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
             p = ax.plot(m[mask]-popt[1], D[mask], label=label, color=kargs.get('curve_color', None))
     
     if show_elts and ax is not None:
-        if do_debug(debug):
-            print("put labels")
-            t2 = time.time()
-            print("fitting time: ",t2-t1)
         from . import put_Xlabels
         if dofit and ax is not None:
             ax.plot(m[mask],D[mask],color=p[0].get_color(), alpha=.1)
@@ -327,13 +320,8 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
         else:
             ax.axhline(0, color='k', alpha=.5, lw=.5)
         
-    if do_debug(debug):
-        print(popt)
-    if (dofit or do_debug(debug)) and ax is not None:
+    if dofit and ax is not None:
         ax.plot(m[mask]-popt[1], fit(m[mask], *popt), 'r:');
-    if do_debug(debug):
-        t3 = time.time()
-        print("labeling time: ",t3-t2)
     return res
 
 
