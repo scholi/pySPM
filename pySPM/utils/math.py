@@ -9,6 +9,30 @@ Provides some useful mathematical functions which are not present in numpy.
 
 import numpy as np
 
+def prod(x):
+    p = 1
+    for k in x:
+        p *= k
+    return p
+
+def perm(x):
+    """
+    permutation with repetition of n factors
+    x = [n1,n2,n3,...nk]
+    n = n1+n2+...+nk
+    return n!/(n1!*n2*...*nk!)
+    """
+    n = sum(x)
+    num = list(range(2,n+1))
+    denom = list(range(2,x[0]+1))
+    for k in x[1:]:
+        denom += list(range(2,k+1))
+    for x in num:
+        if x in denom:
+            num.remove(x)
+            denom.remove(x)
+    return prod(num)/prod(denom)
+    
 def closest_arg(array, value):
     return np.argmin(np.abs(array-value))
     

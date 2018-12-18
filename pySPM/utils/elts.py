@@ -280,17 +280,24 @@ def get_isotopes(elt, min_abund=0):
     return R
 
 def get_abund(elt):
+    from .math import perm, prod
     if type(elt) is Molecule:
         elt = str(elt)
     DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__,"../..")),"data", "elements.db")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     abund = 1
-    for A,x,n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)',elt):
-        if n == '':
-            n = 1
-        else:
-            n = int(n)
+    elts = [(int([A,get_main_isotope(x)][A=='']), x , int(n+['', '1'][n==''])) for A, x, n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)', elt)]
+    ns = {}
+    
+    for x in elts:
+        if x[1] not in ns:
+            ns[x[1]] = []
+        ns[x[1]].append(x[2])
+        
+    permutations = prod([perm(ns[k]) for k in ns])
+    
+    for A, x, n in elts:
         if A == '':
             c.execute("SELECT abund from elements where symbol='{sym}' and abund=(SELECT max(abund) from elements where symbol='{sym}')".format(sym=x))
         else:
@@ -299,7 +306,7 @@ def get_abund(elt):
         if res is None:
             raise Exception("Cannot fetch mass of {}".format(x))
         abund *= (res[0])**n
-    return abund
+    return permutations*abund
 
 @deprecated("getOrganicAt")
 def get_organic_at(m0):
