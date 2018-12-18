@@ -730,7 +730,7 @@ class ITM:
         if pixel_aggregation is None:
             pixel_aggregation = max(1, int(self.size['pixels']['x']//64))
                  
-        from .utils import get_mass, constants as const
+        from .utils import get_mass, constants as const, closest_arg
         gun = self.root.goto('propend/Instrument.PrimaryGun.Species').get_key_value()['string'] # Primary Gun Species (Bi1,Bi3,Bi3++)
         
         # if the + is missing in the name, add it
@@ -768,16 +768,23 @@ class ITM:
         
         if scans is None:
             scans = range(self.Nscan)
+        dts = DT*(self.size['pixels']['x']/2-np.arange(self.size['pixels']['x'])) # time correction for the given x coordinate (in channel number)
         for scan in IT(scans):
-            r = self.getRawData(scan)
-            for p in r[2]:
-                x, y = p
-                for t in r[2][p]:
-                    dt = DT*(self.size['pixels']['x']/2-x) # time correction for the given x coordinate (in channel number)
+            raw = self.get_raw_raw_data(scan)
+            rawv = struct.unpack('<{}I'.format(len(raw)//4), raw)
+            i = 0
+            while i<len(rawv):
+                b = rawv[i]
+                if b& 0xc0000000:
+                    x = b & 0x0fffffff
+                    dt = dts[x]
+                    #fp = dt%1
                     ip = int(dt)
-                    fp = dt%1
-                    m[t-ip] += (1-fp)
-                    m[t-ip-1] += fp
+                    i += 3
+                else:
+                    m[b-ip] += 1#(1-fp)
+                    #m[b-ip-1] += fp
+                    i += 1
                     
         # calculate the extreme cases
         max_time = np.nonzero(m)[0][-1]
@@ -798,34 +805,41 @@ class ITM:
         if safe:
             import psutil
             free_ram = psutil.virtual_memory().free
-            if pixel_size*tx.size*8>= free_ram:
+            if pixel_size*tx.size*4>= free_ram:
                 raise Exception("""You don't have sufficient free RAM to perform this operation.
                 Free RAM: {ram:.1f}Mb
                 Number of pixels: {Npix}
-                Spectrum size [value>{peak_lim}] : {ss}
+                Spectrum size [value>{peak_lim}] : {tx} elements
+                Array size: {N} elements = {ss}Mb
                 It is advised that you clean up memory or use a higher pixel_aggregation value.
                 You can force the execution of this command by using the argument safe=False.
-                """.format(ram=free_ram/1024**2, peak_lim=peak_lim, Npix=pixel_size, ss=pixel_size*tx.size*4/1024**2))
+                """.format(ram=free_ram/1024**2, peak_lim=peak_lim, Npix=pixel_size, tx=tx.size, N=pixel_size*tx.size, ss=pixel_size*tx.size*4/1024**2))
                 
         size = (pixel_size, tx.size)
         spec = np.zeros(size, dtype='float32')
         for scan in IT(scans):
-            r = self.get_raw_data(scan)
-            for p in r[2]:
-                x, y = p
-                i = (self.size['pixels']['x']//pixel_aggregation)*(y//pixel_aggregation)+x//pixel_aggregation
-
-                for t in r[2][p]:
-                    dt = DT*(self.size['pixels']['x']/2-x) # time correction for the given x coordinate (in channel number)
+            raw = self.get_raw_raw_data(scan)
+            rawv = struct.unpack('<{}I'.format(len(raw)//4), raw)
+            k = 0
+            while k<len(rawv):
+                b = rawv[k]
+                if b& 0xc0000000:
+                    x = b & 0x0fffffff
+                    y = rawv[k+1] & 0x0fffffff
+                    dt = dts[x]
+                    #fp = dt%1
                     ip = int(dt)
-                    fp = dt%1
-                    j1 = rev.get(t-ip, 0)
-                    j2 = rev.get(t-ip-1, 0)
-                    if j1>0:
-                        spec[i][j1] += 1-fp
-                    if j2>0:
-                        spec[i][j2] += fp
-                        
+                    k += 3
+                    i = (self.size['pixels']['x']//pixel_aggregation)*(y//pixel_aggregation)+x//pixel_aggregation
+                else:
+                    j1 = rev[b-ip]
+                    if j1<0:
+                        j1 = closest_arg(tx, b-ip)
+                    #j2 = closest_arg(tx, b-ip-1)
+                    spec[i][j1] += 1
+                    #if j2>0:
+                    #    spec[i][j2] += fp
+                    k += 1   
         if prog:
             pb.update(1)
             pb.set_postfix({'task':'smooth spectra'})
@@ -982,56 +996,78 @@ class ITM:
             T = PB(scans)
         else:
             T = scans
-            
+        if kargs.get('debug', False):
+            import time
+            t0 = time.time()
+        dts = DT*(self.size['pixels']['x']/2-np.arange(self.size['pixels']['x'])) # time correction for the given x coordinate (in channel number)
         if ROI is None:
             Spectrum = np.zeros(number_channels, dtype=np.float32)
             for s in T:
-                Data = self.get_raw_data(s)[2]
-                if kargs.get('prog', False):
-                    LData = PB(Data, leave=False)
-                else:
-                    LData = Data
-                for xy in LData:
-                    dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
-                    ip = int(dt)
-                    fp = dt%1
-                    for x in Data[xy]:
-                        Spectrum[x-ip] += (1-fp)
-                        Spectrum[x-ip-1] += fp
+                raw = self.get_raw_raw_data(s)
+                rawv = struct.unpack('<{}I'.format(len(raw)//4), raw)
+                i = 0
+                while i < len(rawv):
+                    b = rawv[i]
+                    if b & 0xc0000000:
+                        x = b & 0x0fffffff
+                        dt = dts[x]
+                        ip = int(dt)
+                        fp = dt%1
+                        i += 3
+                    else:
+                        Spectrum[b-ip] += (1-fp)
+                        Spectrum[b-ip-1] += fp
+                        i += 1
         elif type(ROI) is np.ndarray:
             assert np.min(ROI)>=0
-            Spectrum = np.zeros((number_channels,np.max(ROI)+1), dtype=np.float32)
+            Spectrum = np.zeros((number_channels, np.max(ROI)+1), dtype=np.float32)
             for s in T:
-                Data = self.get_raw_data(s)[2]
-                if kargs.get('prog', False):
-                    LData = PB(Data, leave=False)
-                else:
-                    LData = Data
-                for xy in LData:
-                    dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
-                    ip = int(dt)
-                    fp = dt%1
-                    id = ROI[xy[1], xy[0]]
-                    for x in Data[xy]:
-                        Spectrum[x-ip, id] += (1-fp)
-                        Spectrum[x-ip-1, id] += fp
+                raw = self.get_raw_raw_data(s)
+                rawv = struct.unpack('<{}I'.format(len(raw)//4), raw)
+                i = 0
+                while i < len(rawv):
+                    b = rawv[i]
+                    if b & 0xc0000000:
+                        x = b & 0x0fffffff
+                        y = rawv[i+1] & 0x0fffffff
+                        dt = dts[x]
+                        fp = dt%1
+                        ip = int(dt)
+                        id = ROI[y, x]
+                        i += 3
+                    else:
+                        Spectrum[b-ip, id] += (1-fp)
+                        Spectrum[b-ip-1, id] += fp
+                        i += 1
         elif type(ROI) in [list, tuple]:
             multi_roi = True
             Spectrum = np.zeros((number_channels, len(ROI)), dtype=np.float32)
             for s in T:
-                Data = self.get_raw_data(s)[2]
-                for xy in Data:
-                    dt = DT*(self.size['pixels']['x']/2-xy[0]) # time correction for the given x coordinate (in channel number)
-                    ip = int(dt)
-                    fp = dt%1
-                    li = []
-                    for k,R in enumerate(ROI):
-                        if R[xy[1], xy[0]]:
-                            li.append(k)
-                    for x in Data[xy]:
+                raw = self.get_raw_raw_data(s)
+                rawv = struct.unpack('<{}I'.format(len(raw)//4), raw)
+                i = 0
+                while i < len(rawv):
+                    b = rawv[i]
+                    if b & 0xc000000000:
+                        x = b & 0x0fffffff
+                        y = rawv[i+1] & 0x0fffffff
+                        dt = dts[x]
+                        fp = dt%1
+                        ip = int(dt)
+                        li = []
+                        for k, R in enumerate(ROI):
+                            if R[y,x]:
+                                li.append(k)
+                        i += 3
+                    else:
                         for k in li:
-                            Spectrum[x-ip, k] += (1-fp)
-                            Spectrum[x-ip-1, k] += fp
+                                Spectrum[b-ip, k] += (1-fp)
+                                Spectrum[b-ip-1, k] += fp
+                        i += 1
+        if kargs.get('debug', False):
+            t1 = time.time()
+            print("Sepctra calc. time: ", t1-t0)
+            t0 = t1
         sf = kargs.get('sf', self.root.goto('MassScale/sf').get_double())
         k0 = kargs.get('k0', self.root.goto('MassScale/k0').get_double())
         masses = self.channel2mass(np.arange(number_channels), sf=sf, k0=k0)
@@ -1046,6 +1082,10 @@ class ITM:
                 Np = N-np.convolve(Spectrum, np.ones(dt-1,dtype=int), 'full')[:-dt+2]
             Np[Np==0] = 1
             Spectrum = -N*np.log(1-Spectrum/Np)
+        if kargs.get('debug', False):
+            t1 = time.time()
+            print("Dead time correction time: ", t1-t0)
+            t0 = t1
         if kargs.get('time', False):
             return np.arange(number_channels), Spectrum
         return masses, Spectrum
@@ -1072,47 +1112,48 @@ class ITM:
             return bytearray(RAW)
         return RAW
 
+    def get_pixel_order(self, scan=0):
+        raw = self.get_raw_raw_data(scan)
+        rawv = struct.unpack('<{}I'.format(len(raw)//4), raw)
+        pixel_order = np.zeros((self.size['pixels']['y'], self.size['pixels']['x']))
+        i = 0
+        while i < len(rawv):
+            b = rawv[i]
+            if b & 0xc0000000:
+                x = b & 0x0fffffff
+                y = rawv[i+1] & 0x0fffffff
+                id = rawv[i+2] & 0x3fffffff
+                pixel_order[y,x] = id
+                i += 3
+            else:
+                i += 1
+        return pixel_order
+        
     @alias("getRawData")
     def get_raw_data(self, scan=0):
         """
         Function which allows you to read and parse the raw data.
-        With this you are able to reconstruct the data.
-        Somehow the number of channel is double in the raw data compared
-        to the compressed version saved in the ITA files.
-        scan: The scan number. Start at 0
+        It return a dictionary of list where each key is the pixel position (x,y) and the value is the list of all times (channel number).
         """
-        RAW = self.get_raw_raw_data(scan)
-        Blocks = {}
-        _Block = []
-        PixelList = []
-        PixelOrder = np.zeros((self.size['pixels']['y'], self.size['pixels']['x']))
+        raw = self.get_raw_raw_data(scan)
+        rawv = struct.unpack('<{}I'.format(len(raw)//4), raw)
+        blocks = {}
         i = 0
-        while i < len(RAW):
-            b = RAW[i:i+4]
-            if b[3:4] == b'\xc0':
-                if len(_Block):
-                    Blocks[(x, y)] = _Block
-                b = b[:3] + b'\x00'
-                x = struct.unpack('<I', b)[0]
-                i += 4
-                b = RAW[i:i+4]
-                if b[3:4] != b'\xd0':
-                    raise TypeError("Expecting a D0 block at {}".format(i+3))
-                b = b[:3] + b'\x00'
-                y = struct.unpack('<I', b)[0]
-                i += 4
-                b = bytearray(RAW[i:i+4])
-                if b[3] < 64:
-                    raise TypeError("Expecting a 40 or higher block at {}, got {:02x}".format(i+3,b[3]))
-                b = b[:3] + bytearray([b[3]&16])
-                _Block = []
-                id = struct.unpack('<I', b)[0]
-                PixelOrder[y, x] = id
-                PixelList.append((x,y))
+        _block = []
+        x,y = -1,-1
+        while i < len(rawv):
+            b = rawv[i]
+            if b & 0xc0000000:
+                blocks[(x,y)] = _block # Somehow it's faster to append the data to a list first and then attribute it to the dict
+                x = b & 0x0fffffff
+                y = rawv[i+1] & 0x0fffffff
+                _block = []
+                i += 3
             else:
-                _Block.append(struct.unpack('<I', b)[0])
-            i += 4
-        return PixelList, PixelOrder, Blocks
+                _block.append(b)
+                i += 1
+        del blocks[(-1,-1)]
+        return blocks
 
     def show_masses(self, mass_list=None):
         """
@@ -1231,12 +1272,13 @@ class ITM:
             right = mass2time(right, sf=sf, k0=k0)
         Counts = [np.zeros((self.size['pixels']['x'], self.size['pixels']['y'])) for x in channels]
         for s in scans:
-            PixelList, PixelOrder, Data = self.get_raw_data(s)
+            Data = self.get_raw_data(s)
             for xy in Data:
                 for i,ch in enumerate(channels):
                     Counts[i][xy[1],xy[0]] += np.sum((Data[xy]>=left[i])*(Data[xy]<=right[i]))
         res = [SPM_image(C, real=self.size['real'], _type='TOF', channel="{0[0]:.2f}{unit}-{0[1]:.2f}{unit}".format(channels[i],unit=["u", "s"][time]), zscale="Counts") for i,C in enumerate(Counts)]
         if len(res) == 1:
+            return res[0]
             return res[0]
         return res
         
