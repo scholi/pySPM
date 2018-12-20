@@ -37,7 +37,14 @@ def findPKZ(filename):
         raise IOError("File \"{}\" not found".format(filename))
     return filename
         
-        
+def inarxiv(filename, obj)        :
+    if os.path.splitext(filename)[1]=='':
+        filename += '.pkz'
+    filename = os.path.join(data_path, filename)
+    out = zipfile.ZipFile(filename, 'a', zipfile.ZIP_DEFLATED)
+    file_list = out.namelist()
+    return obj in file_list
+    
 def save(filename, *objs, **obj):
     """
     save python objects to file
