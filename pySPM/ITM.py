@@ -481,7 +481,7 @@ class ITM:
         
     def get_mass_cal(self, alt=False):
         try:
-            if alt:
+            if not alt:
                 V = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0')
                 sf = V.goto('sf',lazy=True).get_double()
                 k0 = V.goto('k0',lazy=True).get_double()
@@ -491,7 +491,7 @@ class ITM:
         except:
             import warnings
             warnings.warn("Failed to get sf,k0, find alternative")
-            if alt:
+            if not alt:
                 sf = self.root.goto('MassScale/sf').get_double()
                 k0 = self.root.goto('MassScale/k0').get_double()
             else:
@@ -1351,13 +1351,19 @@ class ITM:
     @alias("setK0")
     def set_k0(self, k0):
         import struct
-        b = self.root.goto("MassScale/k0")
+        try:
+            b = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0/k0')
+        except:
+            b = self.root.goto("MassScale/k0")
         buffer = struct.pack("<d", k0)
         b.rewrite(buffer);
 
     @alias("setSF")
     def set_sf(self, sf):
         import struct
-        b = self.root.goto("MassScale/sf")
+        try:
+            b = self.root.goto('filterdata/TofCorrection/Spectrum/Reduced Data/IMassScaleSFK0/sf')
+        except:
+            b = self.root.goto("MassScale/sf")
         buffer = struct.pack("<d", sf)
         b.rewrite(buffer);
