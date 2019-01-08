@@ -59,13 +59,12 @@ class ITA(ITM):
                                            '/ImageStackScans/Image.NumberOfImages').get_ulong())
         except:
             self.Nimg = 0
-        
         self.img = self.get_intensity()
         
         try:
             self.fov = self.root.goto('Meta/SI Image[0]/fieldofview').get_double()
         except MissingBlock:
-            self.fov = self.get_set_value("Registration.Raster.FieldOfView")['float']
+            self.fov = self.get_value("Registration.Raster.FieldOfView")['float']
             
     @alias("getIntensity")
     def get_intensity(self):
