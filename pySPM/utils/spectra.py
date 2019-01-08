@@ -325,7 +325,7 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
     return res
 
 
-def plot_isotopes(elt, amp=None, main=None, ax=None, sig=None, asym=None, lg=0, limit=1, color='C1', show_elts=False, debug=False, **kargs):
+def plot_isotopes(elt, amp=None, main=None, ax=None, sig=None, asym=None, lg=0, limit=1, color='C1', show_elts=False, debug=False, dm=0, **kargs):
     """
     plot the isotopes of a given element on a spectral profile plot
     """
@@ -353,6 +353,7 @@ def plot_isotopes(elt, amp=None, main=None, ax=None, sig=None, asym=None, lg=0, 
     main_iso = (main_isotope, get_mass(main_isotope), get_abund(main_isotope))
     L = main.lines[0]
     m, y = L.get_xdata(), L.get_ydata()
+    m -= dm
     if hasattr(ax, 'log') and ax.log:
         y = 10**y
     mask = np.abs(m-main_iso[1])<.1
@@ -390,6 +391,6 @@ def plot_isotopes(elt, amp=None, main=None, ax=None, sig=None, asym=None, lg=0, 
     if hasattr(ax, 'log') and ax.log:
         s[s>=1] = np.log10(s[s>=1])
         s[s<1] = 0
-    ax.plot(m, s, color, **kargs);
+    ax.plot(m+dm, s, color, **kargs);
     return m, s
     
