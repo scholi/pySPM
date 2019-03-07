@@ -83,19 +83,28 @@ class Bruker:
                     if debug:
                         print("Direction found")
                     var = self.layers[i][b'@2:Z scale'][0].decode(encoding)
+                    if debug:
+                        print("@2:Z scale",var)
                     if '[' in var:
                         result = re.match(r'[A-Z]+\s+\[([^\]]+)\]\s+\(-?[0-9\.]+ .*?\)\s+(-?[0-9\.]+)\s+(.*?)$', var).groups()
                         if debug:
                             print(result)
                         scale = float(result[1])/65536.0
+                        
                         result2 = self.scanners[0][b'@'+result[0].encode(encoding)][0].split()
-                        scale2 = float(result[1])
+                        if debug:
+                            print("result2", result2)
+                        scale2 = float(result2[1])
                         if len(result2)>2:
                             zscale = result2[2]
                         else:
                             zscale = result2[0]
                         if b'/V' in zscale:
                             zscale = zscale.replace(b'/V',b'')
+                        if debug:
+                            print("scale: {:.3e}".format(scale))
+                            print("scale2: {:.3e}".format(scale2))
+                            print("zscale: "+str(zscale))
                         var = self.layers[i][b'@2:Z offset'][0].decode(encoding)
                         result = re.match(r'[A-Z]+\s+\[[^\]]+\]\s+\(-?[0-9\.]+ .*?\)\s+(-?[0-9\.]+)\s+.*?$', var).groups()
                         offset = float(result[0])
