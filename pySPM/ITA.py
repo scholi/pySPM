@@ -19,7 +19,6 @@ from .ITM import ITM
 from .collection import Collection
 from .SPM import SPM_image
 from .Block import MissingBlock
-from .PCA import ITA_PCA
 from .utils.misc import deprecated, aliased, alias, PB
 import warnings
 
@@ -783,7 +782,8 @@ class ITA_collection(Collection):
     ITA_collection is a super class containing a collection of tof-sims images.
     for details on Collection see pySPM.collection.Collection
     """
-    def __init__(self, filename, channels1=None, channels2=None, name=None, mass=False, strict=False):
+    def __init__(self, filename, channels1=None, channels2=None, name=None, mass=False, strict
+=False):
         """
         Opening a ToF-SIMS ITA file as an image collection
 
@@ -805,6 +805,7 @@ class ITA_collection(Collection):
         -------
         pySPM.ITA_collection class
         """
+        from .PCA import ITA_PCA
         self.ita = ITA(filename)
         self.filename = filename
         self.PCA = None

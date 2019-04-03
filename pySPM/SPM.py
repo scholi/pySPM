@@ -85,8 +85,45 @@ class SPM_image:
         Add up two images. This is a low level function and no check is performed to proof that both images have the same size.
         """
         New = copy.deepcopy(self)
-        New.pixels += b.pixels
-        New.channel += " + "+b.channel
+        if isinstance(b, SPM_image):
+            New.pixels += b.pixels
+            New.channel += " + "+b.channel
+        elif type(b) in [int, float]:
+            New.pixels += b
+            New.channels += " + {:.2f}".format(b)
+        return New
+        
+    def __sub__(self, b):
+        """
+        Subtract two images. This is a low level function and no check is performed to proof that both images have the same size.
+        """
+        New = copy.deepcopy(self)
+        if isinstance(b, SPM_image):
+            New.pixels -= b.pixels
+            New.channel += " - "+b.channel
+        elif type(b) in [int, float]:
+            New.pixels -= b
+            New.channels += " - {:.2f}".format(b)
+        return New
+        
+    def __mul__(self, b):
+        New = copy.deepcopy(self)
+        if isinstance(b, SPM_image):
+            New.pixels *= b.pixels
+            New.channel = "({})*{}".format(New.channel,b.channel)
+        elif type(b) in [int, float]:
+            New.pixels *= b
+            New.channels = "({})*{:.2f}".format(New.channel,b)
+        return New
+        
+    def __div__(self, b):
+        New = copy.deepcopy(self)
+        if isinstance(b, SPM_image):
+            New.pixels /= b.pixels
+            New.channel = "({})/{}".format(New.channel,b.channel)
+        elif type(b) in [int, float]:
+            New.pixels /= b
+            New.channels = "({})/{:.2f}".format(New.channel,b)
         return New
     
     def pxs(self):
@@ -1641,7 +1678,7 @@ def get_profile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,
             ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color=color, alpha=kargs.get('linealpha',1))
             ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color=color, alpha=kargs.get('linealpha',1))
         else:
-            ax.plot([x1, x2], [y1, y2], color, alpha=kargs.get('linealpha',1))
+            ax.plot([x1, x2], [y1, y2], color, alpha=kargs.get('linealpha',1), lw=kargs.get('lw',1))
             ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color, alpha=kargs.get('linealpha',1))
             ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color, alpha=kargs.get('linealpha',1))
         if alpha>0:

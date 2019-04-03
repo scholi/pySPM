@@ -191,6 +191,7 @@ class ITM:
         return {
             'pixels': self.size['pixels'],
             'fov': self.root.goto('Meta/SI Image[0]/fieldofview').get_double(),
+            'Floodgun': Get("Instrument.Timing.Floodgun"),
             'LMIG': {
                 'Extractor': Get("Instrument.LMIG.Extractor"),
                 'Lens_Source': Get("Instrument.LMIG.Lens_Source")},
@@ -216,6 +217,7 @@ class ITM:
         print("""
         Analysis time: {AnalysisTime}
         Delayed extraction: {ExtractionDelay}
+        Floodgun: {Floodgun}
         LMIG's Lens source: {LMIG[Lens_Source]}
         Sputter species: {SputterSpecies} @ {SputterEnergy}
         Field of View: {Fov[value]:.2f} {Fov[unit]}
@@ -760,7 +762,7 @@ class ITM:
         else:
             IT = lambda x: x
             
-        pixel_size = int(self.size['pixels']['x']*self.size['pixels']['y']//pixel_aggregation**2)
+        pixel_size = ((self.size['pixels']['x']+pixel_aggregation-1)//pixel_aggregation)*((self.size['pixels']['y']+pixel_aggregation-1)//pixel_aggregation)
         channels = round(self.get_value("Measurement.CycleTime")['float']/self.get_value("Registration.TimeResolution")['float'])
         
         # calculate total spectra
@@ -798,7 +800,7 @@ class ITM:
         t = np.arange(channels)
         tx = t[m>peak_lim] # reduced time vector
         mx = m[m>peak_lim] # reduced mass vector
-        rev = {x:-1 for x in range(max_time)}
+        rev = {x:-1 for x in range(max_time+1)}
         for k in range(len(tx)):
             rev[tx[k]] = k
         
@@ -930,7 +932,8 @@ class ITM:
                 'assign': p['assign']['utf16'],
                 'lmass': p['lmass']['float'],
                 'cmass': p['cmass']['float'],
-                'umass': p['umass']['float']})
+                'umass': p['umass']['float'],
+                'SN': p['SN']['utf16']})
         return result
 
     @alias("getRawSpectrum")
