@@ -133,7 +133,7 @@ class SPM_image:
         fxy = {xy: funit(self.size['real'][xy], self.size['real']['unit']) for xy in 'xy'}
         return [(fxy[xy]['value']/self.size['pixels'][xy], fxy[xy]['unit']) for xy in 'xy']
         
-    def add_scale(self, length, ax=None, height=20, margin=5, color='w', loc=4, text=True, pixels=None, fontsize=20):
+    def add_scale(self, length, ax=None, height=20, margin=5, color='w', loc=4, text=True, pixels=None, fontsize=20, edge_color='k', edge_width=3):
         """
         Display a scale marker on an existing image
 
@@ -175,6 +175,8 @@ class SPM_image:
         """
         
         import matplotlib.patches
+        import matplotlib.patheffects as PathEffects
+        
         fL = length/self.size['real']['x']
         L = self.size['pixels']['x']*fL
         fH = height/self.size['pixels']['y']
@@ -222,7 +224,8 @@ class SPM_image:
                 ann = ax.annotate("{value:.01f} {unit}".format(**r),
                     label_ref, color=color,
                     fontsize=fontsize, va="bottom", ha="center")
-        
+            ann.set_path_effects([PathEffects.withStroke(linewidth=edge_width, foreground=edge_color)])
+            
     def offset(self, profiles, width=1, ax=None, col='w', inline=True, **kargs):
         """
         Correct an image by offsetting each row individually in order that the lines passed as argument in "profiles" becomes flat.
