@@ -805,7 +805,6 @@ class ITA_collection(Collection):
         -------
         pySPM.ITA_collection class
         """
-        from .PCA import ITA_PCA
         self.ita = ITA(filename)
         self.filename = filename
         self.PCA = None
@@ -886,7 +885,7 @@ class ITA_collection(Collection):
         channels : None or list of strings
             List of channels to use for the PCA. If None all channels will be used.
         """
-
+        from .PCA import ITA_PCA
         if channels is None:
             channels = self.channels.keys()
         self.PCA = ITA_PCA(self, channels)
