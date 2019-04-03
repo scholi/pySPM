@@ -6,7 +6,7 @@ import pywt
 def sign(abs_var, sign_var):
     return abs(abs_var) * (1 - np.where(sign_var < 0, 2*sign_var, sign_var))
     
-def hfilter(diff_image, var_image, threshold=1, ndamp=10, damp_func='ely'):
+def hfilter(diff_image, var_image, threshold=1, ndamp=10):
     """
     This code was inspired from: https://github.com/spacetelescope/sprint_notebooks/blob/master/lucy_damped_haar.ipynb
     I believe it was initially written by Justin Ely: https://github.com/justincely
@@ -23,10 +23,8 @@ def hfilter(diff_image, var_image, threshold=1, ndamp=10, damp_func='ely'):
     if len(index[0]) == 0:
         return diff_image
     
-    if damp_func is 'ely':
-        sqhim = sqhim[index] * (ndamp * sqhim[index]**(ndamp-1) - (ndamp-1)*sqhim[index]**ndamp)
-    elif damp_func is 'white':
-        sqhim = (ndamp-1)*(1-sqhim[index]**(ndamp+1))+sqhim[index]**ndamp
+    # Eq. 8 of White is derived leading to N*x^(N-1)-(N-1)*x^N  :DOI: 10.1117/12.176819
+    sqhim = sqhim[index] * (ndamp * sqhim[index]**(ndamp-1) - (ndamp-1)*sqhim[index]**ndamp)
     him[index] = sign(threshold*np.sqrt(dvarim[index] * sqhim), him[index])
     
     return pywt.waverec2(pywt.array_to_coeffs(him, coeff_slices, output_format='wavedec2'), 'haar')[:diff_image.shape[0],:diff_image.shape[1]]
