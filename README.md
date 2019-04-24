@@ -108,3 +108,5 @@ There is also a [short introduction to pySPM for ToF-SIMS data](https://nbviewer
 ## Citing
 If you use this library for your work, please think about citing it.
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.998575.svg)](https://doi.org/10.5281/zenodo.998575)
+
+Olivier Scholder. (2018, November 28). scholi/pySPM: pySPM v0.2.16 (Version v0.2.16). Zenodo. http://doi.org/10.5281/zenodo.998575
