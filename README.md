@@ -65,7 +65,8 @@ You can navigate with the scroll of the mouse to zoom in & out. You can use the 
 see the [wiki](../../wiki/spectra) for more info
 
 ### Toy dataset
-As the data are big and not necessary for the library another package [pySPM_data](https://sftpweb.empa.ch/main.html?download&weblink=f5cddf602b6e8b20325b49a9ec61c48c&realfilename=pySPM_data-0.2.4-py3-none-any.whl) was created with several AFM and ToF-SIMS data. You can install it with pip
+As the data are big and not necessary for the library another package [pySPM_data](https://drive.google.com/open?id=1j0qHW9gBkyfga15_8ycRoJ-kKv7Mx7ej) was created with several AFM and ToF-SIMS data.
+After downloding the data from the link above, you can then install it with pip:
 
 ```bash
 pip install pySPM_data-0.2.4-py3-none-any.whl
