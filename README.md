@@ -1,7 +1,6 @@
 [![Downloads](https://pepy.tech/badge/pyspm)](https://pepy.tech/project/pyspm)
 [![Build](https://travis-ci.org/scholi/pySPM.svg?branch=master)](https://travis-ci.org/scholi/pySPM)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python 2.7](https://img.shields.io/badge/python-2.7-yellow.svg)](https://www.python.org/downloads/release/python-2715/)
 [![Python 3.6](https://img.shields.io/badge/python-3.4+-orange.svg)](https://www.python.org/download/releases/3.4.0/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.998575.svg)](https://doi.org/10.5281/zenodo.998575)
 
