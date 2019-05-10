@@ -42,6 +42,15 @@ class Bruker:
                 if line == b"*File list end":
                     break
 
+    def _get_bpp(self, i):
+        off = int(self.layers[i][b'Data offset'][0])
+        cols = int(self.layers[i][b'Number of lines'][0])
+        rows = int(self.layers[i][b'Samps/line'][0])
+        byte_length = int(self.layers[i][b'Data length'][0])
+        length = rows*cols
+        bpp = byte_length // length
+        return bpp
+        
     def _get_raw_layer(self, i):
         """
         Internal function to retrieve raw data of a layer
@@ -89,7 +98,7 @@ class Bruker:
                         result = re.match(r'[A-Z]+\s+\[([^\]]+)\]\s+\(-?[0-9\.]+ .*?\)\s+(-?[0-9\.]+)\s+(.*?)$', var).groups()
                         if debug:
                             print(result)
-                        scale = float(result[1])/65536.0
+                        scale = float(result[1])/256**self._get_bpp(i)
                         
                         result2 = self.scanners[0][b'@'+result[0].encode(encoding)][0].split()
                         if debug:
