@@ -495,8 +495,12 @@ class SPM_image:
         """
         Get the image extent in real data
         """
-        W = self.size['recorded']['real']['x']
-        H = self.size['recorded']['real']['y']
+        if 'recorded' in self.size:
+            W = self.size['recorded']['real']['x']
+            H = self.size['recorded']['real']['y']
+        else:
+            W = self.size['real']['x']
+            H = self.size['real']['y']
         return (0, W, 0, H)
 
     def show(self, ax=None, sig=None, cmap=None, title=None,
