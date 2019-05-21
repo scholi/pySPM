@@ -651,9 +651,8 @@ class ITM:
             ax = plt.gca()
         self.show_meas_data(ax=ax, scans=3, mul=1e6, prog=prog);
         axb = dual_plot(ax)
-        self.showMeasData("Instrument.LMIG.Suppressor", ax=axb, color='orange', scans=False, prog=prog);
+        self.show_meas_data("Instrument.LMIG.Suppressor", ax=axb, color='orange', scans=False, prog=prog);
         
-    @alias("show_meas_data")
     def show_meas_data(self, name='Instrument.LMIG.Emission_Current', prog=False, ax=None, mul=1, scans=2, **kargs):
         t = self.get_meas_data('Measurement.AcquisitionTime')
         S = self.get_meas_data("Measurement.ScanNumber")
