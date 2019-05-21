@@ -146,17 +146,16 @@ class SpectraViewer(QMainWindow):
         if t_filename is None:
             home = QDir.cleanPath(os.getenv("HOMEPATH"))
             path = settings.value("lastPath", home)
-            self.filename = QFileDialog.getOpenFileName(None, "Choose measurement file", path, "*.ita")
+            self.filename = QFileDialog.getOpenFileName(None, "Choose measurement file", path, "*.ita")[0]
         else:
             self.filename = t_filename
-        
         check_file = QFileInfo(self.filename)
         self.setWindowTitle(check_file.fileName())
         if not check_file.exists() or  not check_file.isFile():
             return
         
         settings.setValue("lastPath", check_file.path())
-        self.ita = pySPM.ITA(self.filename)
+        self.ita = pySPM.ITA(self.filename, readonly=False)
         self.t, self.S = self.ita.getSpectrum(time=True)
         self.sf, self.k0 = self.ita.get_mass_cal()
         self.mass = pySPM.utils.time2mass(self.t, self.sf, self.k0)

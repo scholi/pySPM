@@ -33,6 +33,8 @@ def plotLog(filename, watch=False, **kargs):
             mypause(3)
         else:
             plt.show()
+        if not watch:
+            break
                 
 def mypause(interval):
     backend = plt.rcParams['backend']
