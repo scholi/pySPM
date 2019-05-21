@@ -21,9 +21,42 @@ This library is offered as it is and is still in development. Please note that r
 
 If you find bugs and issues, please report them to the developer: https://github.com/scholi/pySPM/issues
 
+## Dependencies
+This library requires the following packages
+* mendatory
+    * numpy
+    * scipy
+    * matplotlib
+* for PCA
+    * scikit-learn
+    * pandas
+* for GUI
+    * pyQT5
+* displaying progressbar (while passing the prog=True parameter to functions)
+    * tqdm
+    
+## Installation
+Just open a terminal (on Windows hit key `[WINDOWS]+R`, then type cmd, then
+`[ENTER]`)
+```bash
+pip install pySPM
+```
+
+## Documentation
+The documentation is still in its early stage
+[read the documentation](https://nbviewer.jupyter.org/github/scholi/pySPM/blob/master/doc/pySPM%20Documentation.ipynb)
+
+There is also a [short introduction to pySPM for ToF-SIMS data](https://nbviewer.jupyter.org/github/scholi/pySPM/blob/master/doc/Introduction%20to%20pySPM%20for%20ToF-SIMS%20data.ipynb)
+
+## Citing
+If you use this library for your work, please think about citing it.
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.998575.svg)](https://doi.org/10.5281/zenodo.998575)
+
+Olivier Scholder. (2018, November 28). scholi/pySPM: pySPM v0.2.16 (Version v0.2.16). Zenodo. http://doi.org/10.5281/zenodo.998575
+
 ## News
 ### ITA files are writable
-From now on you can, not only view the ita files, but you can also write them. For the moment this is still a non-user-friendly procedure, but you can edit each ITStr Block with the ```edit_block()``` function. Be careful, because if the new data has a different size than the old one, a new block is created, but the old one is also kept. This means that your ITA file size will grow.
+From now on you can, not only view the ita files, but you can also write them by supplying the parameter _readable=False_ to _pySPM.ITA_ or _pySPM.ITM_. For the moment this is still a non-user-friendly procedure, but you can edit each ITStr Block with the ```edit_block()``` function. Be careful, because if the new data has a different size than the old one, a new block is created, but the old one is also kept. This means that your ITA file size will grow.
 You can also add new channels and images with the more user-friendly function ```pySPM.ITA.add_new_images()```.
 :warning: It is highly advised to copy the ita file before making any change. You can use the following code to copy the ita in a temporary ita before making any change.
 
@@ -31,7 +64,7 @@ You can also add new channels and images with the more user-friendly function ``
 from shutil import copyfile
 import pySPM
 copyfile(filename, "temp.ita")
-A = pySPM.ITA("temp.ita")
+A = pySPM.ITA("temp.ita", readonly=False)
 ```
 
 ### New tools
@@ -77,35 +110,3 @@ or update it with
 pip install -U pySPM_data-0.2.4-py3-none-any.whl
 ```
 
-## Dependencies
-This library requires the following packages
-* mendatory
-    * numpy
-    * scipy
-    * matplotlib
-* for PCA
-    * scikit-learn
-    * pandas
-* for GUI
-    * pyQT5
-* displaying progressbar (while passing the prog=True parameter to functions)
-    * tqdm
-    
-## Installation
-Just open a terminal (on Windows hit key `[WINDOWS]+R`, then type cmd, then
-`[ENTER]`)
-```bash
-pip install pySPM
-```
-
-## Documentation
-The documentation is still in its early stage
-[read the documentation](https://nbviewer.jupyter.org/github/scholi/pySPM/blob/master/doc/pySPM%20Documentation.ipynb)
-
-There is also a [short introduction to pySPM for ToF-SIMS data](https://nbviewer.jupyter.org/github/scholi/pySPM/blob/master/doc/Introduction%20to%20pySPM%20for%20ToF-SIMS%20data.ipynb)
-
-## Citing
-If you use this library for your work, please think about citing it.
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.998575.svg)](https://doi.org/10.5281/zenodo.998575)
-
-Olivier Scholder. (2018, November 28). scholi/pySPM: pySPM v0.2.16 (Version v0.2.16). Zenodo. http://doi.org/10.5281/zenodo.998575
