@@ -23,7 +23,7 @@ class InvalidRAWdataformat(Exception):
 
 @aliased
 class ITM:
-    def __init__(self, filename, debug=False, readonly=False, precond=False, label=None):
+    def __init__(self, filename, debug=False, readonly=True, precond=False, label=None):
         """
         Create the ITM object out of the filename.  Note that this works for
         all .ITA,.ITM, .ITS files as they have the same structure
