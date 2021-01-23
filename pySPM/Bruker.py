@@ -51,11 +51,13 @@ class Bruker:
         bpp = byte_length // length
         return bpp
         
-    def _get_raw_layer(self, i):
+    def _get_raw_layer(self, i, debug=False):
         """
         Internal function to retrieve raw data of a layer
         """
         off = int(self.layers[i][b'Data offset'][0])
+        if debug:
+            print("RAW offset: ",off)
         cols = int(self.layers[i][b'Number of lines'][0])
         rows = int(self.layers[i][b'Samps/line'][0])
         byte_length = int(self.layers[i][b'Data length'][0])
@@ -98,7 +100,11 @@ class Bruker:
                         result = re.match(r'[A-Z]+\s+\[([^\]]+)\]\s+\(-?[0-9\.]+ .*?\)\s+(-?[0-9\.]+)\s+(.*?)$', var).groups()
                         if debug:
                             print(result)
-                        scale = float(result[1])/256**self._get_bpp(i)
+                        bpp = int(self.layers[i][b'Bytes/pixel'][0])
+                        if debug:
+                            print("BPP", bpp)
+                        #scale = float(result[1])
+                        scale = float(result[1])/256**bpp
                         
                         result2 = self.scanners[0][b'@'+result[0].encode(encoding)][0].split()
                         if debug:
@@ -118,13 +124,17 @@ class Bruker:
                         result = re.match(r'[A-Z]+\s+\[[^\]]+\]\s+\(-?[0-9\.]+ .*?\)\s+(-?[0-9\.]+)\s+.*?$', var).groups()
                         offset = float(result[0])
                     else:
+                        if debug:
+                            print("mode 2")
                         result = re.match(r'[A-Z]+ \(-?[0-9\.]+ [^\)]+\)\s+(-?[0-9\.]+) [\w]+', var).groups()
                         scale = float(result[0])/65536.0
                         scale2 = 1
                         zscale = b'V'
                         result = re.match(r'[A-Z]+ \(-?[0-9\.]+ .*?\)\s+(-?[0-9\.]+) .*?', self.layers[i][b'@2:Z offset'][0].decode(encoding)).groups()
                         offset = float(result[0])
-                    data = self._get_raw_layer(i)*scale*scale2
+                    if debug:
+                        print("Offset:", offset)
+                    data = self._get_raw_layer(i, debug=debug)*scale*scale2
 
                     scan_size = self.layers[i][b'Scan Size'][0].split()
                     if scan_size[2][0] == 126:
