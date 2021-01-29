@@ -369,7 +369,7 @@ class SPM_image:
         """
         N = self.pixels
         # Difference of the pixel between two consecutive row
-        N2 = np.vstack([N[1:, :], N[-1:, :]])-N
+        N2 = N-np.vstack([N[:1, :],N[:-1, :]])
         # Take the median of the difference and cumsum them
         C = np.cumsum(np.median(N2, axis=1))
         # Extend the vector to a matrix (row copy)
