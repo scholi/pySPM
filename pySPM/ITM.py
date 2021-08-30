@@ -1048,6 +1048,7 @@ class ITM:
                 raw = self.get_raw_raw_data(s)
                 rawv = struct.unpack('<{}I'.format(len(raw)//4), raw)
                 i = 0
+                li = []
                 while i < len(rawv):
                     b = rawv[i]
                     if b & 0xc000000000:
