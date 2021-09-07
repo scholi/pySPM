@@ -45,6 +45,9 @@ class SXM:
                 'unit': 'm'
             })
 
+    def closefile(self):
+        self.f.close()
+
     def list_channels(self):
         print("Channels")
         print("========")
