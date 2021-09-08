@@ -36,6 +36,7 @@ class SXM:
         assert self.f.read(1)==b'\x04'
         assert self.header['SCANIT_TYPE'][0][0] in ['FLOAT','INT','UINT','DOUBLE']
         self.data_offset = self.f.tell()
+        self.f.close()
         self.size = dict(pixels={
                 'x': int(self.header['SCAN_PIXELS'][0][0]),
                 'y': int(self.header['SCAN_PIXELS'][0][1])
@@ -70,8 +71,10 @@ class SXM:
                 chID += 1
                     
         size = self.size['pixels']['x']*self.size['pixels']['y']
+        self.f = open(self.filename, 'rb')
         self.f.seek(self.data_offset+chID*size*4)
         data = np.array(struct.unpack('<>'['MSBFIRST'==self.header['SCANIT_TYPE'][0][1]]+str(size)+{'FLOAT':'f','INT':'i','UINT':'I','DOUBLE':'d'}[self.header['SCANIT_TYPE'][0][0]],self.f.read(4*size))).reshape((self.size['pixels']['y'],self.size['pixels']['x']))
+        self.f.close()
         return SPM_image(
             channel=name,
             BIN=data,
