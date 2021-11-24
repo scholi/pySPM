@@ -127,7 +127,7 @@ def in_ipynb():
         
 if in_ipynb():
     try:
-        from tqdm import tqdm_notebook as tqdm
+        from tqdm.notebook import tqdm
     except:
         try:
             from tqdm import tqdm

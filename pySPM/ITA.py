@@ -581,7 +581,7 @@ class ITA(ITM):
                            '/Image['+str(channel)+']/ImageArray.Long')
         D = zlib.decompress(c.value)
         V = np.array(struct.unpack('<'+str(self.sx*self.sy)+'I', D),
-                     dtype=np.float).reshape((self.sy, self.sx))
+                     dtype=np.float64).reshape((self.sy, self.sx))
         return V
     
     @alias("fastGetImage")
