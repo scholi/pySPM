@@ -135,13 +135,19 @@ class Bruker:
                     if debug:
                         print("Offset:", offset)
                     data = self._get_raw_layer(i, debug=debug)*scale*scale2
-
+                    xres = int(self.layers[i][b"Samps/line"][0])
+                    yres = int(self.layers[i][b"Number of lines"][0])
+                    if debug:
+                        print("xres/yres",xres,yres)
                     scan_size = self.layers[i][b'Scan Size'][0].split()
+                    aspect_ratio = [int(x) for x in self.layers[i][b'Aspect Ratio'][0].split(b":")]
+                    if debug:
+                        print("aspect ratio",aspect_ratio)
                     if scan_size[2][0] == 126:
                         scan_size[2] = b'u'+scan_size[2][1:]
                     size = {
-                        'x': float(scan_size[0]),
-                        'y': float(scan_size[1]),
+                        'x': float(scan_size[0])/aspect_ratio[1],
+                        'y': float(scan_size[1])/aspect_ratio[0],
                         'unit': scan_size[2].decode(encoding)}
                     image = pySPM.SPM_image(
                         channel=[channel,'Topography'][channel=='Height Sensor'],

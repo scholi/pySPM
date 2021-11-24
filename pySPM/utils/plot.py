@@ -39,11 +39,11 @@ def offset_coord(xy, offset=(0,0), ax=None, fig=None, unit='px'):
     tr = ax.transData
     tri = tr.inverted()
 
-    if unit is 'px':
+    if unit == 'px':
         offset = np.array(offset)
-    elif unit is 'ax':
+    elif unit == 'ax':
         offset = ax.transAxes.transform(offset)
-    elif unit is 'fig':
+    elif unit == 'fig':
         offset = fig.transFigure.transform(offset)
     return tri.transform(tr.transform(xy)+offset)
 

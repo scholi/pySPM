@@ -1424,7 +1424,7 @@ def tukeyfy(A, alpha, type='default'):
     tuky = tukeywin(A.shape[0], alpha)
     tukx = tukeywin(A.shape[1], alpha)
     tuk = np.multiply(tukx[:, None].T, tuky[:, None])
-    if type is 'default':
+    if type == 'default':
         return A * tuk
     avg = np.mean(A)
     return avg+(A-avg) * tuk
