@@ -27,12 +27,12 @@ class ITA(ITM):
     def __init__(self, filename, *args, **kargs):
         """
         Open an ITA file.
-        
+
         Parameters
         ----------
         filename : string
             the path of the ita file
-        
+
         Returns
         -------
         Class<ITA>
@@ -59,12 +59,12 @@ class ITA(ITM):
         except:
             self.Nimg = 0
         self.img = self.get_intensity()
-        
+
         try:
             self.fov = self.root.goto('Meta/SI Image[0]/fieldofview').get_double()
         except MissingBlock:
             self.fov = self.get_value("Registration.Raster.FieldOfView")['float']
-            
+
     @alias("getIntensity")
     def get_intensity(self):
         """
@@ -84,7 +84,7 @@ class ITA(ITM):
                     warn.warnings("SI image cannot be retrieved")
                     return None
         return img
-        
+
     def get_channel_SN(self, channel):
         """
         New ITA fileformat assign a serial number (SN) in the form of a UUID for each channel.
@@ -102,7 +102,7 @@ class ITA(ITM):
                     return l['SN']['utf16']
 
         raise Exception("Channel name \"{channel}\" not found".format(channel=channel))
-    
+
     @alias("getChannelsByName")
     def get_channels_by_name(self, name, strict=False):
         """
@@ -132,7 +132,7 @@ class ITA(ITM):
                 - lmass : a long value indicating the lower mass of the peak (in u)
                 - umass : a long value indicating the upper mass of the peak (in u)
                 - cmass : a long value indicating the center mass of the peak
-   
+
         Examples
         --------
         >>> A = pySPM.ITA("myfile.ita")
@@ -217,7 +217,7 @@ class ITA(ITM):
             return 0
         for P in self.peaks:
             p = self.peaks[P]
-            
+
             if p['id']['long'] > 1 and p['lmass']['float'] <= mass and mass <= p['umass']['float']:
                 if full:
                     return p
@@ -243,7 +243,7 @@ class ITA(ITM):
 
         """
         return self.get_sum_image_by_name(names, shifts=[(-x, -y) for x, y in self.get_saved_shift()], **kargs)
-        
+
     def __get_sum_image(self, scans, channels, **kargs):
         """
         An internal function to retrieve the sum of several scans for several channel ID.
@@ -254,7 +254,7 @@ class ITA(ITM):
         elif 'Shifts' in kargs:
             shifts = kargs['Shifts']
         else:
-            shifts = [(-x,-y) for x,y in self.get_saved_shift()]            
+            shifts = [(-x,-y) for x,y in self.get_saved_shift()]
         for ch in channels:
             ID = ch['id']['long']
             Z += self.fast_get_image(ID, scans, shifts)
@@ -277,7 +277,7 @@ class ITA(ITM):
             node = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/Images/{SN}/ScanData/EDROff/{scan}".format(SN=SN, scan=s))
             dat = node.decompress()
             data = struct.unpack("<{}I".format(len(dat)//4), dat)
-            Z += np.array(data, dtype=np.float).reshape((self.sy, self.sx))
+            Z += np.array(data, dtype=np.float64).reshape((self.sy, self.sx))
         if raw:
             return Z
         channel = self.get_channel_by_sn(SN)
@@ -305,7 +305,7 @@ class ITA(ITM):
             scans = range(self.Nscan)
         if type(scans) == int:
             scans = [scans]
-        
+
         channels = self.get_added_image_by_name(names, strict)
         if prog:
             scans = PB(scans)
@@ -396,7 +396,7 @@ class ITA(ITM):
             2D numpy array containing the sum of all channels. The values are the count number
         """
         y1 = self.sy-1-y1
-        y2 = self.sy-1-y2           
+        y2 = self.sy-1-y2
         if N is None:
             N = int(np.sqrt((x2-x1)**2+(y2-y1)**2))+1
         x = np.linspace(x1, x2, N)
@@ -468,14 +468,14 @@ class ITA(ITM):
         dx = D[::2]
         dy = D[1::2]
         return list(zip(dx, dy))
-        
+
     @alias("getShiftCorrectedImageByMass")
     def get_shift_corrected_image_by_mass(self, masses, **kargs):
         """
         Shortcut function for pySPM.ITA.get_sum_image_by_mass using the saved shift corrections.
         """
         return self.get_sum_image_by_mass(masses, shifts=[(-x,-y) for x,y in self.get_saved_shift()], **kargs)
-        
+
     @alias("getSumImageByMass")
     def get_sum_image_by_mass(self, masses, scans=None, prog=False, raw=False, **kargs):
         """
@@ -563,7 +563,7 @@ class ITA(ITM):
         node = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/Images/{SN}/SumImage/EDROff".format(SN=SN))
         dat = node.decompress()
         data = struct.unpack("<{}I".format(len(dat)//4), dat)
-        img = np.array(data, dtype=np.float).reshape((self.sy, self.sx))
+        img = np.array(data, dtype=np.float64).reshape((self.sy, self.sx))
         if raw:
             return img
         channel = self.get_channel_by_SN(SN)
@@ -583,7 +583,7 @@ class ITA(ITM):
         V = np.array(struct.unpack('<'+str(self.sx*self.sy)+'I', D),
                      dtype=np.float64).reshape((self.sy, self.sx))
         return V
-    
+
     @alias("fastGetImage")
     def fast_get_image(self, channel, scans, shifts=False, prog=False, **kargs):
         """
@@ -609,15 +609,15 @@ class ITA(ITM):
         # Old parameter name compatibility
         if 'Shifts' in kargs:
             shifts = kargs.pop("Shifts")
-            
+
         Z = np.zeros((self.sy, self.sx))
         if prog:
             scans = PB(scans)
-            
+
         im_root =  self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image['+str(channel)+']')
         for scan in scans:
             c = im_root.goto('ImageArray.Long['+str(scan)+']')
-            V = np.array(c.get_data('I'), dtype=np.float).reshape((self.sy, self.sx))
+            V = np.array(c.get_data('I'), dtype=np.float64).reshape((self.sy, self.sx))
             if shifts:
                 r = [int(z) for z in shifts[scan]]
                 V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)
@@ -627,7 +627,7 @@ class ITA(ITM):
             else:
                 Z += V
         return Z
-        
+
     @alias("getImage")
     def get_image(self, channel, scan, shifts=None, shift_mode='roll', const=0, **kargs):
         """
@@ -654,14 +654,14 @@ class ITA(ITM):
             shifts = kargs.pop("Shifts")
         if 'ShiftMode' in kargs:
             shift_mode = kargs.pop("ShiftMode")
-            
+
         assert type(channel) is int
         assert type(scan) is int
         assert channel >= 0 and channel < self.Nimg
         assert scan >= 0 and scan < self.Nscan
         c = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans'
                            '/Image['+str(channel)+']/ImageArray.Long['+str(scan)+']')
-        V = np.array(c.get_data(), dtype=np.float).reshape((self.sy, self.sx))
+        V = np.array(c.get_data(), dtype=np.float64).reshape((self.sy, self.sx))
         if not shifts is None:
             r = [int(z) for z in shifts[scan]]
             V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)
@@ -677,7 +677,7 @@ class ITA(ITM):
                 elif r[0] > 0:
                     V[:, -r[0]:] = const
         return V
-        
+
     @alias("getOperation")
     def get_opertion(self, OpID):
         """
@@ -689,7 +689,7 @@ class ITA(ITM):
             if blk.goto_item('OpID').get_ulong() == OpID:
                 return blk
         return None
-        
+
     @alias("showWorksheet")
     def show_worksheet(self, page=0):
         """
@@ -733,7 +733,7 @@ class ITA(ITM):
             scans = kargs.pop("Scans")
         if 'Added' in kargs:
             added = kargs.pop("Added")
-            
+
         assert scans is not None or added is not None
         lvl = 3 # zlib encoding level
         sy, sx = self.size['pixels']['y'], self.size['pixels']['x']
@@ -764,13 +764,13 @@ class ITA(ITM):
             added = np.flipud(added)
         data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(added.astype(np.uint32, casting='unsafe'))), level=lvl)
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "ImageArray.Long", data, _type=128)
-        
+
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.PulsesPerPixel", struct.pack("<I", self.spp*self.Nscan))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MaxCountsPerPixel", struct.pack("<I", int(np.max(added))))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MinCountsPerPixel", struct.pack("<I", int(np.min(added))))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCountsDbl", struct.pack("<d", np.sum(added)))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCounts", struct.pack("<I", int(np.sum(added))))
-        
+
         if scans is not None:
             self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans", "Image.NumberOfImages", struct.pack("<I", N+1))
         self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded", "Image.NumberOfImages", struct.pack("<I", AN+1))
@@ -889,7 +889,7 @@ class ITA_collection(Collection):
         if channels is None:
             channels = self.channels.keys()
         self.PCA = ITA_PCA(self, channels)
-    
+
     @alias("showPCA")
     def show_pca(self, num=None, loadings=True, **kargs):
         """
@@ -901,7 +901,7 @@ class ITA_collection(Collection):
             The number of PC component to display. If None display all PAs
         **kargs : additional parameters
             passed to pySPM.PCA.showPCA
-        
+
         Returns
         -------
         None
@@ -942,7 +942,7 @@ class ITA_collection(Collection):
             else:
                 self.PCA.hinton(matrix=L, ax=ax)
         return L
-    
+
     @deprecated("StitchCorrection")
     def stitch_correction(self, channel, stitches, gauss=0, debug=False):
         """
