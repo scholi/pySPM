@@ -13,7 +13,8 @@ which is used in order to align the different scans from ToF-SIMS images.
 from __future__ import print_function
 import numpy as np
 from skimage import transform as tf
-from scipy.ndimage.filters import gaussian_filter
+# from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage import gaussian_filter
 
 
 class Aligner:
@@ -27,7 +28,7 @@ class Aligner:
         self.rotation = 0
 
         self.initIDX = self.getMatchingIndex()
-    
+
     def compute(self, prog=False):
         # Compute the correlation to find the best shift as first guess
         if prog:
@@ -54,7 +55,7 @@ class Aligner:
     def ImproveShift(self, verbose=False, **kargs):
         tform = tf.AffineTransform(
             scale=self.scale, rotation=self.rotation, translation=(0,0))
-        
+
         O = tf.warp(self.other, tform, output_shape=self.other.shape, preserve_range=True)
         if self.FFT:
             Corr = np.real(np.fft.fftshift(np.fft.ifft2(
@@ -164,7 +165,7 @@ def ShiftScore(Ref, Img,  shift, gauss = 5, mean=True, norm=False, debug=False, 
     else:
         im1 = gaussian_filter( Ref, gauss)
         im2 = gaussian_filter( Img, gauss)
-        
+
     corr2 = ApplyShift(im2, shift)
     dx, dy = shift
     # Create a copy of the reference and erase parts which are not overlaping with img
@@ -179,7 +180,7 @@ def ShiftScore(Ref, Img,  shift, gauss = 5, mean=True, norm=False, debug=False, 
         Or[:, :dx] = 0
     elif DSX+dx < 0:
         Or[:, dx+DSX:] = 0
-        
+
     corr2 = corr2[:Ref.shape[0],:Ref.shape[1]]
     # calculate the score: absolute of the differendces normed by the overlaping area
     D = np.sum(np.abs( Or - corr2 ))
@@ -196,7 +197,7 @@ def AutoShift(Ref, Img, Delta = 50, shift=(0,0), step=5, gauss=5, mean=True, tes
     The score is the norm of the difference between the two images where all non-overlaping parts of the images
     due to the shifts are set to 0. The score is then normes by the effective area.
     In order to avoid the errors due to shot-noise, the images are gaussian blured.
-  
+
     Delta: shifts between shift[0/1]-Delta and shift[0/1]+Delta will be tested
     step: The step between tested delta values
     gauss: For noisy image it is better to use a gaussian filter in order to improve the score accuracy.
@@ -226,11 +227,11 @@ def AutoShift(Ref, Img, Delta = 50, shift=(0,0), step=5, gauss=5, mean=True, tes
     else:
         im1 = gaussian_filter( Ref, gauss)
         im2 = gaussian_filter( Img, gauss)
-        
+
     # the following two variables save the best score
     best = (0,0)
     Dbest = Ref.shape[0]*Ref.shape[1]*max(np.max(im2),np.max(im1))
-    
+
     tested = np.zeros((int(2*Delta/step)+1,int(2*Delta/step)+1))
     # Sweep through all possible shifts (brute force)
     for iy,Dy in enumerate(np.arange(shift[1]-Delta, shift[1]+Delta+1, step)):

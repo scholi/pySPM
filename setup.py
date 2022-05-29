@@ -31,7 +31,7 @@ setup(
         'gui_scripts':['stability=pySPM.tools.stability:main','timer=pySPM.tools.tof_timer:main', 'plotter=pySPM.tools.emission_current_plotter:main',
         'spectra=pySPM.tools.spectra:main']
     },
-    install_requires=['numpy','scipy','pandas','scikit-image','scikit-learn','matplotlib'],
+    install_requires=['numpy','scipy','pandas','scikit-image','scikit-learn','matplotlib', 'tqdm'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Topic :: Scientific/Engineering',
