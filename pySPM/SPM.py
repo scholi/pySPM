@@ -1597,8 +1597,8 @@ def fit2d(Z0, dx=2, dy=1, mask=None):
     2D numpy array
         result of the polynom
     """
-    x = np.arange(Z0.shape[1], dtype=np.float)
-    y = np.arange(Z0.shape[0], dtype=np.float)
+    x = np.arange(Z0.shape[1], dtype=float)
+    y = np.arange(Z0.shape[0], dtype=float)
     X0, Y0 = np.meshgrid(x, y)
     if mask is not None:
         X = X0[mask]
