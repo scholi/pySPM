@@ -213,7 +213,7 @@ class SPM_image:
         if text:
             r = funit(length, self.size['real']['unit'])
             if r['unit'][0] == 'u':
-                r['unit'] = '$\\mu$' + r['unit'][1:]
+                r['unit'] = 'µ' + r['unit'][1:]
             if loc in [3,4]:
                 label_ref = [ref[0]+WH[0]/2, ref[1]]
                 ann = ax.annotate("{value:.01f} {unit}".format(**r),
@@ -652,7 +652,7 @@ class SPM_image:
             if isunit != 6:
                 u = sunit[isunit]
                 if u == 'u':
-                    u = '$\\mu$'
+                    u = 'µ'
                 ax.set_xlabel(u'x [{0}{1}]'.format(u, unit))
                 ax.set_ylabel(u'y [{0}{1}]'.format(u, unit))
             else:
@@ -909,7 +909,7 @@ class SPM_image:
             else:
                 u=''
             if u == 'u':
-                u = '$\\mu$'
+                u = 'µ'
             rd = np.sqrt(dx**2+dy**2)
         xvalues = np.linspace(0, rd, len(p))
         lab = kargs.get("label", "")
