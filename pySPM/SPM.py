@@ -13,7 +13,6 @@ import scipy
 import scipy.ndimage
 import scipy.optimize
 import skimage
-from skimage import filters
 import skimage.exposure
 import skimage.filters
 import scipy.interpolate
