@@ -13,6 +13,7 @@ import scipy
 import scipy.ndimage
 import scipy.optimize
 import skimage
+from skimage import filters
 import skimage.exposure
 import skimage.filters
 import scipy.interpolate
@@ -23,6 +24,7 @@ import sys
 import matplotlib as mpl
 import warnings
 from .utils.misc import PB
+from skimage.draw import disk
 
 try:
     from skimage.filters import threshold_local
@@ -1194,17 +1196,45 @@ class SPM_image:
             N.pixels -= np.min(N.pixels)
             return N
 
-    def filter_lowpass(self, p, inline=True):
+    def get_radius_mask_from_center(self, radius):
+        mask = np.zeros(self.pixels.shape, dtype=np.uint8)
+        rr, cc = disk(center=(self.pixels.shape[0] // 2, self.pixels.shape[1] // 2), radius=radius)
+        mask[rr, cc] = 1
+        return mask
+
+    def filter_lowpass(self, fft_radius, inline=True):
         """
         Execute a lowpass filter on the data
         """
         F = self.get_fft()
-        mask = self.getRmask() < p
+        mask = self.get_radius_mask_from_center(radius=fft_radius)
         if inline:
             self.pixels = np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
         else:
             C = copy.deepcopy(self)
             C.pixels = np.real(np.fft.ifft2(np.fft.fftshift(F*mask)))
+            return C
+
+    def filter_gaussian(self, sigma, inline=True, **kwargs):
+        """
+        Execute a gaussian filter on the data
+        """
+        if inline:
+            self.pixels = scipy.ndimage.gaussian_filter(self.pixels, sigma=sigma, **kwargs)
+        else:
+            C = copy.deepcopy(self)
+            C.pixels = scipy.ndimage.gaussian_filter(C.pixels, sigma=sigma, **kwargs)
+            return C
+
+    def filter_percentile(self, percentile, size, inline=True, **kwargs):
+        """
+        Execute a percentile filter on the data
+        """
+        if inline:
+            self.pixels = scipy.ndimage.percentile_filter(self.pixels, percentile=percentile, size=size, **kwargs)
+        else:
+            C = copy.deepcopy(self)
+            C.pixels = scipy.ndimage.percentile_filter(C.pixels, percentile=percentile, size=size, **kwargs)
             return C
 
     def _resize_infos(self):
@@ -1681,11 +1711,11 @@ def get_profile(I, x1, y1, x2, y2, width=0, ax=None, color='w', alpha=0, N=None,
         dx = -width/2*(y2-y1)/d
         dy = width/2*(x2-x1)/d
         if type(color) in [tuple, list]:
-            ax.plot([x1, x2], [y1, y2], color=color, alpha=kargs.get('linealpha',1))
+            ax.plot([x1, x2], [y1, y2], color=color, alpha=kargs.get('linealpha',1), linestyle=kargs.get("linestyle","-"))
             ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color=color, alpha=kargs.get('linealpha',1))
             ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color=color, alpha=kargs.get('linealpha',1))
         else:
-            ax.plot([x1, x2], [y1, y2], color, alpha=kargs.get('linealpha',1), lw=kargs.get('lw',1))
+            ax.plot([x1, x2], [y1, y2], color, alpha=kargs.get('linealpha',1), lw=kargs.get('lw',1), linestyle=kargs.get("linestyle","-"))
             ax.plot([x1-dx, x1+dx], [y1-dy, y1+dy], color, alpha=kargs.get('linealpha',1))
             ax.plot([x2-dx, x2+dx], [y2-dy, y2+dy], color, alpha=kargs.get('linealpha',1))
         if alpha>0:
