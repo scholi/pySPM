@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "pyspm"
+version = "0.3.0"
+description = "Library to handle SPM and ToF-SIMS data"
+authors = ["Olivier Scholder <o.scholder@gmail.com>"]
+maintainers = ["Dinesh Pinto <annual.fallout_0z@icloud.com>"]
+homepage = "https://github.com/scholi/pySPM"
+repository = "https://github.com/scholi/pySPM"
+license = "Apache-2.0"
+readme = "README.md"
+documentation = "https://nbviewer.org/github/scholi/pySPM/blob/master/doc/pySPM%20Documentation.ipynb"
+keywords = ["ToF", "SIMS", "ION-ToF", "SPM", "SFM", "SXM", "AFM", "KPFM", "PCA", "ITA", "imaging", "ITM", "Bruker", "Nanonis"]
+packages = [{ include = "pySPM" }]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+scikit-learn = "^1.2.2"
+scikit-image = "^0.20.0"
+pywavelets = "^1.4.1"
+numpy = "^1.24.2"
+matplotlib = "^3.7.1"
+seaborn = "^0.12.2"
+psutil = "^5.9.4"
+tqdm = "^4.65.0"
+ipython = "^8.12.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
