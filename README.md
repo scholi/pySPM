@@ -7,7 +7,7 @@
 pySPM is a Python library in order to read, handle and plot Scanning Probe Microscopy (SPM) images as well as ToF-SIMS
 data.
 
-For now it support the following formats:
+Supported SPM file formats:
 
 * Nanoscan .xml file format
 * Bruker
@@ -26,10 +26,22 @@ specific data.
 
 If you find bugs and issues, please report them to the developer: https://github.com/scholi/pySPM/issues
 
-## Dependencies
+## Installation
 
-For GUI controls, this library requires `PyQT5`. If you don't want to use the GUI, you can still use the library without
-it.
+### With poetry
+
+```bash
+poetry add git+https://github.com/scholi/pySPM.git@development
+```
+
+### With pip
+
+```bash
+pip install git+https://github.com/scholi/pySPM.git@development
+```
+
+### Optional dependencies
+`PyQT5` for GUI controls.
 
 ## Documentation
 
