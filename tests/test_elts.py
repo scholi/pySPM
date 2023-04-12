@@ -1,5 +1,7 @@
-import pySPM
 import unittest
+
+import pySPM
+
 
 class TestElts(unittest.TestCase):
 
@@ -8,6 +10,7 @@ class TestElts(unittest.TestCase):
         assert pySPM.utils.get_mass("C") == 12
         assert pySPM.utils.is_main_isotope("C", 12)
         assert not pySPM.utils.is_main_isotope("C", 13)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -208,7 +208,7 @@ def show_peak(m, D, m0, delta=None, errors=False, dm0=0, dofit=False, show_elts=
                                        bounds=(
                                            [1 / kargs.get('asym_max', 10), -0.015] + [0, 0] * ((len(p0) - 1) // 2),
                                            [kargs.get('asym_max', 10), 0.015] + [kargs.get('sig_max', 0.01), np.inf] * (
-                                                       (len(p0) - 1) // 2))
+                                                   (len(p0) - 1) // 2))
                                        )
                 fit_type = 0
             except:

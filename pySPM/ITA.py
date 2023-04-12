@@ -75,7 +75,7 @@ class ITA(ITM):
             X, Y = self.size['pixels']['x'], self.size['pixels']['y']
             img = self.image(np.flipud(
                 np.array(self.root.goto('Meta/SI Image/intensdata').get_data("f"), dtype=np.float32).reshape((Y, X))),
-                             channel="SI count")
+                channel="SI count")
         except Exception as e:
             try:
                 img = self.get_added_image(0).pixels

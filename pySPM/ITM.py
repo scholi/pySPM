@@ -255,7 +255,7 @@ class ITM:
             Supp = self.get_property_trend("Instrument.LMIG.Suppressor")
             Press = self.get_property_trend("Instrument.VCU.Pressure.Main")
             N = (SI is not None) + (Snapshot is not None) + 1 + (
-                        EC is not None or Supp is not None or Press is not None)
+                    EC is not None or Supp is not None or Press is not None)
             gs = mpl.gridspec.GridSpec(2, N)
 
             index = 0
@@ -345,7 +345,7 @@ class ITM:
         X, Y = self.size['pixels']['x'], self.size['pixels']['y']
         img = self.image(np.flipud(
             np.array(self.root.goto('Meta/SI Image/intensdata').get_data("f"), dtype=np.float32).reshape((Y, X))),
-                         channel="SI count")
+            channel="SI count")
         return img
 
     def get_LMIG_info(self):
@@ -764,7 +764,7 @@ class ITM:
 
         if FOVcorr:
             DT = dx * (1 / 5e-11) * .5 * np.sqrt(2) * np.sqrt((1e-3 * mp / const.NA) / (
-                        Q * 2 * nrj * const.qe))  # delta time in channel per pixel. The 5e-11 is the channelwidth (50ps)
+                    Q * 2 * nrj * const.qe))  # delta time in channel per pixel. The 5e-11 is the channelwidth (50ps)
             # sqrt(2)/2 is from the sin(45°), nrj=E=.5*mp*v^2
         else:
             DT = 0
@@ -779,7 +779,7 @@ class ITM:
             IT = lambda x: x
 
         pixel_size = ((self.size['pixels']['x'] + pixel_aggregation - 1) // pixel_aggregation) * (
-                    (self.size['pixels']['y'] + pixel_aggregation - 1) // pixel_aggregation)
+                (self.size['pixels']['y'] + pixel_aggregation - 1) // pixel_aggregation)
         channels = round(
             self.get_value("Measurement.CycleTime")['float'] / self.get_value("Registration.TimeResolution")['float'])
 
@@ -853,7 +853,7 @@ class ITM:
                     ip = int(dt)
                     k += 3
                     i = (self.size['pixels']['x'] // pixel_aggregation) * (
-                                y // pixel_aggregation) + x // pixel_aggregation
+                            y // pixel_aggregation) + x // pixel_aggregation
                 else:
                     j1 = rev[b - ip]
                     if j1 < 0:
@@ -1005,7 +1005,7 @@ class ITM:
         # Perform the time of flight correction?
         if FOVcorr:
             DT = dx * (1 / 5e-11) * .5 * np.sqrt(2) * np.sqrt((1e-3 * mp / const.NA) / (
-                        Q * 2 * nrj * const.qe))  # delta time in channel per pixel. The 5e-11 is the channelwidth (50ps)
+                    Q * 2 * nrj * const.qe))  # delta time in channel per pixel. The 5e-11 is the channelwidth (50ps)
             # sqrt(2)/2 is from the sin(45°), nrj=E=.5*mp*v^2
         else:
             DT = 0

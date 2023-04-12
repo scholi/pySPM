@@ -57,7 +57,7 @@ class Bbox:
 
     def is_overlapping(self, other):
         return (other.left < self.right) and (other.bottom < self.top) and (other.right > self.left) and (
-                    other.top > self.bottom)
+                other.top > self.bottom)
 
     def overlap(self, other):
         if not self.is_overlapping(other):

@@ -1,8 +1,8 @@
 import array
+import ctypes
 import struct
 from ctypes import wintypes
 
-import ctypes
 import psutil
 import win32api
 import win32con

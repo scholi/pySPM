@@ -833,7 +833,7 @@ class SPM_image:
                                          transx=lambda x: x * (self.size['real']['x'] / (10 ** fact)) /
                                                           self.pixels.shape[1], \
                                          transy=lambda x: (self.pixels.shape[0] - x) * (
-                                                     self.size['real']['y'] / (10 ** fact)) / self.pixels.shape[0], \
+                                                 self.size['real']['y'] / (10 ** fact)) / self.pixels.shape[0], \
                                          **kargs)
             else:
                 values, p = get_profile(np.flipud(self.pixels), x1, y1, x2, y2, ax=ax, width=width, color=color,
@@ -847,7 +847,7 @@ class SPM_image:
                                         transx=lambda x: x * (self.size['real']['x'] / (10 ** fact)) /
                                                          self.pixels.shape[1], \
                                         transy=lambda x: (self.pixels.shape[0] - x) * (
-                                                    self.size['real']['y'] / (10 ** fact)) / self.pixels.shape[0], \
+                                                self.size['real']['y'] / (10 ** fact)) / self.pixels.shape[0], \
                                         **kargs)
 
         dx = (x2 - x1) * self.size['real']['x'] / self.size['pixels']['x']
@@ -1831,7 +1831,7 @@ def mfm_tf(nx, dx, ny, dy, tf_in, derivative=0, transform=0, z=0, A=0, theta=Non
             assert theta is not None
             assert phi is not None
             tf_out *= ((np.cos(theta) + 1j * (
-                        np.cos(phi) * np.sin(-theta) * kx + np.sin(phi) * np.sin(-theta) * ky)) / k) ** transform
+                    np.cos(phi) * np.sin(-theta) * kx + np.sin(phi) * np.sin(-theta) * ky)) / k) ** transform
         if derivative == 1:
             tf_out *= k
     else:

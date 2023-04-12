@@ -156,7 +156,7 @@ def LG2Dr(A, ratio=np.sqrt(2), Rweight=None, sigma=None, dic=False, **kargs):
     X, Y = np.meshgrid(x, y)
     R = np.sqrt((X - Center[1]) ** 2 + (Y - Center[0]) ** 2)
     if Rweight is not None:
-        if Rweight is 'R':
+        if Rweight == 'R':
             sigma = 0.001 + R
         else:
             sigma = Rweight(R)
@@ -229,7 +229,7 @@ def LG2D(A, Rweight=None, sigma=None, dic=False, **kargs):
     X, Y = np.meshgrid(x, y)
     R = np.sqrt((X - Center[1]) ** 2 + (Y - Center[0]) ** 2)
     if Rweight is not None:
-        if Rweight is 'R':
+        if Rweight == 'R':
             sigma = 0.001 + R
         else:
             sigma = Rweight(R)
@@ -302,7 +302,7 @@ def LG2Da(A, Rweight=None, sigma=None, dic=False, **kargs):
     X, Y = np.meshgrid(x, y)
     R = np.sqrt((X - Center[1]) ** 2 + (Y - Center[0]) ** 2)
     if Rweight is not None:
-        if Rweight is 'R':
+        if Rweight == 'R':
             sigma = 0.001 + R
         else:
             sigma = Rweight(R)

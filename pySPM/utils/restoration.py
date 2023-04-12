@@ -134,9 +134,9 @@ def richardson_lucy(image, psf, iterations, damping=0, ndamp=10,
     psf = psf.astype(np.float)
     psf /= np.sum(psf)  # Normalize the psf ⇒ ∫∫ psf(x,y) dx dy = 1
 
-    if init is 'mean':
+    if init == 'mean':
         x = 0.5 * np.ones(image.shape)
-    elif init is 'image':
+    elif init == 'image':
         x = image
     else:
         x = init
@@ -199,16 +199,16 @@ def convolve(img, psf, type='default', extend=True, mode='same', extend_margin=1
     if extend:
         img = img_extend(img, extend_margin)
 
-    if type is 'fft':
+    if type == 'fft':
         from scipy.signal import fftconvolve as conv
         I = conv(img, psf, mode)
-    elif type is 'default':
+    elif type == 'default':
         from scipy.signal import convolve as conv
         I = conv(img, psf, mode)
-    elif type is 'accurate':
+    elif type == 'accurate':
         from scipy.signal import convolve2d as convolve
         I = convolve(img, psf, mode)
-    elif type is 'fft2':
+    elif type == 'fft2':
         I = np.fft.fftshift((np.fft.irfft2(np.fft.rfft2(img) * np.fft.rfft2(psf))))
 
     if extend:

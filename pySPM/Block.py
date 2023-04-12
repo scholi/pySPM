@@ -249,7 +249,7 @@ class Block:
                     i = p.index('[')
                     idx = int(p[i + 1:-1])
                     p = p[:i]
-                if p is '*':
+                if p == '*':
                     e = parent.get_list()[idx]
                     p = e['name']
                     idx = e['id']
@@ -462,7 +462,7 @@ class Block:
                             vS = vS[:20] + '...'
                         print(
                             u"{name} ({id}) <{blen}> @{bidx}, value = {value} (hex) = \"{vS}\" (UTF-16)= {vL} ({Dtype}){other}" \
-                            .format(value=value, vL=vL, Dtype=Dtype, other=other, vS=vS, **l))
+                                .format(value=value, vL=vL, Dtype=Dtype, other=other, vS=vS, **l))
                     else:
                         print(u"{name} ({id}) <{blen}> @{bidx}, value = {value} (hex) = {vL} ({Dtype}){other}" \
                               .format(value=value, vL=vL, Dtype=Dtype, other=other, **l))
@@ -513,7 +513,7 @@ class Block:
         if type(name) is bytes:
             name = name.decode('ascii')
         i = 0
-        if name is '*':
+        if name == '*':
             return self.get_list()[idx]['bidx']
         for l in self.get_list():
             if l['name'] == name:
@@ -546,7 +546,7 @@ class Block:
                 i = p.index('[')
                 idx = int(p[i + 1:-1])
                 p = p[:i]
-            if p is '*':
+            if p == '*':
                 e = s.get_list()[idx]
                 p = e['name']
                 idx = e['id']
@@ -760,7 +760,7 @@ class Block:
                     out.write(struct.pack('<B4I2Q', X, index, slen, id, Y, blen, bidx))  # write child info
                 # Write the extra bytes used by iontof which seems to be useless as well as the childrens' name
                 delta = curr_block_length - (
-                            self.f.tell() - current.offset)  # number of bytes remaining till the end of the block
+                        self.f.tell() - current.offset)  # number of bytes remaining till the end of the block
                 out.write(self.f.read(delta))
             else:
                 debug_msg.append("Data Block found. Copy data without check...")

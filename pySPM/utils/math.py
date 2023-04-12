@@ -145,7 +145,7 @@ def CDF(x, mu, sig, amp=1, lg=0, **kargs):
     from scipy.special import erf
     g = sig * np.sqrt(2 * np.log(2))
     return amp * lg * (.5 + np.arctan2(x - mu, g) / np.pi) + (1 - lg) * amp * .5 * (
-                1 + erf((x - mu) / (sig * np.sqrt(2))))
+            1 + erf((x - mu) / (sig * np.sqrt(2))))
 
 
 def LG(x, x0, sig=None, amp=None, lg=.5, asym=1, FWHM=None, **kargs):
