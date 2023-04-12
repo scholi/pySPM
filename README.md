@@ -28,19 +28,32 @@ If you find bugs and issues, please report them to the developer: https://github
 
 ## Installation
 
-### With poetry
+### Older version (from PyPI)
+
+Note that this version contains some known bugs
+
+```bash
+pip install pySPM
+```
+
+### Latest development version
+
+All the latest features and buffixes are available in the development branch. You can install it with pip or poetry.
+
+#### With poetry
 
 ```bash
 poetry add git+https://github.com/scholi/pySPM.git@development
 ```
 
-### With pip
+#### With pip
 
 ```bash
 pip install git+https://github.com/scholi/pySPM.git@development
 ```
 
 ### Optional dependencies
+
 `PyQT5` for GUI controls.
 
 ## Documentation
