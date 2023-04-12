@@ -1,4 +1,5 @@
 [![Downloads](https://pepy.tech/badge/pyspm)](https://pepy.tech/project/pyspm)
+[![PyPi version](https://img.shields.io/pypi/v/pySPM)](https://pypi.python.org/pypi/pySPM/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.998575.svg)](https://doi.org/10.5281/zenodo.998575)
 
@@ -21,35 +22,30 @@ Supported SPM file formats:
 
 This library is offered as it is and is still in development. Please note that reading the raw data was done by reverse
 engineering and guessing and not with a manual as the file format is proprietary. It seems to work well with the data
-used by the developer of this library, but there is **NO GUARANTY** that this library will work correctly with your own
+used by the developer of this library, but there is **NO GUARANTEE** that this library will work correctly with your own
 specific data.
 
 If you find bugs and issues, please report them to the developer: https://github.com/scholi/pySPM/issues
 
 ## Installation
 
-### Older version (from PyPI)
-
-Note that this version contains some known bugs
+### From PyPI
 
 ```bash
 pip install pySPM
 ```
-
-### Latest development version
-
-All the latest features and buffixes are available in the development branch. You can install it with pip or poetry.
+### From GitHub
 
 #### With poetry
 
 ```bash
-poetry add git+https://github.com/scholi/pySPM.git@development
+poetry add git+https://github.com/scholi/pySPM.git
 ```
 
 #### With pip
 
 ```bash
-pip install git+https://github.com/scholi/pySPM.git@development
+pip install git+https://github.com/scholi/pySPM.git
 ```
 
 ### Optional dependencies
