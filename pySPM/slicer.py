@@ -6,7 +6,8 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
+
 
 class Ui_slicer(object):
     def setupUi(self, slicer):
@@ -102,5 +103,6 @@ class Ui_slicer(object):
         self.cmap.setItemText(1, _translate("slicer", "gray"))
         self.cmap.setItemText(2, _translate("slicer", "hot"))
         self.cmap.setItemText(3, _translate("slicer", "jet"))
+
 
 from mplwidget import MplWidget

@@ -6,7 +6,8 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
+
 
 class Ui_SpectraViewer(object):
     def setupUi(self, SpectraViewer):
@@ -102,5 +103,6 @@ class Ui_SpectraViewer(object):
         self.pushButton.setText(_translate("SpectraViewer", "Delete Element"))
         self.lab_m0.setText(_translate("SpectraViewer", "Center Mass:"))
         self.show_mass.setText(_translate("SpectraViewer", "Show masses"))
+
 
 from .mplwidget import MplWidget

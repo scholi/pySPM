@@ -2,21 +2,20 @@
 
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
-from pySPM import Block, utils
-import numpy as np
-import struct
 import os.path
-import zlib
-import re
+
+from pySPM import Block
+
 
 class InvalidRAWdataformat(Exception):
     def __init__(self, block, msg):
         self.block = block
         self.msg = msg
-        
+
     def __str__(self):
-        return "Invalid RAW dataformat seen in block "+self.block.parent+'/'+self.block.name+' : '+self.msg
-    
+        return "Invalid RAW dataformat seen in block " + self.block.parent + '/' + self.block.name + ' : ' + self.msg
+
+
 class ITS:
     def __init__(self, filename, debug=False):
         """

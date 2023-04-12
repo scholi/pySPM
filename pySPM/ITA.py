@@ -8,19 +8,18 @@ You can mainly retrieve images and spectra for each channel and scan.
 """
 from __future__ import absolute_import
 
-import numpy as np
-import struct
 import os.path
-import zlib
 import re
-import copy
+import struct
+import zlib
 
+import numpy as np
+
+from .Block import MissingBlock
 from .ITM import ITM
 from .collection import Collection
-from .SPM import SPM_image
-from .Block import MissingBlock
 from .utils.misc import deprecated, aliased, alias, PB
-import warnings
+
 
 @aliased
 class ITA(ITM):
@@ -46,8 +45,10 @@ class ITA(ITM):
         """
         ITM.__init__(self, filename, *args, **kargs)
         try:
-            self.sx = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').get_ulong()
-            self.sy = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize').get_ulong()
+            self.sx = self.root.goto(
+                'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.XSize').get_ulong()
+            self.sy = self.root.goto(
+                'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize').get_ulong()
         except MissingBlock:
             self.sx = self.size['pixels']['x']
             self.sy = self.size['pixels']['y']
@@ -72,7 +73,9 @@ class ITA(ITM):
         """
         try:
             X, Y = self.size['pixels']['x'], self.size['pixels']['y']
-            img = self.image(np.flipud(np.array(self.root.goto('Meta/SI Image/intensdata').get_data("f"), dtype=np.float32).reshape((Y, X))), channel="SI count")
+            img = self.image(np.flipud(
+                np.array(self.root.goto('Meta/SI Image/intensdata').get_data("f"), dtype=np.float32).reshape((Y, X))),
+                             channel="SI count")
         except Exception as e:
             try:
                 img = self.get_added_image(0).pixels
@@ -81,7 +84,7 @@ class ITA(ITM):
                     img = self.get_added_image_by_SN(self.get_channel_SN("total"))
                 except:
                     import warnings
-                    warn.warnings("SI image cannot be retrieved")
+                    warnings.warn("SI image cannot be retrieved")
                     return None
         return img
 
@@ -95,7 +98,7 @@ class ITA(ITM):
         channel : string
             The channel name assigned to a given peak
         """
-        for x in  self.root.goto("MassIntervalList"):
+        for x in self.root.goto("MassIntervalList"):
             if x.name == 'mi':
                 l = x.dict_list()
                 if l['assign']['utf16'] == channel or l['desc']['utf16'] == channel:
@@ -163,9 +166,9 @@ class ITA(ITM):
         res = []
         if strict:
             if type(name) in [list, tuple]:
-                name = ['^'+n+'[+-]?$' for n in name]
+                name = ['^' + n + '[+-]?$' for n in name]
             else:
-                name = '^'+name+'[+-]?$'
+                name = '^' + name + '[+-]?$'
         if type(name) is not list:
             name = [name]
         for n in name:
@@ -254,7 +257,7 @@ class ITA(ITM):
         elif 'Shifts' in kargs:
             shifts = kargs['Shifts']
         else:
-            shifts = [(-x,-y) for x,y in self.get_saved_shift()]
+            shifts = [(-x, -y) for x, y in self.get_saved_shift()]
         for ch in channels:
             ID = ch['id']['long']
             Z += self.fast_get_image(ID, scans, shifts)
@@ -270,13 +273,15 @@ class ITA(ITM):
         if type(scans) == int:
             scans = [scans]
         if prog:
-            scans= PB(scans)
+            scans = PB(scans)
 
         Z = np.zeros((self.sy, self.sx))
         for s in scans:
-            node = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/Images/{SN}/ScanData/EDROff/{scan}".format(SN=SN, scan=s))
+            node = self.root.goto(
+                "filterdata/TofCorrection/ImageStack/Reduced Data/Images/{SN}/ScanData/EDROff/{scan}".format(SN=SN,
+                                                                                                             scan=s))
             dat = node.decompress()
-            data = struct.unpack("<{}I".format(len(dat)//4), dat)
+            data = struct.unpack("<{}I".format(len(dat) // 4), dat)
             Z += np.array(data, dtype=np.float64).reshape((self.sy, self.sx))
         if raw:
             return Z
@@ -331,7 +336,7 @@ class ITA(ITM):
         import matplotlib.pyplot as plt
         if ax is None:
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-        ax.imshow(self.img, extent=(0, self.fov*1e6, 0, self.fov*1e6))
+        ax.imshow(self.img, extent=(0, self.fov * 1e6, 0, self.fov * 1e6))
         ax.set_title("Total SI")
         ax.set_xlabel("x [$\mu$m]")
         ax.set_ylabel("y [$\mu$m]")
@@ -353,12 +358,12 @@ class ITA(ITM):
             Shift = np.real(np.fft.fftshift(np.fft.ifft2(
                 np.conj(np.fft.fft2(S0)) * np.fft.fft2(S))))
             cord = np.unravel_index(np.argmax(Shift), S0.shape)
-            trans = (cord[1]-S0.shape[1]/2, cord[0]-S0.shape[0]/2)
+            trans = (cord[1] - S0.shape[1] / 2, cord[0] - S0.shape[0] / 2)
             Shifts.append(trans)
         if centered:
             avSx = np.round(np.mean([z[0] for z in Shifts]))
             avSy = np.round(np.mean([z[1] for z in Shifts]))
-            Shifts = [(z[0]-avSx, z[1]-avSy) for z in Shifts]
+            Shifts = [(z[0] - avSx, z[1] - avSy) for z in Shifts]
         return Shifts
 
     @alias("getXsectionByMass")
@@ -395,17 +400,17 @@ class ITA(ITM):
         np.ndarray
             2D numpy array containing the sum of all channels. The values are the count number
         """
-        y1 = self.sy-1-y1
-        y2 = self.sy-1-y2
+        y1 = self.sy - 1 - y1
+        y2 = self.sy - 1 - y2
         if N is None:
-            N = int(np.sqrt((x2-x1)**2+(y2-y1)**2))+1
+            N = int(np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)) + 1
         x = np.linspace(x1, x2, N)
         y = np.linspace(y1, y2, N)
         out = np.zeros((self.Nscan, N))
         Y = range(self.Nscan)
         if ax is not None:
             if not flip:
-                ax.plot([x1, x2], [self.sy-1-y1, self.sy-1-y2], col)
+                ax.plot([x1, x2], [self.sy - 1 - y1, self.sy - 1 - y2], col)
         if prog:
             Y = PB(Y)
         from scipy.ndimage import map_coordinates
@@ -461,10 +466,10 @@ class ITA(ITM):
         """
         try:
             X = zlib.decompress(self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data'
-                                           '/ImageStackScans/ShiftCoordinates/ImageStack.ShiftCoordinates').value)
+                                               '/ImageStackScans/ShiftCoordinates/ImageStack.ShiftCoordinates').value)
         except:
-            return [(0,0) for x in range(self.Nscan)]
-        D = struct.unpack('<'+str(len(X)//4)+'i', X)
+            return [(0, 0) for x in range(self.Nscan)]
+        D = struct.unpack('<' + str(len(X) // 4) + 'i', X)
         dx = D[::2]
         dy = D[1::2]
         return list(zip(dx, dy))
@@ -474,7 +479,7 @@ class ITA(ITM):
         """
         Shortcut function for pySPM.ITA.get_sum_image_by_mass using the saved shift corrections.
         """
-        return self.get_sum_image_by_mass(masses, shifts=[(-x,-y) for x,y in self.get_saved_shift()], **kargs)
+        return self.get_sum_image_by_mass(masses, shifts=[(-x, -y) for x, y in self.get_saved_shift()], **kargs)
 
     @alias("getSumImageByMass")
     def get_sum_image_by_mass(self, masses, scans=None, prog=False, raw=False, **kargs):
@@ -494,8 +499,9 @@ class ITA(ITM):
         Z = self.__get_sum_image(scans, channels, **kargs)
         if raw:
             return Z, channels
-        channels_name = [["{:.2f}u".format(m['cmass']['float']),m['assign']['utf16']][m['assign']['utf16']!=''] for m in channels]
-        return self.image(np.flipud(Z), channel="Masses: "+",".join(channels_name))
+        channels_name = [["{:.2f}u".format(m['cmass']['float']), m['assign']['utf16']][m['assign']['utf16'] != ''] for m
+                         in channels]
+        return self.image(np.flipud(Z), channel="Masses: " + ",".join(channels_name))
 
     @alias("getAddedImageByMass")
     def get_added_image_by_mass(self, masses, raw=False, **kargs):
@@ -536,12 +542,12 @@ class ITA(ITM):
             return Z, channels
         return self.image(np.flipud(Z), channel=",".join(channels))
 
-    @alias("get_channel_by_sn","getChannelBySN")
+    @alias("get_channel_by_sn", "getChannelBySN")
     def get_channel_by_SN(self, SN):
         for node in self.root.goto("MassIntervalList"):
             if node.name == "mi":
                 l = node.dict_list()
-                if l['SN']['utf16']==SN:
+                if l['SN']['utf16'] == SN:
                     name = l['assign']['utf16']
                     if not name:
                         name = l['desc']['utf16']
@@ -549,7 +555,7 @@ class ITA(ITM):
                         name = '{:.2f}u'.format(l['cmass']['float'])
                     return name
 
-    @alias("get_added_image_by_sn","getAddedImageBySN")
+    @alias("get_added_image_by_sn", "getAddedImageBySN")
     def get_added_image_by_SN(self, SN, raw=False):
         """
         New ITA fileformat save images with their respective serial number (SN).
@@ -560,9 +566,10 @@ class ITA(ITM):
 
         SN: Serial Number of the channel
         """
-        node = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/Images/{SN}/SumImage/EDROff".format(SN=SN))
+        node = self.root.goto(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/Images/{SN}/SumImage/EDROff".format(SN=SN))
         dat = node.decompress()
-        data = struct.unpack("<{}I".format(len(dat)//4), dat)
+        data = struct.unpack("<{}I".format(len(dat) // 4), dat)
         img = np.array(data, dtype=np.float64).reshape((self.sy, self.sx))
         if raw:
             return img
@@ -578,9 +585,9 @@ class ITA(ITM):
         assert type(channel) is int
         assert channel >= 0 and channel < self.Nimg
         c = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded'
-                           '/Image['+str(channel)+']/ImageArray.Long')
+                           '/Image[' + str(channel) + ']/ImageArray.Long')
         D = zlib.decompress(c.value)
-        V = np.array(struct.unpack('<'+str(self.sx*self.sy)+'I', D),
+        V = np.array(struct.unpack('<' + str(self.sx * self.sy) + 'I', D),
                      dtype=np.float64).reshape((self.sy, self.sx))
         return V
 
@@ -614,16 +621,17 @@ class ITA(ITM):
         if prog:
             scans = PB(scans)
 
-        im_root =  self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image['+str(channel)+']')
+        im_root = self.root.goto(
+            'filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image[' + str(channel) + ']')
         for scan in scans:
-            c = im_root.goto('ImageArray.Long['+str(scan)+']')
+            c = im_root.goto('ImageArray.Long[' + str(scan) + ']')
             V = np.array(c.get_data('I'), dtype=np.float64).reshape((self.sy, self.sx))
             if shifts:
                 r = [int(z) for z in shifts[scan]]
                 V = np.roll(np.roll(V, -r[0], axis=1), -r[1], axis=0)
-                rx = [max(0,-r[0]), self.sx-max(1,r[0])]
-                ry = [max(0,-r[1]), self.sy-max(1,r[1])]
-                Z[ry[0]:ry[1],rx[0]:rx[1]] += V[ry[0]:ry[1],rx[0]:rx[1]]
+                rx = [max(0, -r[0]), self.sx - max(1, r[0])]
+                ry = [max(0, -r[1]), self.sy - max(1, r[1])]
+                Z[ry[0]:ry[1], rx[0]:rx[1]] += V[ry[0]:ry[1], rx[0]:rx[1]]
             else:
                 Z += V
         return Z
@@ -660,7 +668,7 @@ class ITA(ITM):
         assert channel >= 0 and channel < self.Nimg
         assert scan >= 0 and scan < self.Nscan
         c = self.root.goto('filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans'
-                           '/Image['+str(channel)+']/ImageArray.Long['+str(scan)+']')
+                           '/Image[' + str(channel) + ']/ImageArray.Long[' + str(scan) + ']')
         V = np.array(c.get_data(), dtype=np.float64).reshape((self.sy, self.sx))
         if not shifts is None:
             r = [int(z) for z in shifts[scan]]
@@ -699,8 +707,10 @@ class ITA(ITM):
         from .utils import sp
         num_pages = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/COUNT').get_ulong()
         assert page < num_pages
-        Nitems = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/ItemCount'.format(page)).get_ulong()
-        sett = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/SETTINGS'.format(page)).dict_list()
+        Nitems = self.root.goto(
+            'Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/ItemCount'.format(page)).get_ulong()
+        sett = self.root.goto(
+            'Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/SETTINGS'.format(page)).dict_list()
         Nx = sett['Xsize']['ulong']
         Ny = sett['Ysize']['ulong']
         items = self.root.goto('Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{}]/Items'.format(page)).get_data()
@@ -709,21 +719,21 @@ class ITA(ITM):
         for x in self.root.goto("MassIntervalList"):
             if x.name == 'mi':
                 d = x.dict_list()
-                IntV[d['id']['long']] = d['desc']['utf16']+d['assign']['utf16']
+                IntV[d['id']['long']] = d['desc']['utf16'] + d['assign']['utf16']
         for i, it in enumerate(items):
             blk = self.get_operation(it)
             OPTYPE = blk.goto_item('OPTYPE').get_ulong()
-            while OPTYPE !=3:
+            while OPTYPE != 3:
                 OPTYPE = blk.goto_item('OPTYPE').get_ulong()
                 if OPTYPE == 4:
                     blk = self.getOperation(blk.goto_item('ArgOpIDs').get_ulong())
-                elif OPTYPE==3:
+                elif OPTYPE == 3:
                     palette = np.array(blk.goto_item('BMP-Palette').get_data('B')).reshape((256, 4))
                     B, G, R = palette[:, 0], palette[:, 1], palette[:, 2]
                     dimx = blk.goto('Cache/IImage-Cache-DimX').get_ulong()
                     dimy = blk.goto('Cache/IImage-Cache-DimY').get_ulong()
                     img = np.array(blk.goto('Cache/IImage-Cache-Intensities').get_data('d')).reshape((dimy, dimx))
-                    RGB = np.hstack([R[:, None], G[:, None], B[:, None]])/256
+                    RGB = np.hstack([R[:, None], G[:, None], B[:, None]]) / 256
                     cm = mpl.colors.ListedColormap(RGB)
                     ax[i].imshow(img, cmap=cm)
 
@@ -735,26 +745,36 @@ class ITA(ITM):
             added = kargs.pop("Added")
 
         assert scans is not None or added is not None
-        lvl = 3 # zlib encoding level
+        lvl = 3  # zlib encoding level
         sy, sx = self.size['pixels']['y'], self.size['pixels']['x']
         SN = miblock.goto("SN").get_string()
         if added is None:
             added_img = np.zeros((sy, sx), dtype=np.uint32)
         chID = miblock.goto("id").get_ulong()
         if scans is not None:
-            N = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfImages").get_ulong()
-        AN = self.root.goto("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image.NumberOfImages").get_ulong()
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MassIntervalSN", SN.encode('utf8'))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.XSize", struct.pack("<I", sx))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.YSize", struct.pack("<I", sy))
+            N = self.root.goto(
+                "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfImages").get_ulong()
+        AN = self.root.goto(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image.NumberOfImages").get_ulong()
+        self.root.edit_block(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN),
+            "Image.MassIntervalSN", SN.encode('utf8'))
+        self.root.edit_block(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.XSize",
+            struct.pack("<I", sx))
+        self.root.edit_block(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.YSize",
+            struct.pack("<I", sy))
         if scans is not None:
             RS = range(self.Nscan)
             if prog:
                 RS = PB(RS)
             for i in RS:
                 img = np.flipud(scans[i].astype(np.uint32, casting='unsafe'))
-                data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(img)), level=lvl)
-                self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image[{}]".format(N), "ImageArray.Long", data, id=i, _type=128)
+                data = zlib.compress(struct.pack("<{}I".format(sx * sy), *np.ravel(img)), level=lvl)
+                self.root.edit_block(
+                    "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image[{}]".format(N),
+                    "ImageArray.Long", data, id=i, _type=128)
                 if added is None:
                     added_img += img
 
@@ -762,19 +782,35 @@ class ITA(ITM):
             added = added_img
         else:
             added = np.flipud(added)
-        data = zlib.compress(struct.pack("<{}I".format(sx*sy), *np.ravel(added.astype(np.uint32, casting='unsafe'))), level=lvl)
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "ImageArray.Long", data, _type=128)
+        data = zlib.compress(struct.pack("<{}I".format(sx * sy), *np.ravel(added.astype(np.uint32, casting='unsafe'))),
+                             level=lvl)
+        self.root.edit_block(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN),
+            "ImageArray.Long", data, _type=128)
 
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.PulsesPerPixel", struct.pack("<I", self.spp*self.Nscan))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MaxCountsPerPixel", struct.pack("<I", int(np.max(added))))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.MinCountsPerPixel", struct.pack("<I", int(np.min(added))))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCountsDbl", struct.pack("<d", np.sum(added)))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN), "Image.TotalCounts", struct.pack("<I", int(np.sum(added))))
+        self.root.edit_block(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN),
+            "Image.PulsesPerPixel", struct.pack("<I", self.spp * self.Nscan))
+        self.root.edit_block(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN),
+            "Image.MaxCountsPerPixel", struct.pack("<I", int(np.max(added))))
+        self.root.edit_block(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN),
+            "Image.MinCountsPerPixel", struct.pack("<I", int(np.min(added))))
+        self.root.edit_block(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN),
+            "Image.TotalCountsDbl", struct.pack("<d", np.sum(added)))
+        self.root.edit_block(
+            "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded/Image[{}]".format(AN),
+            "Image.TotalCounts", struct.pack("<I", int(np.sum(added))))
 
         if scans is not None:
-            self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans", "Image.NumberOfImages", struct.pack("<I", N+1))
-        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded", "Image.NumberOfImages", struct.pack("<I", AN+1))
+            self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans",
+                                 "Image.NumberOfImages", struct.pack("<I", N + 1))
+        self.root.edit_block("filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded",
+                             "Image.NumberOfImages", struct.pack("<I", AN + 1))
         self.Nimg += 1
+
 
 @aliased
 class ITA_collection(Collection):
@@ -782,8 +818,9 @@ class ITA_collection(Collection):
     ITA_collection is a super class containing a collection of tof-sims images.
     for details on Collection see pySPM.collection.Collection
     """
+
     def __init__(self, filename, channels1=None, channels2=None, name=None, mass=False, strict
-=False):
+    =False):
         """
         Opening a ToF-SIMS ITA file as an image collection
 
@@ -811,7 +848,7 @@ class ITA_collection(Collection):
         if name is None:
             name = os.path.basename(filename)
         self.name = name
-        Collection.__init__(self, sx=self.ita.fov, sy=self.ita.fov*self.ita.sy/self.ita.sx,
+        Collection.__init__(self, sx=self.ita.fov, sy=self.ita.fov * self.ita.sy / self.ita.sx,
                             unit='m', name=name)
         self.msg = ""
         if channels1 is None:
@@ -829,7 +866,7 @@ class ITA_collection(Collection):
                     if mass:
                         try:
                             I = self.ita.get_added_image_by_mass(x)
-                            m = masses[2+channels1.index(x)]
+                            m = masses[2 + channels1.index(x)]
                             if m['assign'] != '':
                                 self.add(I, m['assign'])
                             else:
@@ -840,7 +877,7 @@ class ITA_collection(Collection):
                         Z, ch = self.ita.get_added_image_by_name(x, strict)
                         self.msg += "{0}\n".format(x)
                         for z in ch:
-                            self.msg += "\t{name} ({desc}), mass: {lower:.2f} - {upper:.2f}\n"\
+                            self.msg += "\t{name} ({desc}), mass: {lower:.2f} - {upper:.2f}\n" \
                                 .format(desc=z['desc'], name=z['assign'],
                                         lower=z['lmass'], upper=z['umass'])
                         self.add(Z, x)
@@ -853,7 +890,7 @@ class ITA_collection(Collection):
                             channels[x], strict)
                         self.msg += "{0}\n".format(x)
                         for z in ch:
-                            self.msg += "\t{name} ({desc}), mass: {lower:.2f} - {upper:.2f}\n"\
+                            self.msg += "\t{name} ({desc}), mass: {lower:.2f} - {upper:.2f}\n" \
                                 .format(desc=z['desc'], name=z['assign'],
                                         lower=z['lmass'], upper=z['umass'])
                         self.add(Z, x)
@@ -970,20 +1007,20 @@ class ITA_collection(Collection):
         from scipy.ndimage.filters import gaussian_filter
         N = ITA_collection(self.filename, [], name=self.name)
         size = list(self.channels.values())[0].pixels.shape
-        S = np.zeros((int(size[0]/stitches[0]), int(size[1]/stitches[1])))
+        S = np.zeros((int(size[0] / stitches[0]), int(size[1] / stitches[1])))
         sy, sx = S.shape
         for i in range(stitches[0]):
             for j in range(stitches[1]):
-                S += self.channels[channel].pixels[sy*i:sy*(i+1), sx*j:sx*(j+1)]
+                S += self.channels[channel].pixels[sy * i:sy * (i + 1), sx * j:sx * (j + 1)]
         S[S == 0] = 1
-        if gauss>0:
+        if gauss > 0:
             S = gaussian_filter(S, gauss)
         for x in self.channels:
             F = np.zeros(size)
             for i in range(stitches[0]):
                 for j in range(stitches[1]):
-                    F[sy*i:sy*(i+1), sx*j:sx*(j+1)] = \
-                        self.channels[x].pixels[sy*i:sy*(i+1), sx*j:sx*(j+1)]/S
+                    F[sy * i:sy * (i + 1), sx * j:sx * (j + 1)] = \
+                        self.channels[x].pixels[sy * i:sy * (i + 1), sx * j:sx * (j + 1)] / S
             new_channel = copy.deepcopy(self[x])
             new_channel.pixels = F
             N.add(new_channel, x)

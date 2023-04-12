@@ -1,27 +1,28 @@
-import psutil
-import numpy as np
+import sys
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.dates import strpdate2num
 import pandas as pd
-import sys
+from matplotlib.dates import strpdate2num
+
 from pySPM.tools.fpanel import Fpanel
 
+
 def plotLog(filename, watch=False, **kargs):
-    fig, ax = plt.subplots(1,1)
+    fig, ax = plt.subplots(1, 1)
     fig.subplots_adjust(hspace=0)
     plt.show(block=False)
     while True:
         with open(filename, 'r') as f:
             names = f.readline().rstrip().split('\t')
         df = pd.read_csv(filename, skiprows=1, delimiter='\t', parse_dates=[0], na_values="<undefined>", names=names)
-        #df = df.dropna()
+        # df = df.dropna()
         ax2 = df.plot("Time", subplots=True, ax=ax, sharex=True)
-        dt = df.iloc[-1,0]-df.iloc[0,0]
+        dt = df.iloc[-1, 0] - df.iloc[0, 0]
         for a in ax2:
-            if dt.seconds < 15*60:
+            if dt.seconds < 15 * 60:
                 a.xaxis.set_major_locator(mpl.dates.MinuteLocator(interval=1))
-            elif dt.seconds < 3*60*60:
+            elif dt.seconds < 3 * 60 * 60:
                 a.xaxis.set_major_locator(mpl.dates.MinuteLocator(interval=5))
             else:
                 a.xaxis.set_major_locator(mpl.dates.MinuteLocator(interval=15))
@@ -35,7 +36,8 @@ def plotLog(filename, watch=False, **kargs):
             plt.show()
         if not watch:
             break
-                
+
+
 def mypause(interval):
     backend = plt.rcParams['backend']
     if backend in mpl.rcsetup.interactive_bk:
@@ -47,8 +49,9 @@ def mypause(interval):
             canvas.start_event_loop(interval)
             return
 
+
 def main():
-    if len(sys.argv)>1:
+    if len(sys.argv) > 1:
         filename = sys.argv[1]
         print("Plot file \"{}\"".format(filename))
         plotLog(filename, watch=False)
@@ -56,6 +59,7 @@ def main():
         F = Fpanel()
         logfile = F.getLogFile()
         plotLog(logfile, watch=True)
+
 
 if __name__ == '__main__':
     main()

@@ -8,19 +8,18 @@ This module performs the PCS with the help of the scikit library and gives the u
 
 from __future__ import absolute_import
 
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import scale
-from sklearn.decomposition import PCA as PCA1
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from scipy import stats
-import matplotlib.pyplot as plt
-from pySPM.SPM import SPM_image
-import matplotlib as mpl
-from matplotlib import cm
-from pySPM import collection
 import re
-from .utils.misc import aliased, alias, deprecated
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib import cm
+from sklearn.decomposition import PCA as PCA1
+from sklearn.preprocessing import scale
+
+from pySPM import collection
+from .utils.misc import aliased, alias
+
 
 @aliased
 class PCA:
@@ -43,14 +42,14 @@ class PCA:
         corrmat = self.corr()
         sns.heatmap(corrmat).xaxis.tick_top()
 
-    def hinton(self, max_weight=None, ax=None, matrix = None, xlabel=None, ylabel=None):
+    def hinton(self, max_weight=None, ax=None, matrix=None, xlabel=None, ylabel=None):
         """Draw Hinton diagram for visualizing a weight matrix."""
         if matrix is None:
             matrix = self.corr()
         ax = ax if ax is not None else plt.gca()
 
         if not max_weight:
-            max_weight = 2**np.ceil(np.log(np.abs(matrix).max())/np.log(2))
+            max_weight = 2 ** np.ceil(np.log(np.abs(matrix).max()) / np.log(2))
 
         ax.patch.set_facecolor('lightgray')
         ax.set_aspect('equal', 'box')
@@ -69,11 +68,11 @@ class PCA:
         if xlabel is None:
             xlabel = []
             for x in list(matrix.columns):
-                x = re.sub(r'\^([0-9]+)',r'^{\1}', x)
-                x = re.sub(r'_([0-9]+)',r'_{\1}', x)
-                if x[-1] in ['+','-']:
-                    x = x[:-1]+'^'+x[-1]
-                xlabel.append('$'+x+'$')
+                x = re.sub(r'\^([0-9]+)', r'^{\1}', x)
+                x = re.sub(r'_([0-9]+)', r'_{\1}', x)
+                if x[-1] in ['+', '-']:
+                    x = x[:-1] + '^' + x[-1]
+                xlabel.append('$' + x + '$')
         if ylabel is None:
             ylabel = list(matrix.index)
         ax.xaxis.tick_top()
@@ -100,12 +99,12 @@ class PCA:
     def pca_summary(self):
         if self.pca is None:
             self.run_pca()
-        names = ["PC"+str(i)
-                 for i in range(1, len(self.pca.explained_variance_ratio_)+1)]
+        names = ["PC" + str(i)
+                 for i in range(1, len(self.pca.explained_variance_ratio_) + 1)]
         a = list(np.std(self.pca.transform(self.standX), axis=0))
         b = list(self.pca.explained_variance_ratio_)
         c = [np.sum(self.pca.explained_variance_ratio_[:i])
-             for i in range(1, len(self.pca.explained_variance_ratio_)+1)]
+             for i in range(1, len(self.pca.explained_variance_ratio_) + 1)]
         columns = pd.MultiIndex.from_tuples([("sdev", "Standard deviation"), (
             "varprop", "Proportion of Variance"), ("cumprop", "Cumulative Proportion")])
         Z = zip(a, b, c)
@@ -116,15 +115,15 @@ class PCA:
         if self.pca is None:
             self.run_pca()
         ax = ax if ax is not None else plt.gca()
-        
-        y = np.std(self.pca.transform(self.standX), axis=0)**2
+
+        y = np.std(self.pca.transform(self.standX), axis=0) ** 2
         if num is None:
             num = len(y)
         x = np.arange(len(y)) + 1
         ax.grid(True)
         ax.plot(x[:num], y[:num], "o-")
         ax.set_xticks(x[:num])
-        ax.set_xticklabels(["PC"+str(i) for i in x[:num]], rotation=60)
+        ax.set_xticklabels(["PC" + str(i) for i in x[:num]], rotation=60)
         ax.set_ylabel("Variance")
 
     def pc(self, id=0):
@@ -140,7 +139,8 @@ class PCA:
             self.run_pca()
         if id is not None:
             return pd.DataFrame(self.pca.components_[id, None], columns=self.data.columns)
-        return pd.DataFrame(self.pca.components_, columns=self.data.columns, index=["PC{0}".format(i+1) for i in range(len(self.pca.components_))])
+        return pd.DataFrame(self.pca.components_, columns=self.data.columns,
+                            index=["PC{0}".format(i + 1) for i in range(len(self.pca.components_))])
 
     @alias("getPCAtransf")
     def get_pca_transf(self):
@@ -167,7 +167,7 @@ class PCA:
                 plt.scatter(foo[:, 0], foo[:, 1], color=cm.Scalar)
             else:
                 bar = pd.DataFrame(list(zip(foo[:, 0], foo[:, 1], classifs)), columns=[
-                                   "PC1", "PC2", "Class"])
+                    "PC1", "PC2", "Class"])
                 sns.lmplot("PC1", "PC2", bar, hue="Class", fit_reg=False)
 
 
@@ -191,18 +191,17 @@ class ITA_PCA(PCA):
                 cmap = 'bwr'
         L = self.loadings()[:num]
         if loadings:
-                N = len(c)
-                ncols = kargs.get('ncols', 4)
-                width = kargs.get('width', 21)
-                Ny = (N-1)//ncols+2
-                Nx = min(ncols, N)
-                from matplotlib.gridspec import GridSpec
-                import matplotlib.pyplot as pl
-                fig = plt.figure(figsize=(width, (Ny-1)*width/Nx+width*N/len(L.columns)))
-                gs = GridSpec(Ny, Nx, height_ratios=[width/Nx for i in range(Ny-1)]+[width*N/len(L.columns)])
-                ax = [plt.subplot(gs[i,j]) for i in range(Ny-1) for j in range(Nx)]
-                axh = plt.subplot(gs[-1,:])
-                self.hinton(matrix=L, ax=axh)
+            N = len(c)
+            ncols = kargs.get('ncols', 4)
+            width = kargs.get('width', 21)
+            Ny = (N - 1) // ncols + 2
+            Nx = min(ncols, N)
+            from matplotlib.gridspec import GridSpec
+            fig = plt.figure(figsize=(width, (Ny - 1) * width / Nx + width * N / len(L.columns)))
+            gs = GridSpec(Ny, Nx, height_ratios=[width / Nx for i in range(Ny - 1)] + [width * N / len(L.columns)])
+            ax = [plt.subplot(gs[i, j]) for i in range(Ny - 1) for j in range(Nx)]
+            axh = plt.subplot(gs[-1, :])
+            self.hinton(matrix=L, ax=axh)
         c.show(ax=ax, cmap=cmap, symmetric=symmetric, **kargs)
         return L
 
@@ -212,14 +211,14 @@ class ITA_PCA(PCA):
             num = self.data.shape[1]
         assert num <= self.data.shape[1]
         PCA_col = collection.Collection(
-            cls=self.col, name=self.col.name+"[PCA]")
+            cls=self.col, name=self.col.name + "[PCA]")
         for i in range(num):
             PC = self.get_pca(i)
             if pn:
-                PCA_col.add(PC*(PC>=0), 'PC{0}+'.format(i+1))
-                PCA_col.add(-PC*(PC<=0), 'PC{0}-'.format(i+1))
+                PCA_col.add(PC * (PC >= 0), 'PC{0}+'.format(i + 1))
+                PCA_col.add(-PC * (PC <= 0), 'PC{0}-'.format(i + 1))
             else:
-                PCA_col.add(PC, 'PC{0}'.format(i+1))
+                PCA_col.add(PC, 'PC{0}'.format(i + 1))
         return PCA_col
 
     @alias("getPCA")
