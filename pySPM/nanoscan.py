@@ -2,14 +2,17 @@
 
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
-import os
 import base64
-import xml.etree.ElementTree as ET
+import os
 import struct
+import xml.etree.ElementTree as ET
+
 import numpy as np
+
 import pySPM.SPM
 from pySPM.SPM import SPM_image, funit
 from .utils.misc import aliased, alias, deprecated
+
 
 @deprecated("getCurve")
 def get_curve(filename, channel='Normal Deflection', backward=False):
@@ -33,9 +36,10 @@ def get_curve(filename, channel='Normal Deflection', backward=False):
                         "/spm:unit/spm:v", namespace)[0].text
     BIN = base64.b64decode(RAW)
     N = len(BIN)
-    vals = np.array(struct.unpack("<"+str(N//4)+"f", BIN))
+    vals = np.array(struct.unpack("<" + str(N // 4) + "f", BIN))
     x = np.linspace(start, stop, len(vals))
     return x, vals
+
 
 @aliased
 class Nanoscan():
@@ -61,10 +65,10 @@ class Nanoscan():
             udisps = float(self.__grab(
                 ".//spm:area/spm:contents/spm:display_scale/spm:v"))
             uname = self.__grab(".//spm:area/spm:contents/spm:unit/spm:v")
-            x = funit(uval*udisps, udispu)
+            x = funit(uval * udisps, udispu)
             uval = float(self.__grab(
                 ".//spm:area//spm:contents/spm:size/spm:contents/spm:slow_axis/spm:v"))
-            y = funit(uval*udisps, udispu)
+            y = funit(uval * udisps, udispu)
             self.size = {
                 'unit': x['unit'],
                 'x': x['value'],
@@ -84,21 +88,27 @@ class Nanoscan():
                 self.feedback = {}
             self.scan_speed = {
                 z: {
-                    'value': float(self.__grab("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{dir}']/../spm:point_interval/spm:v".format(dir=z))) * self.pixel_size[0],
-                    'unit': self.__grab("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{dir}']/../spm:point_interval_unit/spm:v".format(dir=z))} for z in ['forward', 'backward']}
+                    'value': float(self.__grab(
+                        "spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{dir}']/../spm:point_interval/spm:v".format(
+                            dir=z))) * self.pixel_size[0],
+                    'unit': self.__grab(
+                        "spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{dir}']/../spm:point_interval_unit/spm:v".format(
+                            dir=z))} for z in ['forward', 'backward']}
         else:
             raise TypeError(
                 "Unknown or wrong data type. Expecting a valid Nanoscan xml")
-    
+
     def list_channels(self):
         """
         Printout the list of stored channels
         """
-        for d in ['forward','backward']:
+        for d in ['forward', 'backward']:
             print(d)
-            print("="*len(d))
-            for z in self.root.findall("spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{}']/../spm:channel//spm:contents/spm:name/spm:v".format(d), self.namespaces):
-                print("  - "+z.text)
+            print("=" * len(d))
+            for z in self.root.findall(
+                    "spm:vector//spm:direction/spm:vector/spm:contents/spm:name[spm:v='{}']/../spm:channel//spm:contents/spm:name/spm:v".format(
+                        d), self.namespaces):
+                print("  - " + z.text)
             print()
 
     def get_channel(self, channel='Topography', backward=False, corr=None):
@@ -108,16 +118,16 @@ class Nanoscan():
                               "/../spm:data/spm:v".format(direction=["forward", "backward"][backward], channel=channel))
         except:
             raise 'Channel {0} in {1} scan not found'.format(
-                channel, direction)
+                channel, "backward" if backward else "forward")
             return None
 
         BIN = base64.b64decode(RAW)
-        recorded_length = len(BIN)/4
+        recorded_length = len(BIN) / 4
 
-        py = int(recorded_length/self.pixel_size[0])
+        py = int(recorded_length / self.pixel_size[0])
         recorded_size = {
             'x': self.size['x'],
-            'y': self.size['y']*py/float(self.pixel_size[1]),
+            'y': self.size['y'] * py / float(self.pixel_size[1]),
             'unit': self.size['unit']}
 
         image_array = np.array(struct.unpack("<%if" % (recorded_length), BIN)).reshape(
@@ -132,7 +142,6 @@ class Nanoscan():
 
     @deprecated("arraySummary")
     def array_summary(self):
-        from pySPM.utils import htmlTable
         res = [y.format(**self.__dict__) for y in
                ["{filename}", "{pixel_size[0]}×{pixel_size[1]}", "{size[x][value]}×{size[y][value]} {size[x][unit]}",
                 "{scan_speed[forward][value]} {scan_speed[forward][unit]}",
@@ -158,10 +167,12 @@ Scan Speed: {scanSpeed[value]}{scanSpeed[unit]}/line""".format(
                 "scan_speed", "feedback", "P", "I"]]
         for x in os.listdir(path):
             try:
-                A = pySPM.Nanoscan(path+x)
+                A = pySPM.Nanoscan(path + x)
                 res.append([y.format(f=os.path.basename(A.filename), **A.__dict__) for y in
-                        ["{f}", "{pixel_size[0]}×{pixel_size[1]}", "{size[x]}×{size[y]} {size[unit]}", "{scan_speed[forward][value]} {scan_speed[forward][unit]}",
-                         "{feedback[channel]}", "{feedback[P][value]:.2f} {feedback[P][unit]}", "{feedback[I][value]:.2f} {feedback[I][unit]}"]])
+                            ["{f}", "{pixel_size[0]}×{pixel_size[1]}", "{size[x]}×{size[y]} {size[unit]}",
+                             "{scan_speed[forward][value]} {scan_speed[forward][unit]}",
+                             "{feedback[channel]}", "{feedback[P][value]:.2f} {feedback[P][unit]}",
+                             "{feedback[I][value]:.2f} {feedback[I][unit]}"]])
             except:
-                print("Cannot read image \""+x+"\" skipping it")
+                print("Cannot read image \"" + x + "\" skipping it")
         htmlTable(res, header=True)

@@ -7,10 +7,12 @@
 Various helper function for plotting data with matplotlib
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib as mpl
-from .misc import dec_debug, do_debug, alias
+import matplotlib.pyplot as plt
+import numpy as np
+
+from .misc import alias
+
 
 @alias("plot_mask")
 def plotMask(ax, mask, color, **kargs):
@@ -29,7 +31,8 @@ def plotMask(ax, mask, color, **kargs):
     palette.set_over(color, 1.0)
     ax.imshow(m, cmap=palette, vmin=0, vmax=0.5, **kargs)
 
-def offset_coord(xy, offset=(0,0), ax=None, fig=None, unit='px'):
+
+def offset_coord(xy, offset=(0, 0), ax=None, fig=None, unit='px'):
     if ax is None:
         ax = plt.gca()
 
@@ -45,9 +48,11 @@ def offset_coord(xy, offset=(0,0), ax=None, fig=None, unit='px'):
         offset = ax.transAxes.transform(offset)
     elif unit == 'fig':
         offset = fig.transFigure.transform(offset)
-    return tri.transform(tr.transform(xy)+offset)
+    return tri.transform(tr.transform(xy) + offset)
 
-def Xdist(ax,left, right, y, color='r', linestyle=':', fmt="{dist:.1f}{unit}", xtransf=lambda x: x, va='bottom', ha='center', offset=(0,2), **kargs):
+
+def Xdist(ax, left, right, y, color='r', linestyle=':', fmt="{dist:.1f}{unit}", xtransf=lambda x: x, va='bottom',
+          ha='center', offset=(0, 2), **kargs):
     """
     Show the distance between to x-values
     
@@ -68,17 +73,21 @@ def Xdist(ax,left, right, y, color='r', linestyle=':', fmt="{dist:.1f}{unit}", x
         arguments starting with arr_ will be sent to the arrow
         for example arr_color='r', ann_color='b' will display a red arrow with the distance in blue
     """
-    
+
     ax.axvline(left, color=color, linestyle=linestyle)
     ax.axvline(right, color=color, linestyle=linestyle)
     ann = dict(va=va, ha=ha, color=color)
-    ann.update({k[3:]:kargs[k] for k in kargs if k.startswith('an_')})
-    ax.annotate(fmt.format(dist=xtransf(right-left),unit=kargs.get('unit','')), ({'center':.5*(left+right),'left':right,'right':left}[ann['ha']], y), offset, textcoords='offset pixels', **ann)
-    arr = dict(arrowstyle='<->',color=color)
-    arr.update({k[4:]:kargs[k] for k in kargs if k.startswith('arr_')})
+    ann.update({k[3:]: kargs[k] for k in kargs if k.startswith('an_')})
+    ax.annotate(fmt.format(dist=xtransf(right - left), unit=kargs.get('unit', '')),
+                ({'center': .5 * (left + right), 'left': right, 'right': left}[ann['ha']], y), offset,
+                textcoords='offset pixels', **ann)
+    arr = dict(arrowstyle='<->', color=color)
+    arr.update({k[4:]: kargs[k] for k in kargs if k.startswith('arr_')})
     ax.annotate("", (left, y), (right, y), arrowprops=arr)
 
-def Ydist(ax, down, up, x, color='r', linestyle=':', fmt="{dist:.2f}{unit}", ytransf=lambda y: y, rotation=90, va='center', ha='right', offset=(-2,0), **kargs):
+
+def Ydist(ax, down, up, x, color='r', linestyle=':', fmt="{dist:.2f}{unit}", ytransf=lambda y: y, rotation=90,
+          va='center', ha='right', offset=(-2, 0), **kargs):
     """
     Show the distance between to x-values
     
@@ -99,18 +108,21 @@ def Ydist(ax, down, up, x, color='r', linestyle=':', fmt="{dist:.2f}{unit}", ytr
         arguments starting with arr_ will be sent to the arrow
         for example arr_color='r', ann_color='b' will display a red arrow with the distance in blue
     """
-    
+
     ax.axhline(down, color=color, linestyle=linestyle)
     ax.axhline(up, color=color, linestyle=linestyle)
     ann = dict(va=va, ha=ha, color=color)
-    ann.update({k[3:]:kargs[k] for k in kargs if k.startswith('an_')})
-    ax.annotate(fmt.format(dist=ytransf(up-down),unit=kargs.get('unit','')), (x,{'center':.5*(down+up),'top':up,'bottom':down}[ann['va']]), offset, textcoords='offset pixels', rotation=rotation, **ann)
-    arr = dict(arrowstyle='<->',color=color)
-    arr.update({k[4:]:kargs[k] for k in kargs if k.startswith('arr_')})
+    ann.update({k[3:]: kargs[k] for k in kargs if k.startswith('an_')})
+    ax.annotate(fmt.format(dist=ytransf(up - down), unit=kargs.get('unit', '')),
+                (x, {'center': .5 * (down + up), 'top': up, 'bottom': down}[ann['va']]), offset,
+                textcoords='offset pixels', rotation=rotation, **ann)
+    arr = dict(arrowstyle='<->', color=color)
+    arr.update({k[4:]: kargs[k] for k in kargs if k.startswith('arr_')})
     ax.annotate("", (x, down), (x, up), arrowprops=arr)
 
-@alias("DualPlot")    
-def dual_plot(ax, col1='C0',col2='C1'):
+
+@alias("DualPlot")
+def dual_plot(ax, col1='C0', col2='C1'):
     """
     Create a dual axis from ax and tune the color of the left/right axes to col1, col2 resp.
     """
@@ -123,6 +135,7 @@ def dual_plot(ax, col1='C0',col2='C1'):
     axb.tick_params(axis='y', colors=col2)
     return axb
 
+
 def sp(M, N=1, W=21, ravel=True, fig=False):
     """
     Shortcut for creating subplots with max width = W (default 21,
@@ -133,8 +146,8 @@ def sp(M, N=1, W=21, ravel=True, fig=False):
     """
     if N < 0:
         tot = -N
-        N = 1+(tot-1)//M
-    f, ax = plt.subplots(N, M, figsize=(W, N*W/M))
+        N = 1 + (tot - 1) // M
+    f, ax = plt.subplots(N, M, figsize=(W, N * W / M))
     if ravel:
         if fig:
             return np.ravel(ax), f
@@ -142,7 +155,8 @@ def sp(M, N=1, W=21, ravel=True, fig=False):
     if fig:
         return ax, f
     return ax
-    
+
+
 def get_rect(img, bottom, top, left, right, ax, color='r'):
     """
     return a sub-area on a 2D-array img and display the boundaries on a matplotlib axis ax
@@ -152,13 +166,14 @@ def get_rect(img, bottom, top, left, right, ax, color='r'):
     ax.axvline(left, color=color)
     ax.axvline(right, color=color)
     return img[bottom:top, left:right]
-    
+
+
 def sublegend(*ax, **kargs):
-    labels   = kargs.get('labels', None)
-    color    = kargs.get('color', 'white')
-    margin   = kargs.get('margin', 9)
-    titles   = kargs.get('titles', None)
-    fontsize = kargs.get('fontsize',14)
+    labels = kargs.get('labels', None)
+    color = kargs.get('color', 'white')
+    margin = kargs.get('margin', 9)
+    titles = kargs.get('titles', None)
+    fontsize = kargs.get('fontsize', 14)
     """
     ax: list of axes
     labels: If None, the will be a, b, c, d, ...
@@ -167,78 +182,88 @@ def sublegend(*ax, **kargs):
     titles: set to False to remove all titles. (Useful to keep the set_title info in the code to remember what is plotted)
     fontsize: The font size of the labels
     """
-    props = dict(boxstyle='round', facecolor=color, alpha=1)  
+    props = dict(boxstyle='round', facecolor=color, alpha=1)
     if not hasattr(margin, "__getitem__") and not hasattr(margin, "__iter__"):
         margin = (margin, margin)
 
     if labels is None:
-        labels = [chr(ord('a')+i) for i,_ in enumerate(np.ravel(ax))]
-    for i,a in enumerate(np.ravel(ax)):
+        labels = [chr(ord('a') + i) for i, _ in enumerate(np.ravel(ax))]
+    for i, a in enumerate(np.ravel(ax)):
         if titles is False:
             a.set_title("")
-        a.annotate(labels[i],(0, 1),xytext=(margin[0],-margin[1]),fontsize=fontsize,verticalalignment='top', bbox=props, xycoords='axes fraction',textcoords='offset pixels');
+        a.annotate(labels[i], (0, 1), xytext=(margin[0], -margin[1]), fontsize=fontsize, verticalalignment='top',
+                   bbox=props, xycoords='axes fraction', textcoords='offset pixels');
+
 
 def formula(x):
     import re
-    x = re.sub('_([0-9]+)',r'$_{\1}$',x)
-    x = re.sub(r'\^([0-9\+\-]+)',r'$^{\1}$',x)
+    x = re.sub('_([0-9]+)', r'$_{\1}$', x)
+    x = re.sub(r'\^([0-9\+\-]+)', r'$^{\1}$', x)
     return x
 
-def _points_in_bbox(x,y,bbox):
-    x_in = np.logical_and(x>=bbox.xmin, x<=bbox.xmax)
-    y_in = np.logical_and(y>=bbox.ymin, y<=bbox.ymax)
+
+def _points_in_bbox(x, y, bbox):
+    x_in = np.logical_and(x >= bbox.xmin, x <= bbox.xmax)
+    y_in = np.logical_and(y >= bbox.ymin, y <= bbox.ymax)
     mask = x_in & y_in
     return np.any(mask), mask
+
 
 def _bbox_overlap(bbox1, bbox2):
     x_overlap = (bbox1.xmax >= bbox2.xmin) and (bbox1.xmin <= bbox2.xmax)
     y_overlap = (bbox1.ymax >= bbox2.ymin) and (bbox1.ymin <= bbox2.ymax)
     return x_overlap and y_overlap
 
+
 _cached_points = {}
 _cached_pointsd = {}
+
 
 def _overlap(ax, obj, objs, debug=False):
     global _cached_points
     fig = ax.get_figure()
     renderer = fig.canvas.get_renderer()
     tr = ax.transData
-#    tri = tr.inverted()
-    r = obj.get_window_extent(renderer) # got object bbox
+    #    tri = tr.inverted()
+    r = obj.get_window_extent(renderer)  # got object bbox
     for o in objs:
         if type(o) is mpl.lines.Line2D:
             if o in _cached_points:
                 xy = _cached_points[o]
                 xyd = _cached_pointsd[o]
             else:
-                xyd = np.vstack(o.get_data()).T # retriev data in data coordinates
-                xy = tr.transform(xyd) # retrieve data in pixel coordinates
+                xyd = np.vstack(o.get_data()).T  # retriev data in data coordinates
+                xy = tr.transform(xyd)  # retrieve data in pixel coordinates
                 _cached_points[o] = xy
                 _cached_pointsd[o] = xyd
-            isin, ins = _points_in_bbox(xy[:,0],xy[:,1],r)
+            isin, ins = _points_in_bbox(xy[:, 0], xy[:, 1], r)
             if isin:
-                if debug: ax.plot(xyd[:,0][ins],xyd[:,1][ins],'rx')
+                if debug: ax.plot(xyd[:, 0][ins], xyd[:, 1][ins], 'rx')
                 return o
         else:
             ro = o.get_window_extent(renderer)
-            if _bbox_overlap(r,ro):
+            if _bbox_overlap(r, ro):
                 return o
     return False
 
-def color_frame(ax, color, sx = 0.01, sy=None, lw = 5, **kargs):
+
+def color_frame(ax, color, sx=0.01, sy=None, lw=5, **kargs):
     if sy is None:
         sy = sx
     import matplotlib as mpl
     fig = plt.gcf()
-    fig.patches.append(mpl.patches.Rectangle((-sx,-sy), 1+2*sx,1+2*sy, transform=ax.transAxes, ec=color, fill=False, lw=lw, zorder=0, **kargs))
+    fig.patches.append(
+        mpl.patches.Rectangle((-sx, -sy), 1 + 2 * sx, 1 + 2 * sy, transform=ax.transAxes, ec=color, fill=False, lw=lw,
+                              zorder=0, **kargs))
+
 
 def _get_yextend_of_curve(ax, bbox, curve):
     tri = ax.transData.inverted()
-    rd = bbox.transformed(tri) # bbox in data coordinates
+    rd = bbox.transformed(tri)  # bbox in data coordinates
     x, y = curve.get_data()
-    mask = (x>=rd.xmin)*(x<=rd.xmax)
-    if len(y[mask])==0:
-        return (0,0)
+    mask = (x >= rd.xmin) * (x <= rd.xmax)
+    if len(y[mask]) == 0:
+        return (0, 0)
     return (np.min(y[mask]), np.max(y[mask]))
 
 
@@ -246,27 +271,29 @@ def put_Xlabels(ax, pos, labels, colors='rgb', debug=False, save=False, bbox=Fal
     fig = ax.get_figure()
     renderer = fig.canvas.get_renderer()
     P = list(zip(pos, labels))
-    P.sort(key=lambda x: x[0]) # sort labels by ascending x
+    P.sort(key=lambda x: x[0])  # sort labels by ascending x
     labs = []
-    ax.draw(renderer) # make sure to draw the new object
+    ax.draw(renderer)  # make sure to draw the new object
     ylim = ax.get_ylim()
     objs = [o for o in ax.get_children() if type(o) not in [mpl.patches.Rectangle]]
     coli = [None, None]
     for i, (x, lab) in enumerate(P):
-        col = colors[i%len(colors)]
+        col = colors[i % len(colors)]
         pos = offset_coord((x, ylim[0]), (3, 0), ax=ax)
         labs.append(ax.text(pos[0], pos[1], lab, va='bottom', ha='left', rotation=90, color=col))
-        ax.axvline(x, color=col, linestyle=kargs.get('linestyle','-'), alpha=kargs.get('line_alpha',.5))
-        ax.draw(renderer) # make sure to draw the new object
-        r = labs[-1].get_window_extent(renderer) # get the Bbox of the last label
-        ov = _overlap(ax, labs[-1], objs+labs[:-1])
+        ax.axvline(x, color=col, linestyle=kargs.get('linestyle', '-'), alpha=kargs.get('line_alpha', .5))
+        ax.draw(renderer)  # make sure to draw the new object
+        r = labs[-1].get_window_extent(renderer)  # get the Bbox of the last label
+        ov = _overlap(ax, labs[-1], objs + labs[:-1])
         if save:
             if ov:
                 r1 = r.transformed(ax.transData.inverted())
                 r2 = ov.get_window_extent(renderer).transformed(ax.transData.inverted())
                 print(repr(ov), r2.ymin, r2.ymax)
-                coli[0] = mpl.patches.Rectangle((r1.xmin, r1.ymin), r1.xmax-r1.xmin, r1.ymax-r1.ymin, ec='b', fill=False)                
-                coli[1] = mpl.patches.Rectangle((r2.xmin, r2.ymin), r2.xmax-r2.xmin, r2.ymax-r2.ymin, ec='r', fill=False)
+                coli[0] = mpl.patches.Rectangle((r1.xmin, r1.ymin), r1.xmax - r1.xmin, r1.ymax - r1.ymin, ec='b',
+                                                fill=False)
+                coli[1] = mpl.patches.Rectangle((r2.xmin, r2.ymin), r2.xmax - r2.xmin, r2.ymax - r2.ymin, ec='r',
+                                                fill=False)
 
                 ax.add_patch(coli[0])
                 ax.add_patch(coli[1])
@@ -287,21 +314,21 @@ def put_Xlabels(ax, pos, labels, colors='rgb', debug=False, save=False, bbox=Fal
                 new_y = rov.ymax
             if ov == last_ov:
                 y_offset += kargs.get('offset_step', 5)
-                if y_offset > kargs.get('offset_step', 5)*kargs.get('max_iteration', 6):
+                if y_offset > kargs.get('offset_step', 5) * kargs.get('max_iteration', 6):
                     break
             else:
                 y_offset = kargs.get('offset_step', 5)
             last_ov = ov
-            new_xy_px = ax.transData.transform((x,new_y))+np.array([3,y_offset])
-            new_xy = ax.transData.inverted().transform(new_xy_px) # Offset the new_y of 5 pixels
+            new_xy_px = ax.transData.transform((x, new_y)) + np.array([3, y_offset])
+            new_xy = ax.transData.inverted().transform(new_xy_px)  # Offset the new_y of 5 pixels
             labs[-1].set_position(new_xy)
             ax.draw(renderer)
-            ov = _overlap(ax, labs[-1], objs+labs[:-1], debug=debug)
+            ov = _overlap(ax, labs[-1], objs + labs[:-1], debug=debug)
             if save:
                 ax.draw(renderer)
-                fig.savefig("put_Xlabels_{:03d}_{:03d}.png".format(i,it))
+                fig.savefig("put_Xlabels_{:03d}_{:03d}.png".format(i, it))
                 if ov:
-                    r2 = ov.get_window_extent(renderer) # get the Bbox of the last label
+                    r2 = ov.get_window_extent(renderer)  # get the Bbox of the last label
                     mpl.patches.draw_bbox(r, renderer, color='r')
                     mpl.patches.draw_bbox(r2, renderer, color='r')
     if bbox:
@@ -310,14 +337,15 @@ def put_Xlabels(ax, pos, labels, colors='rgb', debug=False, save=False, bbox=Fal
             if type(o) is not mpl.lines.Line2D:
                 r = o.get_window_extent(renderer).transformed(ax.transData.inverted())
                 ax.add_patch(
-                        mpl.patches.Rectangle((r.xmin,r.ymin), r.xmax-r.xmin, r.ymax-r.ymin, ec='r', fill=False)
-                        )
+                    mpl.patches.Rectangle((r.xmin, r.ymin), r.xmax - r.xmin, r.ymax - r.ymin, ec='r', fill=False)
+                )
 
         for l in labs:
             r = l.get_window_extent(renderer).transformed(ax.transData.inverted())
             ax.add_patch(
-                    mpl.patches.Rectangle((r.xmin,r.ymin), r.xmax-r.xmin, r.ymax-r.ymin, ec='b', fill=False)
-                    )
+                mpl.patches.Rectangle((r.xmin, r.ymin), r.xmax - r.xmin, r.ymax - r.ymin, ec='b', fill=False)
+            )
+
 
 def stdplot(x, y, Nsig=2, ax=None, color='b', axis=1, **kargs):
     """
@@ -343,9 +371,10 @@ def stdplot(x, y, Nsig=2, ax=None, color='b', axis=1, **kargs):
     dy = np.std(y, axis=axis)
     mean = np.mean(y, axis=axis)
     ax.plot(x, mean, color=color, **kargs)
-    for i in range(1, Nsig+1):
-        ax.fill_between(x, mean-i*dy, mean+i*dy, color=color, alpha=.2)
-        
+    for i in range(1, Nsig + 1):
+        ax.fill_between(x, mean - i * dy, mean + i * dy, color=color, alpha=.2)
+
+
 def pixel2img(xy, ax=None):
     """
     Plot create by SPM.show can be either in pixels or real unit.
@@ -360,8 +389,7 @@ def pixel2img(xy, ax=None):
         if not ax.isPixel:
             pixel_shape = ax.images[0].get_array().shape
             extent = ax.images[0].get_extent()
-            eW = extent[1]-extent[0]
-            eH = extent[3]-extent[2]
-            return (xy[0]*eW/pixel_shape[1], xy[1]*eH/pixel_shape[0])
+            eW = extent[1] - extent[0]
+            eH = extent[3] - extent[2]
+            return (xy[0] * eW / pixel_shape[1], xy[1] * eH / pixel_shape[0])
     return xy
-        

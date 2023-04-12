@@ -14,8 +14,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../pySPM'))
 
+sys.path.insert(0, os.path.abspath('../pySPM'))
 
 # -- Project information -----------------------------------------------------
 
@@ -27,7 +27,6 @@ author = 'Olivier Scholder'
 version = ''
 # The full version, including alpha/beta/rc tags
 release = 'v0.2.4'
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -70,7 +69,6 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -105,7 +103,6 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'pySPMdoc'
 
-
 # -- Options for LaTeX output ------------------------------------------------
 
 latex_elements = {
@@ -134,7 +131,6 @@ latex_documents = [
      'Olivier Scholder', 'manual'),
 ]
 
-
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
@@ -143,7 +139,6 @@ man_pages = [
     (master_doc, 'pyspm', 'pySPM Documentation',
      [author], 1)
 ]
-
 
 # -- Options for Texinfo output ----------------------------------------------
 
@@ -155,6 +150,5 @@ texinfo_documents = [
      author, 'pySPM', 'One line description of project.',
      'Miscellaneous'),
 ]
-
 
 # -- Extension configuration -------------------------------------------------

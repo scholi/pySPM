@@ -6,7 +6,8 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
+
 
 class Ui_ToF_Timer(object):
     def setupUi(self, ToF_Timer):
@@ -42,4 +43,3 @@ class Ui_ToF_Timer(object):
         self.label.setText(_translate("ToF_Timer", "Remaining time: 00:00:00"))
         self.label_2.setText(_translate("ToF_Timer", "Scans: 0/0"))
         self.label_3.setText(_translate("ToF_Timer", "Analysis time: 0 s"))
-
