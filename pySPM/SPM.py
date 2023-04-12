@@ -394,14 +394,14 @@ class SPM_image:
         Correct the image by subtracting a fitted slope along the y-axis
         """
         s = np.mean(self.pixels, axis=1)
-        i = np.arange(len(s))
+        i = np.arange(s.shape[0])
         fit = np.polyfit(i, s, 1)
         if inline:
-            self.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
+            self.pixels -= np.tile(np.polyval(fit, i).reshape(self.pixels.shape[0], 1), self.pixels.shape[1])
             return self
         else:
             New = copy.deepcopy(self)
-            New.pixels -= np.tile(np.polyval(fit, i).reshape(len(i), 1), len(i))
+            New.pixels -= np.tile(np.polyval(fit, i).reshape(self.pixels.shape[0], 1), self.pixels.shape[1])
             return New
 
     def correct_plane(self, inline=True, mask=None):
@@ -445,11 +445,11 @@ class SPM_image:
         if inline is True the current data are updated otherwise a new image with the corrected data is returned
         """
         if inline:
-            self.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0], 1)).T
+            self.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[1], 1)).T
             return self
         else:
             New = copy.deepcopy(self)
-            New.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[0], 1)).T
+            New.pixels -= np.tile(np.mean(self.pixels, axis=1).T, (self.pixels.shape[1], 1)).T
             return New
 
     def dist_v2(self, pixel=False):
