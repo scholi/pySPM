@@ -96,11 +96,13 @@ class Bruker:
             if mfm:
                 # Handle case of MFM, where image data is stored at layer 3 on the backward channel
                 backward = True
+                _type = "Bruker MFM"
                 try:
                     layer_name = self.layers[i][b'@3:Image Data'][0].decode(encoding)
                 except KeyError:
                     continue
             else:
+                _type = "Bruker AFM"
                 try:
                     layer_name = self.layers[i][b'@2:Image Data'][0].decode(encoding)
                 except KeyError:
@@ -179,7 +181,7 @@ class Bruker:
                         channel=[channel, 'Topography'][channel == 'Height Sensor'],
                         BIN=data,
                         real=size,
-                        _type='Bruker AFM',
+                        _type=_type,
                         zscale=zscale.decode(encoding),
                         corr=corr)
                     return image

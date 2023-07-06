@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyspm"
-version = "0.3.0"
+version = "0.3.2"
 description = "Library to handle SPM and ToF-SIMS data"
 authors = ["Olivier Scholder <o.scholder@gmail.com>"]
 maintainers = ["Dinesh Pinto <annual.fallout_0z@icloud.com>"]
