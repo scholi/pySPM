@@ -9,10 +9,12 @@ This is specially useful for SPM data which store several channels for the same 
 
 import copy
 import re
-import numpy as np
+
 import matplotlib.pyplot as plt
-from .SPM import SPM_image
+import numpy as np
+
 from . import SPM
+from .SPM import SPM_image
 
 
 def atoi(text):
@@ -73,23 +75,23 @@ class Collection:
                 del self.channels[name]
             else:
                 raise KeyError('The channel {} is already present in '
-                           'the collection. Please delete it before')
+                               'the collection. Please delete it before')
                 return
         self.channels[name] = Img
-        
+
     def create_image(self, img, key=None):
         return SPM_image(img, _type=self.name, real=self.size, channel=key)
 
     def __len__(self):
         return len(self.channels)
-        
+
     def __getitem__(self, key):
         if key not in self.channels:
             return None
         if isinstance(self.channels[key], SPM_image):
             return self.channels[key]
         return self.create_image(self.channels[key], key=key)
-        
+
     def __delitem__(self, key):
         del self.channels[key]
 
@@ -121,16 +123,16 @@ class Collection:
         assert channels_number > 0
         channels.sort(key=natural_keys)
         if ax is None:
-            if channels_number == 4 and ncols==3:
+            if channels_number == 4 and ncols == 3:
                 fig, ax = plt.subplots(2, 2, figsize=(width,
                                                       self[channels[0]].pixels.shape[
-                                                          0]*width
+                                                          0] * width
                                                       / self[channels[0]].pixels.shape[1]))
             else:
-                Ny = (channels_number-1)//ncols+1
+                Ny = (channels_number - 1) // ncols + 1
                 Nx = min(ncols, channels_number)
                 fig, ax = plt.subplots(Ny, Nx,
-                                       figsize=(width, ((channels_number-1)//ncols+1)*width/Nx))
+                                       figsize=(width, ((channels_number - 1) // ncols + 1) * width / Nx))
         if type(ax) is not list:
             ax = np.array(ax).ravel()
         for i, x in enumerate(channels):
@@ -155,7 +157,7 @@ class Collection:
                 {k: self.channels[k].ravel() for k in channels})
         return data
 
-    def overlay(self, channel_names, colors=[[1, 0, 0], [0,1,0],[0,0,1]],
+    def overlay(self, channel_names, colors=[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
                 sig=None, vmin=None, vmax=None, **kargs):
         """
         Create an overlay (in color) of several channels.
@@ -168,11 +170,11 @@ class Collection:
         data = [SPM.normalize(
             self[ch].pixels, sig=sig, vmin=vmin, vmax=vmax)
             for ch in channel_names]
-        layers = [np.stack([data[i]*colors[i][j] for j in range(3)], axis=2)
+        layers = [np.stack([data[i] * colors[i][j] for j in range(3)], axis=2)
                   for i in range(len(channel_names))]
         overlay = np.clip(np.sum(layers, axis=0), 0, 1)
         o = self.create_image(overlay, key="overlay")
-        ch = [self.create_image(x, key=self[channel_names[i]].channel) for i,x in enumerate(layers)]
+        ch = [self.create_image(x, key=self[channel_names[i]].channel) for i, x in enumerate(layers)]
         if 'ax' in kargs:
             o.show(**kargs)
         return o, ch
@@ -191,18 +193,18 @@ class Collection:
         del result.channels
         result.channels = {}
         size = list(self.channels.values())[0]
-        S = np.zeros((size[0]/stitches[0], size[1]/stitches[1]))
+        S = np.zeros((size[0] / stitches[0], size[1] / stitches[1]))
         for i in range(stitches[0]):
             for j in range(stitches[1]):
-                S += self.channels[channel][sy*i:sy*(i+1), sx*j:sx*(j+1)]
+                S += self.channels[channel][sy * i:sy * (i + 1), sx * j:sx * (j + 1)]
         S[S == 0] = 1
         sy, sx = S.shape
         for x in self.channels:
             F = np.zeros(size)
             for i in range(stitches[0]):
                 for j in range(stitches[1]):
-                    F[sy*i:sy*(i+1), sx*j:sx*(j+1)] \
-                        = self.channels[x][sy*i:sy*(i+1), sx*j:sx*(j+1)]/S
+                    F[sy * i:sy * (i + 1), sx * j:sx * (j + 1)] \
+                        = self.channels[x][sy * i:sy * (i + 1), sx * j:sx * (j + 1)] / S
             result.add(F, x)
         return result
 
@@ -222,7 +224,8 @@ def PointInTriangle(pt, v1, v2, v3):
     return (b1 == b2) * (b2 == b3)
 
 
-def overlay_triangle(channel_names, colors=[[1,0,0],[0,1,0],[0,0,1]], radius=.8,proportion = .8,ax=None, size=512, bgcolor=[0,0,0], textcolor='white',fontsize=20):
+def overlay_triangle(channel_names, colors=[[1, 0, 0], [0, 1, 0], [0, 0, 1]], radius=.8, proportion=.8, ax=None,
+                     size=512, bgcolor=[0, 0, 0], textcolor='white', fontsize=20):
     """
     Create the image of a triangle, where the color is a gradient between three colors
     (one for each vertex).
@@ -238,21 +241,21 @@ def overlay_triangle(channel_names, colors=[[1,0,0],[0,1,0],[0,0,1]], radius=.8,
     assert len(colors) == 3
     if ax is None:
         ax = plt.gca()
-    RGB = [bgcolor[i]*np.ones((size, size)) for i in range(3)]
-    distance = 2*radius*proportion*np.sin(np.radians(120))
+    RGB = [bgcolor[i] * np.ones((size, size)) for i in range(3)]
+    distance = 2 * radius * proportion * np.sin(np.radians(120))
 
     x = np.linspace(-.7, 1.1, size)
     y = np.linspace(-1, 1, size)
     X, Y = np.meshgrid(x, y)
-    centers = [(radius*proportion*np.cos(np.radians(120*i)), radius *
-                proportion*np.sin(np.radians(120*i))) for i in range(3)]
-    dist = [np.sqrt((X-centers[i][0])**2+(Y-centers[i][1])**2)
+    centers = [(radius * proportion * np.cos(np.radians(120 * i)), radius *
+                proportion * np.sin(np.radians(120 * i))) for i in range(3)]
+    dist = [np.sqrt((X - centers[i][0]) ** 2 + (Y - centers[i][1]) ** 2)
             for i in range(3)]
 
     for j in range(3):
         RGB[j] = sum(
-            [colors[i][j]*np.maximum((distance-dist[i])/distance, 0) for i in range(3)])
-        ax.annotate(channel_names[j], (radius*np.cos(np.radians(120*j)), radius*np.sin(np.radians(120*j))),
+            [colors[i][j] * np.maximum((distance - dist[i]) / distance, 0) for i in range(3)])
+        ax.annotate(channel_names[j], (radius * np.cos(np.radians(120 * j)), radius * np.sin(np.radians(120 * j))),
                     color=textcolor,
                     fontsize=fontsize,
                     va="center",

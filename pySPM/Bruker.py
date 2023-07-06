@@ -6,6 +6,7 @@
 Module to handle SPM images recorded by a Bruker AFM
 """
 
+import struct
 import re
 import struct
 

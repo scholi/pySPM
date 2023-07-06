@@ -17,10 +17,12 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Information:**
- - OS: [e.g. windows]
+
+- OS: [e.g. windows]
 - Python and pySPM version.
 
 Please run the following and attach the result to your issue
+
 ```python
 import sys
 import pySPM

@@ -1,5 +1,5 @@
 from .win32_helper import *
-import psutil
+
 
 class Fpanel:
     def __init__(self):
@@ -9,7 +9,7 @@ class Fpanel:
             self.hwnd = findWindow("Fpanel")[0]
         else:
             raise Exception("Fpanel is not running")
-        
+
     def isInstrumentPanelOpen(self):
         try:
             hwnd = findTopWindow(wantedClass="InstrumentPanel.36575160")
@@ -24,13 +24,13 @@ class Fpanel:
                 continue
             if f.path.endswith(".txt") or f.path.endswith(".log"):
                 logs.append(f.path)
-        if len(logs)==0:
+        if len(logs) == 0:
             log = None
-        elif len(logs)==1:
+        elif len(logs) == 1:
             log = logs[0]
         else:
             logs2 = [x for x in logs if 'log' in x]
-            if len(logs)==1:
+            if len(logs) == 1:
                 log = logs2[0]
             else:
                 log = logs[0]
@@ -40,13 +40,13 @@ class Fpanel:
         controls = []
         for x in findControls(self.hwnd, wantedClass="Button"):
             bbox = getBBox(x)
-            w = bbox[2]-bbox[0]
-            h = bbox[3]-bbox[1]
-            if w!=28 or h!=28:
+            w = bbox[2] - bbox[0]
+            h = bbox[3] - bbox[1]
+            if w != 28 or h != 28:
                 continue
-            controls.append([x]+bbox)
+            controls.append([x] + bbox)
         Y = sorted(list(set([x[2] for x in controls])))
-        hInstrumentButton = [x[0] for x in controls if x[2]==Y[3]][0]
+        hInstrumentButton = [x[0] for x in controls if x[2] == Y[3]][0]
         clickButton(hInstrumentButton)
         clickButton(hInstrumentButton)
 
@@ -57,7 +57,7 @@ class Fpanel:
         hwnd = selectVert(selectHoriz(findControls(hwnd, wantedClass="Button"), 0), i)[0]
         clickButton(hwnd)
         clickButton(hwnd)
-        
+
     def openLogWindow(self):
         if not self.isLogWindowOpen():
             self.openTab(8)
@@ -66,10 +66,10 @@ class Fpanel:
             clickButton(hBt)
             clickButton(hBt)
         return findTopWindow(wantedClass="LogFrame.259931064")
-        
+
     def isLogWindowOpen(self):
         hwnd = findWindow("Log Settings")
-        if len(hwnd)==0:
+        if len(hwnd) == 0:
             return False
         return hwnd[0]
 
@@ -83,6 +83,6 @@ class Fpanel:
             self.openTab(1)
             hEC = selectVert(hwnds, 1)[0]
             bbox = getBBox(hEC)
-            x = (bbox[0]+bbox[2])//2
-            y = (bbox[1]+bbox[3])//2
+            x = (bbox[0] + bbox[2]) // 2
+            y = (bbox[1] + bbox[3]) // 2
             click(x, y)

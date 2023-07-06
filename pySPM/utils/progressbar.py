@@ -1,4 +1,6 @@
 import sys
+
+
 class Progressbar:
     def __init__(self, iterator=None, total=None, length=80):
         self.it = iterator
@@ -8,7 +10,7 @@ class Progressbar:
             except Exception as e:
                 self.total = None
         self.length = length
-        
+
     def __iter__(self):
         self.elapsed = 0
         self.update()
@@ -16,15 +18,15 @@ class Progressbar:
             yield x
             self.elapsed += 1
             self.update()
-            
+
     def __repr__(self):
         if self.total is not None:
-            p = int(self.length*self.elapsed/self.total)
+            p = int(self.length * self.elapsed / self.total)
             tot = self.total
         else:
             p = 0
             tot = '???'
-        return "|"+"="*p+" "*(self.length-p)+"| ({}/{})".format(self.elapsed, tot)
-    
+        return "|" + "=" * p + " " * (self.length - p) + "| ({}/{})".format(self.elapsed, tot)
+
     def update(self):
-        sys.stderr.write(self.__repr__()+'\r')
+        sys.stderr.write(self.__repr__() + '\r')

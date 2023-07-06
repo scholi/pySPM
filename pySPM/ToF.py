@@ -6,11 +6,13 @@
 This is an old module which is deprecated now. It is kept in the project as it can be used to read BIF6 and BIF3D images.
 """
 
-import numpy as np
-import struct
 import os
 import re
+import struct
+
 import matplotlib.pyplot as plt
+import numpy as np
+
 import pySPM
 
 Elements = {
@@ -25,7 +27,8 @@ Elements = {
     'Ag': {107: (106.9050916, .51839), 109: (108.9047553, .48161)},
     'Au': {197: (196.96656879, 1)},
     'Si': {28: (27.97692653465, .92223), 29: (28.97649466490, .04685), 30: (29.973770136, 0.3092)},
-    'Ti': {46: (45.95262772, .0825), 47: (46.95175879, 0.0744), 48: (47.94794198, .7372), 49: (48.94786568, .0541), 50: (49.94478689, .0518)},
+    'Ti': {46: (45.95262772, .0825), 47: (46.95175879, 0.0744), 48: (47.94794198, .7372), 49: (48.94786568, .0541),
+           50: (49.94478689, .0518)},
 }
 
 
@@ -37,10 +40,10 @@ def getSpecElt(Elts):
     r2 = getSpecElt(Elts[1:])
     for x in r1:
         for y in r2:
-            if x+y not in tm:
-                tm[x+y] = [r1[x][0]+r2[y][0], r1[x][1]*r2[y][1]]
+            if x + y not in tm:
+                tm[x + y] = [r1[x][0] + r2[y][0], r1[x][1] * r2[y][1]]
             else:
-                tm[x+y][1] += r1[x][1]*r2[y][1]
+                tm[x + y][1] += r1[x][1] * r2[y][1]
     return tm
 
 
@@ -66,24 +69,24 @@ class BIF6:
         self.f = open(filename, 'rb')
         self.header = struct.unpack('xx4s5H', self.f.read(16))
         self.size = (self.header[2], self.header[3])
-        self.N = self.size[0]*self.size[1]
+        self.N = self.size[0] * self.size[1]
         self.cat = []
         for i in range(self.header[1]):
-            self.f.seek(16+i*(4*self.N+16))
+            self.f.seek(16 + i * (4 * self.N + 16))
             self.cat.append(struct.unpack('4f', self.f.read(16)))
 
     def getImgID(self, ID):
         assert ID >= 0 and ID <= self.header[1]
-        self.f.seek(32+ID*(4*self.N+16))
-        return np.array(struct.unpack(str(self.N)+'I', self.f.read(4*self.N))).reshape(self.size)
+        self.f.seek(32 + ID * (4 * self.N + 16))
+        return np.array(struct.unpack(str(self.N) + 'I', self.f.read(4 * self.N))).reshape(self.size)
 
     def getImgMass(self, masses, raw=False):
-        if type(masses)is float or type(masses) is int:
+        if type(masses) is float or type(masses) is int:
             masses = [masses]
         SUM = None
         for i, x in enumerate(self.cat):
             for m in masses:
-                if m >= x[0]-.5 and m <= x[1]+.5:
+                if m >= x[0] - .5 and m <= x[1] + .5:
                     if SUM is None:
                         SUM = self.getImgID(i)
                     else:
@@ -109,8 +112,8 @@ class BIF6:
     def showImgElt(self, elt, size=10, abundCorr=False, tot=True):
         A = self.getImgElt(elt)
         ks = [z for z in A if A[z]['data'] != None]
-        fig, ax = plt.subplots((len(ks)+1)//4+1, 4,
-                               figsize=(10*((len(ks)+1)//4+1), 10))
+        fig, ax = plt.subplots((len(ks) + 1) // 4 + 1, 4,
+                               figsize=(10 * ((len(ks) + 1) // 4 + 1), 10))
         mi = np.min(A[ks[0]]['data'].pixels)
         ma = np.max(A[ks[0]]['data'].pixels)
         A[ks[0]]['CT'] = ma
@@ -130,12 +133,12 @@ class BIF6:
             di = 1
         for i, k in enumerate(ks):
             if abundCorr:
-                ax[(i+di)//4][(i+di) % 4].imshow(A[k]
-                                                 ['data'].pixels/A[k]['abund'], vmin=0, vmax=ma)
+                ax[(i + di) // 4][(i + di) % 4].imshow(A[k]
+                                                       ['data'].pixels / A[k]['abund'], vmin=0, vmax=ma)
             else:
-                A[k]['data'].show(ax=ax[(i+di)//4][(i+di) %
-                                                   4], vmin=0, vmax=ma)
-            ax[(i+di)//4][(i+di) % 4].set_title(
+                A[k]['data'].show(ax=ax[(i + di) // 4][(i + di) %
+                                                       4], vmin=0, vmax=ma)
+            ax[(i + di) // 4][(i + di) % 4].set_title(
                 'mass: {mass:.3} - abundancy: {abund:.3f} - CT: {CT}'.format(**A[k]))
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -153,7 +156,7 @@ class BIF3D:
         for x in os.listdir(self.Path):
             if x[:len(self.Basename)] == self.Basename:
                 if x[-6:] == ".BIF3D":
-                    s = self.Basename+r' \(([0-9]+)\)(?: - (.*?))?\.BIF3D'
+                    s = self.Basename + r' \(([0-9]+)\)(?: - (.*?))?\.BIF3D'
                     r = re.search(s, x)
                     ID = int(r.group(1))
                     self.Peaks[ID] = r.group(2)
@@ -192,7 +195,7 @@ class BIF3D:
             self.size = size
         else:
             assert self.size == size
-        return np.array(struct.unpack("{0}d".format(self.size[0]*self.size[1]), A[640:])).reshape(self.size)
+        return np.array(struct.unpack("{0}d".format(self.size[0] * self.size[1]), A[640:])).reshape(self.size)
 
     def loadChannel(self, channel):
         k = self.getIDs(channel)
