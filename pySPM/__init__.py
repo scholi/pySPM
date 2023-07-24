@@ -12,6 +12,7 @@ from .ITM import ITM
 from .ITS import ITS
 from .SPM import *
 from .SXM import SXM
+from ._version import __version__
 from .collection import Collection
 from .nanoscan import Nanoscan
 from .utils import constants as const
