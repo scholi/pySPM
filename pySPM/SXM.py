@@ -33,7 +33,11 @@ class SXM:
                 self.header[key] = []
             else:
                 if l:  # remove empty lines
-                    self.header[key].append(l.decode('ascii').split())
+                    try:
+                        self.header[key].append(l.decode('ascii').split())
+                    except UnicodeDecodeError:
+                        self.header[key].append(l.decode('unicode_escape').split())
+
         while self.f.read(1) != b'\x1a':
             pass
         assert self.f.read(1) == b'\x04'
