@@ -1,4 +1,4 @@
-[![Downloads](https://pepy.tech/badge/pyspm)](https://pepy.tech/project/pyspm)
+[![Downloads](https://static.pepy.tech/badge/pyspm)](https://pepy.tech/project/pyspm)
 [![PyPi version](https://img.shields.io/pypi/v/pySPM)](https://pypi.python.org/pypi/pySPM/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.998575.svg)](https://doi.org/10.5281/zenodo.998575)
