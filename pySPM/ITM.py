@@ -28,7 +28,7 @@ class InvalidRAWdataformat(Exception):
 @aliased
 class ITM:
     def __init__(self, filename, debug=False, readonly=True, precond=False, label=None):
-        """
+        r"""
         Create the ITM object out of the filename.  Note that this works for
         all .ITA,.ITM, .ITS files as they have the same structure
         
@@ -282,7 +282,7 @@ class ITM:
                     t, tunit = s2hms(Press[:, 0])
                     ax.plot(t, Press[:, 1] * 1e6, 'C2')
                     ax.set_xlabel("Time [{}]".format(tunit))
-                    ax.set_ylabel("Pressure ($\cdot 10^{-8}$) [mbar]")
+                    ax.set_ylabel(r"Pressure ($\cdot 10^{-8}$) [mbar]")
                     index2 += 1
                     if index2 % 2 == 0:
                         ax.yaxis.set_label_position("right")

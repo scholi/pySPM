@@ -38,7 +38,7 @@ class Block:
     """
 
     def __init__(self, fp, parent=None):
-        """
+        r"""
         Init the class
         fp: file pointer (the one created by open(...) of an ITA,ITM,ITS, etc... file pointing at the beginning of a block
         
@@ -112,7 +112,7 @@ class Block:
         self.rewrite(struct.pack("<I", self.getLong() + 1))
 
     def add_child(self, blk):
-        """
+        r"""
         Add a new child to a given block. /!\ will overwrite the ITA/ITM file.
         """
         assert self.Type[0] in [1, 3]

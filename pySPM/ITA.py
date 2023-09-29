@@ -338,8 +338,8 @@ class ITA(ITM):
             fig, ax = plt.subplots(1, 1, figsize=(5, 5))
         ax.imshow(self.img, extent=(0, self.fov * 1e6, 0, self.fov * 1e6))
         ax.set_title("Total SI")
-        ax.set_xlabel("x [$\mu$m]")
-        ax.set_ylabel("y [$\mu$m]")
+        ax.set_xlabel(r"x [$\mu$m]")
+        ax.set_ylabel(r"y [$\mu$m]")
 
     @alias("getShiftsByMass")
     def get_shifts_by_mass(self, masses, centered=True, prog=False, Filter=None):

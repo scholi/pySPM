@@ -943,7 +943,7 @@ class SPM_image:
             if kargs.get('stdplot', False):
                 for ns in range(1, kargs.get('sig', 2) + 1):
                     ax.fill_between(xvalues, profile - ns * s, profile + ns * s, color=col, alpha=.2,
-                                    label=[lab + ' ($\\sigma,\ldots {}\\sigma$)'.format(kargs.get('sig', 2)), None][
+                                    label=[lab + r' ($\sigma,\ldots {}\sigma$)'.format(kargs.get('sig', 2)), None][
                                         ns > 1])
 
         Plot = ax.plot(xvalues, profile, color=col, linewidth=kargs.get('linewidth', 1),
