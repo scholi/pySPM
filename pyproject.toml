@@ -13,17 +13,20 @@ keywords = ["ToF", "SIMS", "ION-ToF", "SPM", "SFM", "SXM", "AFM", "KPFM", "PCA",
 packages = [{ include = "pySPM" }]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.9,<3.13"
 scikit-learn = "^1.2.2"
-scikit-image = "^0.20.0"
+scikit-image = "^0.21.0"
 pywavelets = "^1.4.1"
-numpy = "^1.24.2"
+numpy = "^1.26.0"
 matplotlib = "^3.7.1"
-seaborn = "^0.12.2"
+seaborn = "^0.13.0"
 psutil = "^5.9.4"
 tqdm = "^4.65.0"
-ipython = "^8.12.0"
+ipython = "^8.16.0"
 
+
+[tool.poetry.group.test.dependencies]
+coverage = "^7.3.1"
 
 [build-system]
 requires = ["poetry-core"]
