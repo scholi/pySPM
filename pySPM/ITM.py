@@ -291,7 +291,7 @@ class ITM:
                     t, tunit = s2hms(EC[:, 0])
                     axc.plot(t, EC[:, 1] * 1e6, 'C0')
                     axc.set_xlabel("Time [{}]".format(tunit))
-                    axc.set_ylabel("Emission Current [$\mu$A]")
+                    axc.set_ylabel(r"Emission Current [$\mu$A]")
                     index2 += 1
                     if index2 % 2 == 0:
                         axc.yaxis.set_label_position("right")
