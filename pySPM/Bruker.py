@@ -34,6 +34,8 @@ class Bruker:
             elif line == b'*Scanner list':
                 self.scanners.append({})
                 mode = 'Scanner'
+            elif line.startswith(b"*EC"):
+                mode = "EC"
             else:
                 args = line.split(b": ")
                 if len(args) > 1:
