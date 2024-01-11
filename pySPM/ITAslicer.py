@@ -17,10 +17,10 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 from scipy import optimize as opt
+from slicer import Ui_slicer
 
 import pySPM
 from pySPM.utils import CDF
-from slicer import Ui_slicer
 
 
 class SlicerApp(QWidget):

@@ -2,16 +2,16 @@
 
 
 from . import utils
+from ._version import __version__  # noqa: F401
 from .Block import Block
 from .Bruker import Bruker
 from .ITA import ITA, ITA_collection
 from .ITAX import ITAX
 from .ITM import ITM
 from .ITS import ITS
+from .nanoscan import Nanoscan
 from .SPM import *
 from .SXM import SXM
-from ._version import __version__  # noqa: F401
-from .nanoscan import Nanoscan
 
 __all__ = [
     "ITA",

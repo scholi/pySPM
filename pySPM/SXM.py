@@ -11,7 +11,6 @@ import numpy as np
 
 from .SPM import SPM_image
 
-
 # -- coding: utf-8 --
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 

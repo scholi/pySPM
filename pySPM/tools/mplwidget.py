@@ -1,8 +1,8 @@
-from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
 
 class MplCanvas(FigureCanvas):

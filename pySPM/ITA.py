@@ -13,8 +13,8 @@ import zlib
 import numpy as np
 
 from .Block import MissingBlock
-from .ITM import ITM
 from .collection import Collection
+from .ITM import ITM
 from .utils.misc import PB, alias, aliased, deprecated
 
 

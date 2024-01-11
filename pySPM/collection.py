@@ -166,7 +166,7 @@ class Collection:
     def overlay(
         self,
         channel_names,
-            colors=None,
+        colors=None,
         sig=None,
         vmin=None,
         vmax=None,
@@ -251,12 +251,12 @@ def PointInTriangle(pt, v1, v2, v3):
 
 def overlay_triangle(
     channel_names,
-        colors=None,
+    colors=None,
     radius=0.8,
     proportion=0.8,
     ax=None,
     size=512,
-        bgcolor=None,
+    bgcolor=None,
     textcolor="white",
     fontsize=20,
 ):

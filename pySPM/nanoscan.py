@@ -9,6 +9,7 @@ import numpy as np
 
 import pySPM.SPM
 from pySPM.SPM import SPM_image, funit
+
 from .utils.misc import alias, aliased, deprecated
 
 
