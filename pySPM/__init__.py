@@ -8,7 +8,7 @@ from .ITA import ITA, ITA_collection
 from .ITAX import ITAX
 from .ITM import ITM
 from .ITS import ITS
-from .SPM import SPM_image
+from .SPM import *
 from .SXM import SXM
 from ._version import __version__  # noqa: F401
 from .nanoscan import Nanoscan
