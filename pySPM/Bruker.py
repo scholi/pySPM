@@ -170,14 +170,20 @@ class Bruker:
                     if debug:
                         print("xres/yres", xres, yres)
                     scan_size = self.layers[i][b'Scan Size'][0].split()
-                    aspect_ratio = [int(x) for x in self.layers[i][b'Aspect Ratio'][0].split(b":")]
+                    aspect_ratio = [float(x) for x in self.layers[i][b'Aspect Ratio'][0].split(b":")]
+                    if len(aspect_ratio)==2:
+                        aspect_ratio = aspect_ratio[1]/aspect_ratio[0]
+                    elif len(aspect_ratio)==1:
+                        aspect_ratio = aspect_ratio[0]
+                    has_non_square_aspect_ratio  = aspect_ratio<1
                     if debug:
                         print("aspect ratio", aspect_ratio)
+                        print("scan size", scan_size)
                     if scan_size[2][0] == 126:
                         scan_size[2] = b'u' + scan_size[2][1:]
                     size = {
-                        'x': float(scan_size[0]) / aspect_ratio[1],
-                        'y': float(scan_size[1]) / aspect_ratio[0],
+                        'x': float(scan_size[0]),
+                        'y': [float(scan_size[1]),float(scan_size[1])*yres/xres][has_non_square_aspect_ratio],
                         'unit': scan_size[2].decode(encoding)}
                     image = pySPM.SPM_image(
                         channel=[channel, 'Topography'][channel == 'Height Sensor'],
