@@ -4,7 +4,6 @@ import pySPM
 
 
 class TestElts(unittest.TestCase):
-
     def test_basic(self):
         assert pySPM.utils.simplify_formula("H^29SiH") == "H2^29Si"
         assert pySPM.utils.get_mass("C") == 12
