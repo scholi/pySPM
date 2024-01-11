@@ -1,5 +1,3 @@
-# -- coding: utf-8 --
-
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
 """
@@ -11,7 +9,13 @@ import sys
 
 import numpy as np
 from PyQt5.QtCore import QCoreApplication
-from PyQt5.QtWidgets import QApplication, QTableWidgetItem, QFileDialog, QWidget, QAction
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QFileDialog,
+    QTableWidgetItem,
+    QWidget,
+)
 from scipy import optimize as opt
 
 import pySPM
@@ -31,14 +35,16 @@ class SlicerApp(QWidget):
         self.level = None
         if filename is None:
             if len(sys.argv) < 2:
-                self.path, _ = QFileDialog.getOpenFileName(self, "ITA Image", "", "(*.ITA)")
+                self.path, _ = QFileDialog.getOpenFileName(
+                    self, "ITA Image", "", "(*.ITA)"
+                )
             else:
                 # If an argument is sent to the script, the first argument will be used as a Path. Very usefull for debugging the script without having to selectr the folder each time with window dialog
                 self.path = sys.argv[1]
         else:
             self.path = filename
         if not os.path.exists(self.path):
-            raise Exception("File \"{}\" is not found".format(self.path))
+            raise Exception(f'File "{self.path}" is not found')
         if os.path.exists(self.path + ".level.npy"):
             self.level = np.load(self.path + ".level.npy")
         self.curs = [0, 0, 0]
@@ -46,14 +52,18 @@ class SlicerApp(QWidget):
         self.ITA = pySPM.ITA(self.path)
         for i, x in enumerate(self.ITA.get_masses()):
             self.ui.peakList.setRowCount(i + 1)
-            self.ui.peakList.setItem(i, 0, QTableWidgetItem(x['assign']))
-            self.ui.peakList.setItem(i, 1, QTableWidgetItem("{:.2f}u".format((x['cmass']))))
-            self.ui.peakList.setItem(i, 2, QTableWidgetItem("{:.2f}u".format(x['umass'] - x['lmass'])))
+            self.ui.peakList.setItem(i, 0, QTableWidgetItem(x["assign"]))
+            self.ui.peakList.setItem(
+                i, 1, QTableWidgetItem("{:.2f}u".format(x["cmass"]))
+            )
+            self.ui.peakList.setItem(
+                i, 2, QTableWidgetItem("{:.2f}u".format(x["umass"] - x["lmass"]))
+            )
         self.ui.peakList.show()
         self.ui.cmap.currentIndexChanged.connect(self.plot)
         self.ui.prof1daxis.currentIndexChanged.connect(self.plot)
         self.ui.peakList.cellClicked.connect(self.load_channel)
-        self.canvas.mpl_connect('button_press_event', self.on_pick)
+        self.canvas.mpl_connect("button_press_event", self.on_pick)
         self.flatAction = QAction("Flatten substrate from this channel")
         self.flatAction.triggered.connect(self.flatten)
         self.ui.correction.stateChanged.connect(self.plot)
@@ -62,8 +72,12 @@ class SlicerApp(QWidget):
 
     def flatline(self, y):
         for x in range(self.volume.shape[1]):
-            popt, pcov = opt.curve_fit(CDF, np.arange(self.volume.shape[2]), self.volume[y, x, :],
-                                       (10, self.volume.shape[2] / 2, 1))
+            popt, pcov = opt.curve_fit(
+                CDF,
+                np.arange(self.volume.shape[2]),
+                self.volume[y, x, :],
+                (10, self.volume.shape[2] / 2, 1),
+            )
             self.level[y, x] = popt[1]
 
     def flatten(self):
@@ -89,7 +103,7 @@ class SlicerApp(QWidget):
             x = self.ITA.getImage(id, i)
             vol.append(x)
         self.volume = np.stack([x for x in vol], axis=2)
-        if not self.level is None:
+        if self.level is not None:
             self.corrected = np.zeros(self.volume.shape)
             z = np.arange(self.ITA.Nscan)
             self.ui.pb.setMaximum(self.level.shape[0])
@@ -97,7 +111,9 @@ class SlicerApp(QWidget):
                 self.ui.pb.setValue(y)
                 for x in np.arange(self.level.shape[1]):
                     dz = int(-self.level[y, x] + np.max(self.level))
-                    self.corrected[y, x, dz:] = self.volume[y, x, :self.volume.shape[2] - dz]
+                    self.corrected[y, x, dz:] = self.volume[
+                        y, x, : self.volume.shape[2] - dz
+                    ]
             self.ui.pb.setValue(0)
         self.plot()
         self.ui.status.setText("IDLE")
@@ -126,8 +142,8 @@ class SlicerApp(QWidget):
         self.axXY.set_title("XY")
         self.axXZ.set_title("XZ")
         self.axYZ.set_title("YZ")
-        if self.ui.prof1daxis.currentText() in 'XYZ':
-            i = 'XYZ'.index(self.ui.prof1daxis.currentText())
+        if self.ui.prof1daxis.currentText() in "XYZ":
+            i = "XYZ".index(self.ui.prof1daxis.currentText())
             self.ax.set_xlabel("XYZ"[i])
             if i == 0:
                 self.ax.plot(A[:, self.curs[0], self.curs[2]])
@@ -138,7 +154,7 @@ class SlicerApp(QWidget):
         self.canvas.draw()
 
     def on_pick(self, event):
-        if not event.inaxes in [self.axYZ, self.axXZ, self.axXY]:
+        if event.inaxes not in [self.axYZ, self.axXZ, self.axXY]:
             return
         x = event.xdata
         y = event.ydata
@@ -157,7 +173,9 @@ class SlicerApp(QWidget):
             self.curs[2] = ydata
         else:
             print("Click event not handled")
-        self.curs = [np.clip(0, self.curs[i], self.volume.shape[i] - 1) for i in range(3)]
+        self.curs = [
+            np.clip(0, self.curs[i], self.volume.shape[i] - 1) for i in range(3)
+        ]
         self.plot()
 
     def initPlotLayout(self):

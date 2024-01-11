@@ -1,5 +1,3 @@
-# -- coding: utf-8 --
-
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
 import os
@@ -19,7 +17,7 @@ The new data will just be appended to your file. It also support the update of t
 the default file extension is pkz (for Pickle Zip)
 """
 
-data_path = '.'
+data_path = "."
 
 
 def set_datapath(path):
@@ -28,23 +26,23 @@ def set_datapath(path):
 
 
 def findPKZ(filename):
-    if os.path.splitext(filename)[1] == '':
-        filename += '.pkz'
+    if os.path.splitext(filename)[1] == "":
+        filename += ".pkz"
     p2 = os.path.join(data_path, filename)
     if os.path.exists(p2):
         return p2
     if os.path.exists(filename):
         return filename
     if not os.path.exists(filename):
-        raise IOError("File \"{}\" not found".format(filename))
+        raise OSError(f'File "{filename}" not found')
     return filename
 
 
 def inarxiv(filename, obj):
-    if os.path.splitext(filename)[1] == '':
-        filename += '.pkz'
+    if os.path.splitext(filename)[1] == "":
+        filename += ".pkz"
     filename = os.path.join(data_path, filename)
-    out = zipfile.ZipFile(filename, 'a', zipfile.ZIP_DEFLATED)
+    out = zipfile.ZipFile(filename, "a", zipfile.ZIP_DEFLATED)
     file_list = out.namelist()
     return obj in file_list
 
@@ -53,10 +51,10 @@ def save(filename, *objs, **obj):
     """
     save python objects to file
     """
-    if os.path.splitext(filename)[1] == '':
-        filename += '.pkz'
+    if os.path.splitext(filename)[1] == "":
+        filename += ".pkz"
     filename = os.path.join(data_path, filename)
-    out = zipfile.ZipFile(filename, 'a', zipfile.ZIP_DEFLATED)
+    out = zipfile.ZipFile(filename, "a", zipfile.ZIP_DEFLATED)
     file_list = out.namelist()
     update = []
     for i, o in enumerate(objs):
@@ -75,10 +73,10 @@ def save(filename, *objs, **obj):
         out.close()
         ft, temp = tempfile.mkstemp()
         shutil.copy(filename, temp)
-        out = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
+        out = zipfile.ZipFile(filename, "w", zipfile.ZIP_DEFLATED)
 
         # Copy all old data which are not updated and clean tempfile
-        old = zipfile.ZipFile(temp, 'r')
+        old = zipfile.ZipFile(temp, "r")
         for k in [x for x in file_list if x not in update]:
             out.writestr(k, old.read(k))
         old.close()
@@ -97,10 +95,10 @@ def load(filename, *keys):
     """
     filename = findPKZ(filename)
     if len(keys) == 0:
-        keys = ['0']
-    elif len(keys) == 1 and ',' in keys[0]:
-        keys = keys[0].split(',')
-    f = zipfile.ZipFile(filename, 'r')
+        keys = ["0"]
+    elif len(keys) == 1 and "," in keys[0]:
+        keys = keys[0].split(",")
+    f = zipfile.ZipFile(filename, "r")
 
     res = []
     for key in keys:
@@ -108,12 +106,12 @@ def load(filename, *keys):
             key = str(key)
         try:
             raw = f.read(key)
-        except Exception as e:
-            raise KeyError("There is no key {} found in the data {}".format(key, filename))
+        except Exception:
+            raise KeyError(f"There is no key {key} found in the data {filename}")
         try:
             res.append(pickle.loads(raw))
         except:
-            raise Exception("Cannot pickle recorded data for key {}".format(key))
+            raise Exception(f"Cannot pickle recorded data for key {key}")
 
     f.close()
     if len(keys) == 1:
@@ -133,7 +131,7 @@ class loader:
         self.local = {}
 
     def __iter__(self):
-        f = zipfile.ZipFile(self.filename, 'r')
+        f = zipfile.ZipFile(self.filename, "r")
         self.keys = set(f.namelist() + list(self.local.keys()))
         f.close()
         return self
@@ -145,8 +143,8 @@ class loader:
             return self.keys.pop()
 
     def __getitem__(self, key):
-        if not key in self.local:
-            f = zipfile.ZipFile(self.filename, 'r')
+        if key not in self.local:
+            f = zipfile.ZipFile(self.filename, "r")
             self.local[key] = pickle.loads(f.read(key))
             f.close()
         return self.local[key]
@@ -168,16 +166,16 @@ class BidirData:
     def __init__(self, filename):
         try:
             self.filename = findPKZ(filename)
-        except IOError:
-            if os.path.splitext(filename)[1] == '':
-                filename += '.pkz'
+        except OSError:
+            if os.path.splitext(filename)[1] == "":
+                filename += ".pkz"
             self.filename = os.path.join(data_path, filename)
-            out = zipfile.ZipFile(filename, 'a', zipfile.ZIP_DEFLATED)
+            out = zipfile.ZipFile(filename, "a", zipfile.ZIP_DEFLATED)
             out.close()
         self.local = {}
 
     def __iter__(self):
-        f = zipfile.ZipFile(self.filename, 'r')
+        f = zipfile.ZipFile(self.filename, "r")
         self.keys = set(f.namelist() + list(self.local.keys()))
         f.close()
         return self
@@ -189,8 +187,8 @@ class BidirData:
             return self.keys.pop()
 
     def __getitem__(self, key):
-        if not key in self.local:
-            f = zipfile.ZipFile(self.filename, 'r')
+        if key not in self.local:
+            f = zipfile.ZipFile(self.filename, "r")
             self.local[key] = pickle.loads(f.read(key))
             f.close()
         return self.local[key]
@@ -203,7 +201,7 @@ class BidirData:
         delf.local.delitem(key)
 
     def keys(self):
-        f = zipfile.ZipFile(self.filename, 'r')
+        f = zipfile.ZipFile(self.filename, "r")
         keys = f.filelist
         f.close()
         return [x.filename for x in keys]

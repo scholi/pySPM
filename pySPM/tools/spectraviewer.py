@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Form implementation generated from reading ui file 'spectraviewer.ui'
 #
 # Created by: PyQt5 UI code generator 5.9
@@ -9,7 +7,7 @@
 from PyQt5 import QtCore, QtWidgets
 
 
-class Ui_SpectraViewer(object):
+class Ui_SpectraViewer:
     def setupUi(self, SpectraViewer):
         SpectraViewer.setObjectName("SpectraViewer")
         SpectraViewer.resize(1148, 690)
@@ -18,7 +16,9 @@ class Ui_SpectraViewer(object):
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName("gridLayout")
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.pushButton_2.sizePolicy().hasHeightForWidth())
@@ -30,7 +30,9 @@ class Ui_SpectraViewer(object):
         self.lab_sf.setObjectName("lab_sf")
         self.gridLayout.addWidget(self.lab_sf, 2, 0, 1, 2)
         self.tableMassCal = QtWidgets.QTableWidget(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.tableMassCal.sizePolicy().hasHeightForWidth())
@@ -57,7 +59,9 @@ class Ui_SpectraViewer(object):
         self.pushButton.setObjectName("pushButton")
         self.gridLayout.addWidget(self.pushButton, 4, 0, 1, 2)
         self.mpl = MplWidget(self.centralwidget)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.mpl.sizePolicy().hasHeightForWidth())

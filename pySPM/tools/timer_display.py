@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Form implementation generated from reading ui file 'timer_display.ui'
 #
 # Created by: PyQt5 UI code generator 5.9
@@ -9,7 +7,7 @@
 from PyQt5 import QtCore, QtWidgets
 
 
-class Ui_ToF_Timer(object):
+class Ui_ToF_Timer:
     def setupUi(self, ToF_Timer):
         ToF_Timer.setObjectName("ToF_Timer")
         ToF_Timer.resize(466, 108)

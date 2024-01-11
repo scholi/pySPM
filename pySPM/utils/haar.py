@@ -14,7 +14,9 @@ def hfilter(diff_image, var_image, threshold=1, ndamp=10):
     I have thus exchanged it by using pyWavelet (pywt) and a custom function htrans
     to calculate the matrix for the var_image.
     """
-    him, coeff_slices = pywt.coeffs_to_array(pywt.wavedec2(diff_image.astype(np.float), 'haar'), padding=0)
+    him, coeff_slices = pywt.coeffs_to_array(
+        pywt.wavedec2(diff_image.astype(np.float), "haar"), padding=0
+    )
     dvarim = htrans(var_image.astype(np.float))
 
     sqhim = ((him / threshold) ** 2) / dvarim
@@ -24,18 +26,21 @@ def hfilter(diff_image, var_image, threshold=1, ndamp=10):
         return diff_image
 
     # Eq. 8 of White is derived leading to N*x^(N-1)-(N-1)*x^N  :DOI: 10.1117/12.176819
-    sqhim = sqhim[index] * (ndamp * sqhim[index] ** (ndamp - 1) - (ndamp - 1) * sqhim[index] ** ndamp)
+    sqhim = sqhim[index] * (
+        ndamp * sqhim[index] ** (ndamp - 1) - (ndamp - 1) * sqhim[index] ** ndamp
+    )
     him[index] = sign(threshold * np.sqrt(dvarim[index] * sqhim), him[index])
 
-    return pywt.waverec2(pywt.array_to_coeffs(him, coeff_slices, output_format='wavedec2'), 'haar')[
-           :diff_image.shape[0], :diff_image.shape[1]]
+    return pywt.waverec2(
+        pywt.array_to_coeffs(him, coeff_slices, output_format="wavedec2"), "haar"
+    )[: diff_image.shape[0], : diff_image.shape[1]]
 
 
 def htrans(A):
     h0 = A
     res = []
     while h0.shape[0] > 1 and h0.shape[1] > 1:
-        h0, (hx, hy, hc) = pywt.dwt2(h0, 'haar')
+        h0, (hx, hy, hc) = pywt.dwt2(h0, "haar")
         res = [(h0, h0, h0)] + res
     out, _ = pywt.coeffs_to_array([h0] + res, padding=1)
     return out

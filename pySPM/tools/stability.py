@@ -2,8 +2,15 @@
 import os
 import sys
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QMainWindow, \
-    QAction, QFileDialog, QComboBox
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QComboBox,
+    QFileDialog,
+    QMainWindow,
+    QVBoxLayout,
+    QWidget,
+)
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
@@ -11,14 +18,14 @@ from matplotlib.figure import Figure
 from pySPM import ITM
 
 
-def DualPlot(ax, col1='C0', col2='C1'):
+def DualPlot(ax, col1="C0", col2="C1"):
     axb = ax.twinx()
-    axb.spines['left'].set_color(col1)
-    axb.spines['right'].set_color(col2)
+    axb.spines["left"].set_color(col1)
+    axb.spines["right"].set_color(col2)
     ax.yaxis.label.set_color(col1)
     axb.yaxis.label.set_color(col2)
-    ax.tick_params(axis='y', colors=col1)
-    axb.tick_params(axis='y', colors=col2)
+    ax.tick_params(axis="y", colors=col1)
+    axb.tick_params(axis="y", colors=col2)
     return axb
 
 
@@ -55,13 +62,13 @@ class Plotter(QMainWindow):
         self.img = None
         self.msize = 6
 
-        openAction = QAction('&Open', self)
-        openAction.setShortcut('Ctrl+O')
-        openAction.setStatusTip('Open folder')
+        openAction = QAction("&Open", self)
+        openAction.setShortcut("Ctrl+O")
+        openAction.setStatusTip("Open folder")
         openAction.triggered.connect(self.open)
 
         menubar = self.menuBar()
-        fileMenu = menubar.addMenu('&File')
+        fileMenu = menubar.addMenu("&File")
         fileMenu.addAction(openAction)
 
         self.fileDrop = QComboBox()
@@ -72,7 +79,7 @@ class Plotter(QMainWindow):
         layout.addWidget(self.canvas)
 
         window = QWidget()
-        window.setLayout(layout);
+        window.setLayout(layout)
         self.setCentralWidget(window)
 
         self.fileDrop.currentIndexChanged.connect(self.plot)
@@ -87,5 +94,5 @@ def main():
     sys.exit(app.exec_())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

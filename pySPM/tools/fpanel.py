@@ -3,7 +3,7 @@ from .win32_helper import *
 
 class Fpanel:
     def __init__(self):
-        self.PID = getPID('fpanel5.exe')
+        self.PID = getPID("fpanel5.exe")
         if self.PID is not None:
             self.proc = psutil.Process(self.PID)
             self.hwnd = findWindow("Fpanel")[0]
@@ -20,7 +20,11 @@ class Fpanel:
     def getLogFile(self):
         logs = []
         for f in self.proc.open_files():
-            if f.path.startswith("C:\\Program") or f.path.startswith("C:\\Users") or f.path.startswith("C:\\Windows"):
+            if (
+                f.path.startswith("C:\\Program")
+                or f.path.startswith("C:\\Users")
+                or f.path.startswith("C:\\Windows")
+            ):
                 continue
             if f.path.endswith(".txt") or f.path.endswith(".log"):
                 logs.append(f.path)
@@ -29,7 +33,7 @@ class Fpanel:
         elif len(logs) == 1:
             log = logs[0]
         else:
-            logs2 = [x for x in logs if 'log' in x]
+            logs2 = [x for x in logs if "log" in x]
             if len(logs) == 1:
                 log = logs2[0]
             else:
@@ -54,7 +58,9 @@ class Fpanel:
         if not self.isInstrumentPanelOpen():
             self.openInstrumentPanel()
         hwnd = findTopWindow(wantedClass="InstrumentPanel.36575160")
-        hwnd = selectVert(selectHoriz(findControls(hwnd, wantedClass="Button"), 0), i)[0]
+        hwnd = selectVert(selectHoriz(findControls(hwnd, wantedClass="Button"), 0), i)[
+            0
+        ]
         clickButton(hwnd)
         clickButton(hwnd)
 

@@ -1,12 +1,8 @@
-# -- coding: utf-8 --
-
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
 """
 Handle elements to calculate mass, abundance, etc.
 """
-
-from __future__ import absolute_import
 
 import os
 import re
@@ -23,14 +19,22 @@ def formulafy(x):
     This can be used in matplotlib to display nicely a chemical formula.
     """
     import re
-    return '$' + re.sub('([a-zA-Z])_?([0-9]+)', r'\1_{\2}',
-                        re.sub(r'\^([0-9]+)', r'^{\1}', re.sub('([\\+-]+)$', r'^{\1}', x))) + '$'
+
+    return (
+        "$"
+        + re.sub(
+            "([a-zA-Z])_?([0-9]+)",
+            r"\1_{\2}",
+            re.sub(r"\^([0-9]+)", r"^{\1}", re.sub("([\\+-]+)$", r"^{\1}", x)),
+        )
+        + "$"
+    )
 
 
 def get_peaklist(nominal_mass, negative=False):
     """
     Retrieve all elements from the database which have a given nominal_mass
-    
+
     Parameters
     ----------
     nominal_mass : int or tuple/list
@@ -38,23 +42,29 @@ def get_peaklist(nominal_mass, negative=False):
         If tuple/list return all elements bounded between a lower (first element) and upper (second eleemnt) nominal mass.
     negative : boolean
         If True will return the elements in the database for negative polarity
-    
+
     Examples
     --------
     get_peaklist(12) will return all elements with a nominal mass of 12u
     get_peaklist((12,15)) will return all elements with a nominal mass between 12 and 15
     """
-    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db")
+    DB_PATH = os.path.join(
+        os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db"
+    )
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     if type(nominal_mass) in [float, int]:
         c.execute(
             "SELECT Formula from fragments where NominalMass={nm} and (Polarity is NULL or Polarity=={pol})".format(
-                nm=nominal_mass, pol=[1, -1][negative]))
+                nm=nominal_mass, pol=[1, -1][negative]
+            )
+        )
     elif type(nominal_mass) in [tuple, list]:
         c.execute(
             "SELECT Formula from fragments where NominalMass>={nm[0]} and NominalMass<={nm[1]} and (Polarity is NULL or Polarity=={pol})".format(
-                nmL=nominal_mass, pol=[1, -1][negative]))
+                pol=[1, -1][negative]
+            )
+        )
     return [str(x[0]) for x in c.fetchall()]
 
 
@@ -66,7 +76,7 @@ def get_properties(elt):
     --------
     > get_properties("C")
     {'Element': 'C', 'Z': 6, 'mass': 12.010735896764459}
-    
+
     > get_properties("Si")
     {'Element': 'Si',
     'Q': 0.78,
@@ -79,29 +89,33 @@ def get_properties(elt):
     'sublim_nrj': 4.63,
     'work_func': 4.85}
     """
-    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db")
+    DB_PATH = os.path.join(
+        os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db"
+    )
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT * from properties where Element='{}'".format(elt))
+    c.execute(f"SELECT * from properties where Element='{elt}'")
     res = c.fetchone()
     r = {}
     if res:
         for idx, col in enumerate(c.description):
             r[col[0]] = res[idx]
     else:
-        res = c.execute("SELECT mass,abund,symbol,Z from elements where symbol='{}'".format(elt))
+        res = c.execute(
+            f"SELECT mass,abund,symbol,Z from elements where symbol='{elt}'"
+        )
         if res:
             row = res.fetchall()
-            r['Element'] = row[0][2]
-            r['Z'] = row[0][3]
-            r['mass'] = sum([x[0] * x[1] for x in row])
+            r["Element"] = row[0][2]
+            r["Z"] = row[0][3]
+            r["mass"] = sum([x[0] * x[1] for x in row])
     return r
 
 
 def get_mass(elt, mz=True):
     """
     Calculate the exact molar mass of a givent chemical compound.
-    
+
     Parameters
     ----------
     elt : string
@@ -109,7 +123,7 @@ def get_mass(elt, mz=True):
     mz : boolean
         Will output the mass per ion.
         e.g. This means that if the formula is Si++, then the answer will be half the mass of Si
-    
+
     Notes
     -----
     "Si+" will subtract the mass of one electron compared to "Si"
@@ -117,28 +131,30 @@ def get_mass(elt, mz=True):
     """
     if type(elt) is Molecule:
         elt = str(elt)
-    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db")
+    DB_PATH = os.path.join(
+        os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db"
+    )
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     m = 0
-    for A, x, n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)', elt):
-        if n == '':
+    for A, x, n in re.findall("(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)", elt):
+        if n == "":
             n = 1
         else:
             n = int(n)
-        if A == '':
+        if A == "":
             c.execute(
-                "SELECT mass from elements where symbol='{sym}' and abund=(SELECT max(abund) from elements where symbol='{sym}')".format(
-                    sym=x))
+                f"SELECT mass from elements where symbol='{x}' and abund=(SELECT max(abund) from elements where symbol='{x}')"
+            )
         else:
-            c.execute("SELECT mass from elements where symbol='{sym}' and A={A}".format(sym=x, A=A))
+            c.execute(f"SELECT mass from elements where symbol='{x}' and A={A}")
         res = c.fetchone()
         if res is None:
-            raise Exception("Cannot fetch mass of {}".format(x))
+            raise Exception(f"Cannot fetch mass of {x}")
         m += n * res[0]
-    m -= me * elt.count('+')
-    m += me * elt.count('-')
-    Z = max(1, abs(elt.count('+') - elt.count('-')))
+    m -= me * elt.count("+")
+    m += me * elt.count("-")
+    Z = max(1, abs(elt.count("+") - elt.count("-")))
     if mz:
         return m / Z
     return m
@@ -149,15 +165,17 @@ def get_main_isotope(elt):
     Return the A value of the main isotope of a given element.
     e.g. get_main_isotope("Si") will return 28
     """
-    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db")
+    DB_PATH = os.path.join(
+        os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db"
+    )
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute(
-        "SELECT A from elements where symbol='{sym}' and abund=(SELECT max(abund) from elements where symbol='{sym}')".format(
-            sym=elt))
+        f"SELECT A from elements where symbol='{elt}' and abund=(SELECT max(abund) from elements where symbol='{elt}')"
+    )
     res = c.fetchone()
     if res is None:
-        raise Exception("Cannot fetch element '{sym}'".format(sym=elt))
+        raise Exception(f"Cannot fetch element '{elt}'")
     return res[0]
 
 
@@ -169,10 +187,12 @@ def get_isotopes_of_element(elt):
     """
     Get all the isotopes for a given element
     """
-    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db")
+    DB_PATH = os.path.join(
+        os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db"
+    )
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT symbol, A, abund from elements where symbol='{sym}'".format(sym=elt))
+    c.execute(f"SELECT symbol, A, abund from elements where symbol='{elt}'")
     return c.fetchall()
 
 
@@ -181,12 +201,12 @@ def _formula2dict(elt, iso=True):
     Convert a formula into a dictionary.
     """
     elts = {}
-    for A, x, n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)', elt):
-        if A == '':
+    for A, x, n in re.findall("(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)", elt):
+        if A == "":
             A = get_main_isotope(x)
         else:
             A = int(A)
-        if n == '':
+        if n == "":
             n = 1
         else:
             n = int(n)
@@ -264,14 +284,14 @@ def _get_isotopes_elt(n, x, min_abund=0):
     """
     get the isotopes of n atoms x
     """
-    res = {'': 1}
+    res = {"": 1}
     iso = get_isotopes_of_element(x)
     for i in range(n):
         r = []
         Nres = {}
         for x in res:
             for y in iso:
-                X = simplify_formula(x + '^{1}{0}'.format(*y))
+                X = simplify_formula(x + "^{1}{0}".format(*y))
                 ab = res[x] * y[2]
                 if X not in Nres:
                     if n * ab >= min_abund:
@@ -283,10 +303,10 @@ def _get_isotopes_elt(n, x, min_abund=0):
 
 
 def get_isotopes(elt, min_abund=0):
-    charges = '+' * elt.count('+') + '-' * elt.count('-')
-    res = {'': 1}
-    for A, x, n in re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)', elt):
-        if n == '':
+    charges = "+" * elt.count("+") + "-" * elt.count("-")
+    res = {"": 1}
+    for A, x, n in re.findall("(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)", elt):
+        if n == "":
             n = 1
         else:
             n = int(n)
@@ -304,14 +324,19 @@ def get_isotopes(elt, min_abund=0):
 
 def get_abund(elt):
     from .math import perm, prod
+
     if type(elt) is Molecule:
         elt = str(elt)
-    DB_PATH = os.path.join(os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db")
+    DB_PATH = os.path.join(
+        os.path.abspath(os.path.join(__file__, "../..")), "data", "elements.db"
+    )
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     abund = 1
-    elts = [(int([A, get_main_isotope(x)][A == '']), x, int(n + ['', '1'][n == ''])) for A, x, n in
-            re.findall('(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)', elt)]
+    elts = [
+        (int([A, get_main_isotope(x)][A == ""]), x, int(n + ["", "1"][n == ""]))
+        for A, x, n in re.findall("(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)", elt)
+    ]
     ns = {}
 
     for x in elts:
@@ -322,15 +347,15 @@ def get_abund(elt):
     permutations = prod([perm(ns[k]) for k in ns])
 
     for A, x, n in elts:
-        if A == '':
+        if A == "":
             c.execute(
-                "SELECT abund from elements where symbol='{sym}' and abund=(SELECT max(abund) from elements where symbol='{sym}')".format(
-                    sym=x))
+                f"SELECT abund from elements where symbol='{x}' and abund=(SELECT max(abund) from elements where symbol='{x}')"
+            )
         else:
-            c.execute("SELECT abund from elements where symbol='{sym}' and A={A}".format(sym=x, A=A))
+            c.execute(f"SELECT abund from elements where symbol='{x}' and A={A}")
         res = c.fetchone()
         if res is None:
-            raise Exception("Cannot fetch mass of {}".format(x))
+            raise Exception(f"Cannot fetch mass of {x}")
         abund *= (res[0]) ** n
     return permutations * abund
 
@@ -338,14 +363,15 @@ def get_abund(elt):
 @deprecated("getOrganicAt")
 def get_organic_at(m0):
     import numpy as np
+
     res = []
     for C in range(1, 1 + m0 // 12):
         for N in range(1 + (m0 - 12 * C) // 15):
             for S in range(1 + (m0 - 12 * C - 15 * N) // 32):
                 for O in range(1 + (m0 - 12 * C - 15 * N - 32 * S) // 16):
                     H = m0 - 12 * C - 15 * N - 32 * S - 16 * O
-                    elt = ''
-                    for e in 'CNSOH':
+                    elt = ""
+                    for e in "CNSOH":
                         if locals()[e] > 0:
                             elt += e
                             if locals()[e] > 1:
@@ -360,7 +386,9 @@ def elts_substract(elt1, elt2):
     d = _formula2dict(elt2)
     for x in d:
         if x not in r:
-            raise Exception("Cannot subtract a molecule with more atoms than the main one")
+            raise Exception(
+                "Cannot subtract a molecule with more atoms than the main one"
+            )
         r[x] -= d[x]
 
 
@@ -382,15 +410,21 @@ def _elts_add(eltsa, eltsb):
 @deprecated("eltsNM")
 def elts_nm(elts, NM):
     import re
+
     r = [({}, 0)]
     res = []
     if type(elts) is str:
-        elts = re.compile(r'((?:^[0-9]+)?[A-Z][a-z]?(?:_[0-9]+)?)').findall(elts)
+        elts = re.compile(r"((?:^[0-9]+)?[A-Z][a-z]?(?:_[0-9]+)?)").findall(elts)
     me = [get_mass(x) for x in elts]
     while r:
         rnew = _elts_add(r, list(zip([_formula2dict(x) for x in elts], me)))
-        r = [x for x in rnew if x[1] < NM + .5]
-        res += [_dict2formula(x[0]) for x in r if x[1] > NM - .5 if _dict2formula(x[0]) not in res]
+        r = [x for x in rnew if x[1] < NM + 0.5]
+        res += [
+            _dict2formula(x[0])
+            for x in r
+            if x[1] > NM - 0.5
+            if _dict2formula(x[0]) not in res
+        ]
         res = list(set(res))
     return res
 
@@ -431,7 +465,7 @@ class Molecule:
             r.atoms[x] -= n
         return r
 
-    def inc(self, elt='H'):
+    def inc(self, elt="H"):
         r = Molecule(self.formula())
         k = list(_formula2dict(elt).keys())[0]
         if k in r.atoms:
@@ -440,7 +474,7 @@ class Molecule:
             r.atoms[k] = 1
         return r
 
-    def dec(self, elt='H'):
+    def dec(self, elt="H"):
         r = Molecule(self.formula())
         k = list(_formula2dict(elt).keys())[0]
         if k not in r.atoms or r.atoms[k] < 1:
@@ -461,4 +495,4 @@ class Molecule:
         return self.formula()
 
 
-H = Molecule('H')
+H = Molecule("H")

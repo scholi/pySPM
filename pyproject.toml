@@ -51,3 +51,8 @@ extend-select = [
     "TID", # flake8-tidy-imports
     "UP", # pyupgrade
 ]
+ignore = [
+    "N806", # variable in function should be lowercase
+    "N802", # function name should be lowercase
+    "N801" # class name should use CapWords convention
+]

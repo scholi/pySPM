@@ -1,5 +1,3 @@
-# -- coding: utf-8 --
-
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
 """
@@ -8,8 +6,8 @@ This module allows to display a small GUI in order to display a table of key/val
 It is used by the class ITM.show_values(gui=True).
 """
 
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QWidget, QApplication, QTreeView, QVBoxLayout
+from PyQt5.QtGui import QStandardItem, QStandardItemModel
+from PyQt5.QtWidgets import QApplication, QTreeView, QVBoxLayout, QWidget
 
 
 class GUI_values(QWidget):

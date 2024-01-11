@@ -8,12 +8,12 @@ import win32api
 import win32con
 import win32gui
 from win32con import WM_GETTEXT, WM_GETTEXTLENGTH
-from win32gui import SendMessage, PyGetString
+from win32gui import PyGetString, SendMessage
 
 
 def getText(hwnd):
     buffer_len = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0) + 1
-    buffer = array.array('b', b'\x00\x00' * buffer_len)
+    buffer = array.array("b", b"\x00\x00" * buffer_len)
     text_len = SendMessage(hwnd, WM_GETTEXT, buffer_len, buffer)
     text = PyGetString(buffer.buffer_info()[0], buffer_len - 1)
     return text
@@ -25,7 +25,9 @@ user32.EnumWindows.argtypes = [WNDENUMPROC, wintypes.LPARAM]
 user32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
 user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
 
-prototype = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, ctypes.POINTER(wintypes.RECT))
+prototype = ctypes.WINFUNCTYPE(
+    wintypes.BOOL, wintypes.HWND, ctypes.POINTER(wintypes.RECT)
+)
 paramflags = (1, "hwnd"), (2, "lprect")
 GetWindowRect = prototype(("GetWindowRect", user32), paramflags)
 
@@ -42,18 +44,17 @@ def _getMultipleWindowValues(hwnd, getCountMessage, getValueMessage):
     valuecount = win32gui.SendMessage(hwnd, getCountMessage, 0, 0)
     for itemIndex in range(valuecount):
         valuebuffer = ctypes.create_unicode_buffer(VALUE_LENGTH)
-        valueLength = win32gui.SendMessage(hwnd,
-                                           getValueMessage,
-                                           itemIndex,
-                                           valuebuffer)
+        valueLength = win32gui.SendMessage(
+            hwnd, getValueMessage, itemIndex, valuebuffer
+        )
         result.append(valuebuffer[:valueLength])
     return result
 
 
 def getListboxItems(hwnd):
-    return _getMultipleWindowValues(hwnd,
-                                    getCountMessage=win32con.LB_GETCOUNT,
-                                    getValueMessage=win32con.LB_GETTEXT)
+    return _getMultipleWindowValues(
+        hwnd, getCountMessage=win32con.LB_GETCOUNT, getValueMessage=win32con.LB_GETTEXT
+    )
 
 
 def findTopWindow(wantedText=None, wantedClass=None, selectionFunction=None):
@@ -61,12 +62,14 @@ def findTopWindow(wantedText=None, wantedClass=None, selectionFunction=None):
     if topWindows:
         return topWindows[0]
     else:
-        raise WinGuiAutoError("No top level window found for wantedText=" +
-                              repr(wantedText) +
-                              ", wantedClass=" +
-                              repr(wantedClass) +
-                              ", selectionFunction=" +
-                              repr(selectionFunction))
+        raise WinGuiAutoError(
+            "No top level window found for wantedText="
+            + repr(wantedText)
+            + ", wantedClass="
+            + repr(wantedClass)
+            + ", selectionFunction="
+            + repr(selectionFunction)
+        )
 
 
 def findTopWindows(wantedText=None, wantedClass=None, selectionFunction=None):
@@ -74,9 +77,9 @@ def findTopWindows(wantedText=None, wantedClass=None, selectionFunction=None):
     topWindows = []
     win32gui.EnumWindows(_windowEnumerationHandler, topWindows)
     for hwnd, windowText, windowClass in topWindows:
-        if wantedText and not _normaliseText(wantedText) in _normaliseText(windowText):
+        if wantedText and _normaliseText(wantedText) not in _normaliseText(windowText):
             continue
-        if wantedClass and not windowClass == wantedClass:
+        if wantedClass and windowClass != wantedClass:
             continue
         if selectionFunction and not selectionFunction(hwnd):
             continue
@@ -84,12 +87,12 @@ def findTopWindows(wantedText=None, wantedClass=None, selectionFunction=None):
     return results
 
 
-def findWindow(name='', C='', parent=0):
+def findWindow(name="", C="", parent=0):
     R = []
 
     def callbck(hwnd, lParam):
         title, c = getInfo(hwnd)
-        if (name == '' or title.startswith(name)) and (C == '' or c == C):
+        if (name == "" or title.startswith(name)) and (C == "" or c == C):
             R.append(hwnd)
         return True
 
@@ -108,7 +111,7 @@ def getInfo(hwnd):
     buffer = ctypes.create_unicode_buffer(length)
     user32.GetWindowTextW(hwnd, buffer, length)
     b2 = ctypes.create_unicode_buffer(200)
-    user32.GetClassNameW(hwnd, b2, 200);
+    user32.GetClassNameW(hwnd, b2, 200)
     title = buffer.value
     c = b2.value
     return title, c
@@ -133,55 +136,51 @@ def getPID(name):
 
 
 def _windowEnumerationHandler(hwnd, resultList):
-    '''Pass to win32gui.EnumWindows() to generate list of window handle,
-    window text, window class tuples.'''
-    resultList.append((hwnd,
-                       win32gui.GetWindowText(hwnd),
-                       win32gui.GetClassName(hwnd)))
+    """Pass to win32gui.EnumWindows() to generate list of window handle,
+    window text, window class tuples."""
+    resultList.append((hwnd, win32gui.GetWindowText(hwnd), win32gui.GetClassName(hwnd)))
 
 
 def _normaliseText(controlText):
-    '''Remove '&' characters, and lower case.
-    Useful for matching control text.'''
-    return controlText.lower().replace('&', '')
+    """Remove '&' characters, and lower case.
+    Useful for matching control text."""
+    return controlText.lower().replace("&", "")
 
 
 class WinGuiAutoError(Exception):
     pass
 
 
-def findControl(topHwnd,
-                wantedText=None,
-                wantedClass=None,
-                selectionFunction=None):
-    controls = findControls(topHwnd,
-                            wantedText=wantedText,
-                            wantedClass=wantedClass,
-                            selectionFunction=selectionFunction)
+def findControl(topHwnd, wantedText=None, wantedClass=None, selectionFunction=None):
+    controls = findControls(
+        topHwnd,
+        wantedText=wantedText,
+        wantedClass=wantedClass,
+        selectionFunction=selectionFunction,
+    )
     if controls:
         return controls[0]
     else:
-        raise WinGuiAutoError("No control found for topHwnd=" +
-                              repr(topHwnd) +
-                              ", wantedText=" +
-                              repr(wantedText) +
-                              ", wantedClass=" +
-                              repr(wantedClass) +
-                              ", selectionFunction=" +
-                              repr(selectionFunction))
+        raise WinGuiAutoError(
+            "No control found for topHwnd="
+            + repr(topHwnd)
+            + ", wantedText="
+            + repr(wantedText)
+            + ", wantedClass="
+            + repr(wantedClass)
+            + ", selectionFunction="
+            + repr(selectionFunction)
+        )
 
 
-def findControls(topHwnd,
-                 wantedText=None,
-                 wantedClass=None,
-                 selectionFunction=None):
+def findControls(topHwnd, wantedText=None, wantedClass=None, selectionFunction=None):
     def searchChildWindows(currentHwnd):
         results = []
         childWindows = []
         try:
-            win32gui.EnumChildWindows(currentHwnd,
-                                      _windowEnumerationHandler,
-                                      childWindows)
+            win32gui.EnumChildWindows(
+                currentHwnd, _windowEnumerationHandler, childWindows
+            )
         except win32gui.error:
             # This seems to mean that the control *cannot* have child windows,
             # i.e. not a container.
@@ -191,14 +190,13 @@ def findControls(topHwnd,
             if descendentMatchingHwnds:
                 results += descendentMatchingHwnds
 
-            if wantedText and \
-                    not _normaliseText(wantedText) in _normaliseText(windowText):
+            if wantedText and _normaliseText(wantedText) not in _normaliseText(
+                windowText
+            ):
                 continue
-            if wantedClass and \
-                    not windowClass == wantedClass:
+            if wantedClass and windowClass != wantedClass:
                 continue
-            if selectionFunction and \
-                    not selectionFunction(childHwnd):
+            if selectionFunction and not selectionFunction(childHwnd):
                 continue
             results.append(childHwnd)
         return results
@@ -207,21 +205,21 @@ def findControls(topHwnd,
 
 
 def _sendNotifyMessage(hwnd, nofifyMessage):
-    '''Send a notify message to a control.'''
-    win32gui.SendMessage(win32gui.GetParent(hwnd),
-                         win32con.WM_COMMAND,
-                         _buildWinLong(nofifyMessage,
-                                       win32api.GetWindowLong(hwnd,
-                                                              win32con.GWL_ID)),
-                         hwnd)
+    """Send a notify message to a control."""
+    win32gui.SendMessage(
+        win32gui.GetParent(hwnd),
+        win32con.WM_COMMAND,
+        _buildWinLong(nofifyMessage, win32api.GetWindowLong(hwnd, win32con.GWL_ID)),
+        hwnd,
+    )
 
 
 def _buildWinLong(high, low):
-    '''Build a windows long parameter from high and low words.
+    """Build a windows long parameter from high and low words.
     See http://support.microsoft.com/support/kb/articles/q189/1/70.asp
-    '''
+    """
     # return ((high << 16) | low)
-    return int(struct.unpack('>L', struct.pack('>2H', high, low))[0])
+    return int(struct.unpack(">L", struct.pack(">2H", high, low))[0])
 
 
 def selectHoriz(hwnds, i):

@@ -1,5 +1,3 @@
-# -- coding: utf-8 --
-
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
 # electron mass

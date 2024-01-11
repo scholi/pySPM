@@ -7,7 +7,7 @@ class Progressbar:
         if total is None and iterator is not None:
             try:
                 self.total = len(iterator)
-            except Exception as e:
+            except Exception:
                 self.total = None
         self.length = length
 
@@ -25,8 +25,8 @@ class Progressbar:
             tot = self.total
         else:
             p = 0
-            tot = '???'
-        return "|" + "=" * p + " " * (self.length - p) + "| ({}/{})".format(self.elapsed, tot)
+            tot = "???"
+        return "|" + "=" * p + " " * (self.length - p) + f"| ({self.elapsed}/{tot})"
 
     def update(self):
-        sys.stderr.write(self.__repr__() + '\r')
+        sys.stderr.write(self.__repr__() + "\r")

@@ -29,16 +29,16 @@ class Point:
 class Bbox:
     def __init__(self, *args, **kargs):
         if len(args) == 0:
-            self.left = kargs['left']
-            self.right = kargs['right']
-            self.top = kargs['top']
-            self.bottom = kargs['bottom']
+            self.left = kargs["left"]
+            self.right = kargs["right"]
+            self.top = kargs["top"]
+            self.bottom = kargs["bottom"]
         elif len(args) == 1:
             assert type(args[0]) is dict
-            self.left = args[0]['left']
-            self.right = args[0]['right']
-            self.top = args[0]['top']
-            self.bottom = args[0]['bottom']
+            self.left = args[0]["left"]
+            self.right = args[0]["right"]
+            self.top = args[0]["top"]
+            self.bottom = args[0]["bottom"]
         elif len(args) == 3:
             assert type(args[0]) in [list, tuple]
             self.left = args[0][0]
@@ -56,8 +56,12 @@ class Bbox:
         return "Bbox ({left},{bottom}) -> ({right},{top})".format(**self.__dict__)
 
     def is_overlapping(self, other):
-        return (other.left < self.right) and (other.bottom < self.top) and (other.right > self.left) and (
-                other.top > self.bottom)
+        return (
+            (other.left < self.right)
+            and (other.bottom < self.top)
+            and (other.right > self.left)
+            and (other.top > self.bottom)
+        )
 
     def overlap(self, other):
         if not self.is_overlapping(other):
@@ -69,9 +73,10 @@ class Bbox:
         return Bbox(left, right, top, bottom)
 
     def show(self, ax=None, **kargs):
-        from .plot import pixel2img
-        import matplotlib.pyplot as plt
         import matplotlib as mpl
+        import matplotlib.pyplot as plt
+
+        from .plot import pixel2img
 
         if ax is None:
             ax = plt.gca()
@@ -81,5 +86,7 @@ class Bbox:
         width = ur[0] - pos[0]
         height = ur[1] - pos[1]
         fill = kargs.pop("fill", None)
-        color = kargs.pop("color", 'r')
-        ax.add_patch(mpl.patches.Rectangle(pos, width, height, fill=fill, color=color, **kargs))
+        color = kargs.pop("color", "r")
+        ax.add_patch(
+            mpl.patches.Rectangle(pos, width, height, fill=fill, color=color, **kargs)
+        )

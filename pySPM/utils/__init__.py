@@ -1,12 +1,9 @@
-# -- coding: utf-8 --
-
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
-from . import fit, misc, colors
 from .constants import *
 from .elts import *
 from .math import *
-from .misc import alias, PB
+from .misc import PB, alias
 from .plot import *
 from .restoration import *
 from .save import *
@@ -42,14 +39,15 @@ def funit(value, unit=None):
     {'value': 2.34, 'unit': 'mm'}
     """
     if unit == None:
-        unit = value['unit']
-        value = value['value']
+        unit = value["unit"]
+        value = value["value"]
     import math
+
     if value == 0:
-        return {'value': value, 'unit': unit}
+        return {"value": value, "unit": unit}
     shift = int(math.floor(math.log10(value) / 3.0))  # base10 exponent
-    mag = u'afpnum1kMGTPE'
-    index_mag = mag.index('1')
+    mag = "afpnum1kMGTPE"
+    index_mag = mag.index("1")
     # Test if unit has a scale factor (n,m,k,M,G, etc.)
     if len(unit) > 1 and unit[0] in mag and unit[1:] and index_mag:
         index_mag = mag.index(unit[0])
@@ -63,16 +61,16 @@ def funit(value, unit=None):
         value *= 10 ** ((index_mag - len(mag) + 1) * 3)
         index_mag = len(mag) - 1
     unit_prefix = mag[index_mag]
-    if unit_prefix == '1':
-        unit_prefix = ''
-    return {'value': value, 'unit': u'{mag}{unit}'.format(mag=unit_prefix, unit=unit)}
+    if unit_prefix == "1":
+        unit_prefix = ""
+    return {"value": value, "unit": f"{unit_prefix}{unit}"}
 
 
 def get_shifts_bbox(shifts, shape):
     """
     Return the bounding-box of the overlapping area of scans which have a thermal drift given by shifts.
     Return: dictionary with the top, left, right, bottom position
-    
+
     Parameters
     ----------
     shifts: list of tuple [(dx0, dy0), (dx1, dy1), ..., (dxN, dyN)]
@@ -82,6 +80,7 @@ def get_shifts_bbox(shifts, shape):
         shape of the image.
     """
     from .geometry import Bbox
+
     right = shape[1] + min(0, np.min([x[0] for x in shifts]))
     left = np.max([x[0] for x in shifts])
     top = shape[0] + min(0, np.min([x[1] for x in shifts]))
@@ -93,10 +92,10 @@ def s2hms(s):
     """Convert seconds to hour, minutes or seconds"""
     M = np.max(s)
     if M > 120 * 60:
-        return s / (60 * 60), 'h'
+        return s / (60 * 60), "h"
     if M > 300:
-        return s / 60, 'min'
-    return s, 's'
+        return s / 60, "min"
+    return s, "s"
 
 
 def time2hms(s, string=True):
@@ -105,7 +104,7 @@ def time2hms(s, string=True):
     m = int(s // 60)
     s -= m * 60
     if string:
-        return "{:02d}:{:02d}:{:02.2f}".format(h, m, s)
+        return f"{h:02d}:{m:02d}:{s:02.2f}"
     return (h, m, s)
 
 
@@ -136,7 +135,7 @@ def fit_spectrum(t, m, error=False):
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
-        yield l[i:i + n]
+        yield l[i : i + n]
 
 
 def mass2time(m, sf, k0):
@@ -145,7 +144,7 @@ def mass2time(m, sf, k0):
     To convert it to real time, you should multiply the answer by the Time Resolution which can be obtained by pySPM.ITM.get_value("Registration.TimeResolution")
     """
     r = m * 0 + k0
-    if not hasattr(r, '__setitem__'):
+    if not hasattr(r, "__setitem__"):
         if m < 0:
             return r
         return sf * np.sqrt(m) + k0
@@ -162,17 +161,18 @@ def time2mass(t, sf, k0):
 
 
 def show_table(t):
-    from IPython.core.display import display, HTML
+    from IPython.core.display import HTML, display
+
     display(HTML(html_table(t)))
 
 
 def html_table(t, header=False):
     S = "<table>"
     if header:
-        S += "<tr>" + "".join(["<th>{0}</th>".format(x) for x in t[0]]) + "</tr>"
+        S += "<tr>" + "".join([f"<th>{x}</th>" for x in t[0]]) + "</tr>"
         t = t[1:]
     for x in t:
-        S += "<tr>" + "".join(["<td>{0}</td>".format(y) for y in x]) + "</tr>"
+        S += "<tr>" + "".join([f"<td>{y}</td>" for y in x]) + "</tr>"
     S += "</table>"
     return S
 
@@ -188,16 +188,26 @@ def aa_table(t, header=False):
             Lcol[i] = max(Lcol[i], len(repr(x[i])))
     if header:
         print(
-            "  ".join([u"{: <" + str(Lcol[i] + 4) + "}" for i in range(Ncols)]).format(*t[0]))
+            "  ".join(["{: <" + str(Lcol[i] + 4) + "}" for i in range(Ncols)]).format(
+                *t[0]
+            )
+        )
         print("=" * sum(Lcol))
         t = t[1:]
     for j, x in enumerate(t):
-        print("  ".join([u"{:" + ['.', '_'][j % 2] + "<" +
-                         str(Lcol[i] + 4) + "}" for i in range(Ncols)]).format(*x))
+        print(
+            "  ".join(
+                [
+                    "{:" + [".", "_"][j % 2] + "<" + str(Lcol[i] + 4) + "}"
+                    for i in range(Ncols)
+                ]
+            ).format(*x)
+        )
 
 
 def dict_update(d, u):
     import collections
+
     for k, v in u.items():
         if isinstance(v, collections.Mapping):
             r = dict_update(d.get(k, {}), v)
@@ -209,16 +219,29 @@ def dict_update(d, u):
 
 def htmlTable(t, show=True, header=False):
     import html
+
     s = "<table><tr>"
     if header:
-        s += "<th>" + "</th><th>".join([html.escape(str(y))
-                                        for y in t[0]]) + "</th></tr><tr>"
+        s += (
+            "<th>"
+            + "</th><th>".join([html.escape(str(y)) for y in t[0]])
+            + "</th></tr><tr>"
+        )
         t = t[1:]
-    s += "".join([
-        "<tr><td>" + "</td><td>".join([
-            html.escape(str(y)) for y in x]) + "</td></tr>" for x in t]) + "</table>"
+    s += (
+        "".join(
+            [
+                "<tr><td>"
+                + "</td><td>".join([html.escape(str(y)) for y in x])
+                + "</td></tr>"
+                for x in t
+            ]
+        )
+        + "</table>"
+    )
     if show:
-        from IPython.display import display, HTML
+        from IPython.display import HTML, display
+
         display(HTML(s))
     else:
         return s
@@ -226,7 +249,10 @@ def htmlTable(t, show=True, header=False):
 
 def zfit_level(A, processes=4):
     import multiprocessing as mp
-    level = np.array(mp.Pool(processes).map(fitCDF1line, (A[:, i, :] for i in range(A.shape[1]))))
+
+    level = np.array(
+        mp.Pool(processes).map(fitCDF1line, (A[:, i, :] for i in range(A.shape[1])))
+    )
     return level
 
 
@@ -239,7 +265,7 @@ def getToFimg(I, N=100, prog=False):
     if prog:
         L = PB(L)
     for i in L:
-        R += (np.random.rand(*I.shape) < (1 - np.exp(-I)))
+        R += np.random.rand(*I.shape) < (1 - np.exp(-I))
     return R
 
 
@@ -252,5 +278,5 @@ def getToFsimg(I, N=[10, 50, 100, 300, 500], prog=False):
 def centered_meshgrid(A):
     w = A.shape[1]
     h = A.shape[0]
-    Y, X = np.mgrid[-h // 2:h // 2, -w // 2:w // 2]
+    Y, X = np.mgrid[-h // 2 : h // 2, -w // 2 : w // 2]
     return Y, X

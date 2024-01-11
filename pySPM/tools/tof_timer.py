@@ -12,9 +12,9 @@ class GUI_Timer(QMainWindow):
         super(QMainWindow, self).__init__()
         self.ui = Ui_ToF_Timer()
         self.ui.setupUi(self)
-        self.timer = QTimer(self);
+        self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
-        self.timer.start(1000);
+        self.timer.start(1000)
 
     def update(self):
         ok = False
@@ -25,22 +25,24 @@ class GUI_Timer(QMainWindow):
                 AnalTime = int(getText(B[2]).replace(",", ""))
                 TotScans = int(getText(B[1]).replace(",", ""))
                 Scans = int(getText(B[0]).replace(",", ""))
-                self.ui.label_2.setText("Scans: {} / {}".format(Scans, TotScans));
-                self.ui.label_3.setText("Analysis Time: {} s".format(AnalTime));
-                self.ui.progressBar.setValue(Scans);
-                self.ui.progressBar.setMaximum(TotScans);
+                self.ui.label_2.setText(f"Scans: {Scans} / {TotScans}")
+                self.ui.label_3.setText(f"Analysis Time: {AnalTime} s")
+                self.ui.progressBar.setValue(Scans)
+                self.ui.progressBar.setMaximum(TotScans)
                 ok = True
         if not ok:
-            self.ui.label.setText("Remaining time: Unavailable (measurement not in progress?)")
+            self.ui.label.setText(
+                "Remaining time: Unavailable (measurement not in progress?)"
+            )
             return
         if Scans > 0:
-            r = AnalTime * (TotScans - Scans) / Scans;
+            r = AnalTime * (TotScans - Scans) / Scans
             h = int(r // 3600)
             m = int((r - h * 3600) // 60)
             s = int(r - h * 3600 - m * 60)
-            self.ui.label.setText("Remaining time: {:02d}:{:02d}:{:02d}".format(h, m, s));
+            self.ui.label.setText(f"Remaining time: {h:02d}:{m:02d}:{s:02d}")
         else:
-            self.ui.label.setText("Remaining time: Unknown");
+            self.ui.label.setText("Remaining time: Unknown")
 
 
 def main():
@@ -50,5 +52,5 @@ def main():
     sys.exit(app.exec_())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

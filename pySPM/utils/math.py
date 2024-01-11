@@ -1,5 +1,3 @@
-# -- coding: utf-8 --
-
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
 import scipy.optimize as opt
@@ -91,31 +89,37 @@ def moving_average(x, N):
 
 def butter_lowpass(cutOff, fs, order=5):
     import scipy.signal
+
     nyq = 0.5 * fs
     normalCutoff = cutOff / nyq
-    b, a = scipy.signal.butter(order, normalCutoff, btype='low', analog=True)
+    b, a = scipy.signal.butter(order, normalCutoff, btype="low", analog=True)
     return b, a
 
 
 def butter_lowpass_filter(data, cutOff, fs, order=4):
     import scipy.signal
+
     b, a = butter_lowpass(cutOff, fs, order=order)
     y = scipy.signal.lfilter(b, a, data)
     return y
 
 
 def Gauss(x, x0, s, amp=None, **kargs):
-    if 'A' in kargs:
+    if "A" in kargs:
         from warnings import warn
+
         warn("Parameter A is deprecated. Please use amp in order to set the amplitude!")
-        amp = kargs.pop('A')
-    elif 'Amp' in kargs:
+        amp = kargs.pop("A")
+    elif "Amp" in kargs:
         from warnings import warn
-        warn("Parameter Amp is deprecated. Please use amp in order to set the amplitude!")
-        amp = kargs.pop('Amp')
-    R = np.exp(-(x - x0) ** 2 / (2 * s ** 2))
+
+        warn(
+            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!"
+        )
+        amp = kargs.pop("Amp")
+    R = np.exp(-((x - x0) ** 2) / (2 * s**2))
     if amp is None:
-        R /= (s * np.sqrt(2 * np.pi))
+        R /= s * np.sqrt(2 * np.pi)
     else:
         R *= amp
     R[s == 0] = (x[s == 0] == x0) * 1.0
@@ -123,36 +127,48 @@ def Gauss(x, x0, s, amp=None, **kargs):
 
 
 def Lorentz(x, x0, gamma, amp=None, **kargs):
-    if 'A' in kargs:
+    if "A" in kargs:
         from warnings import warn
+
         warn("Parameter A is deprecated. Please use amp in order to set the amplitude!")
-        Amp = kargs['A']
-    elif 'Amp' in kargs:
+        Amp = kargs["A"]
+    elif "Amp" in kargs:
         from warnings import warn
-        warn("Parameter Amp is deprecated. Please use amp in order to set the amplitude!")
-        amp = kargs.pop('Amp')
-    R = 1 / ((x - x0) ** 2 + (.5 * gamma) ** 2)
+
+        warn(
+            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!"
+        )
+        amp = kargs.pop("Amp")
+    R = 1 / ((x - x0) ** 2 + (0.5 * gamma) ** 2)
     if amp is None:
-        return .5 * gamma * R / np.pi
-    return amp * R * (.5 * gamma) ** 2
+        return 0.5 * gamma * R / np.pi
+    return amp * R * (0.5 * gamma) ** 2
 
 
 def CDF(x, mu, sig, amp=1, lg=0, **kargs):
-    if 'Amp' in kargs:
+    if "Amp" in kargs:
         from warnings import warn
-        warn("Parameter Amp is deprecated. Please use amp in order to set the amplitude!")
-        amp = kargs.pop('Amp')
+
+        warn(
+            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!"
+        )
+        amp = kargs.pop("Amp")
     from scipy.special import erf
+
     g = sig * np.sqrt(2 * np.log(2))
-    return amp * lg * (.5 + np.arctan2(x - mu, g) / np.pi) + (1 - lg) * amp * .5 * (
-            1 + erf((x - mu) / (sig * np.sqrt(2))))
+    return amp * lg * (0.5 + np.arctan2(x - mu, g) / np.pi) + (1 - lg) * amp * 0.5 * (
+        1 + erf((x - mu) / (sig * np.sqrt(2)))
+    )
 
 
-def LG(x, x0, sig=None, amp=None, lg=.5, asym=1, FWHM=None, **kargs):
-    if 'Amp' in kargs:
+def LG(x, x0, sig=None, amp=None, lg=0.5, asym=1, FWHM=None, **kargs):
+    if "Amp" in kargs:
         from warnings import warn
-        warn("Parameter Amp is deprecated. Please use amp in order to set the amplitude!")
-        amp = kargs.pop('Amp')
+
+        warn(
+            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!"
+        )
+        amp = kargs.pop("Amp")
 
     assert sig is not None or FWHM is not None
 
@@ -162,7 +178,9 @@ def LG(x, x0, sig=None, amp=None, lg=.5, asym=1, FWHM=None, **kargs):
         sig = FWHM / (2 * np.sqrt(2 * np.log(2)))
     Y = (1 - lg) * Gauss(x, x0, sig, amp=amp) + lg * Lorentz(x, x0, FWHM, amp=amp)
     if asym != 1:
-        Yr = (1 - lg) * Gauss(x, x0, sig * asym, amp=amp) + lg * Lorentz(x, x0, FWHM * asym, amp=amp)
+        Yr = (1 - lg) * Gauss(x, x0, sig * asym, amp=amp) + lg * Lorentz(
+            x, x0, FWHM * asym, amp=amp
+        )
         Y[x > x0] = Yr[x > x0]
     return Y
 
@@ -174,12 +192,13 @@ def logistic(x, lower=0, upper=1, growth=1, x0=0, nu=1, C=1):
 def fitCDF1line(A):
     line = np.zeros(A.shape[1])
     for x in range(A.shape[1]):
-        popt, pcov = opt.curve_fit(CDF,
-                                   np.arange(A.shape[0]),
-                                   A[:, x],
-                                   (A.shape[0] / 2, 1, np.max(A[:, x])),
-                                   bounds=(0, (A.shape[1], np.inf, np.inf))
-                                   )
+        popt, pcov = opt.curve_fit(
+            CDF,
+            np.arange(A.shape[0]),
+            A[:, x],
+            (A.shape[0] / 2, 1, np.max(A[:, x])),
+            bounds=(0, (A.shape[1], np.inf, np.inf)),
+        )
         line[x] = popt[0]
     return line
 
@@ -209,13 +228,14 @@ def binning(data, N=2, axis=0, ufunc=np.sum):
     r = np.copy(data)
     size = list(data.shape)
     size[axis] = w
-    size = size[:axis + 1] + [N] + size[axis + 1:]
+    size = size[: axis + 1] + [N] + size[axis + 1 :]
     r.resize(size)
     return ufunc(r, axis=axis + 1)
 
 
 def stat_info(data):
     import matplotlib.pyplot as plt
+
     D = np.ravel(data)
     U = np.unique(D)
     if len(U) > 1:
@@ -228,16 +248,16 @@ def stat_info(data):
     std = np.std(D)
 
     fig, ax = plt.subplots(2, 1, figsize=(21, 4))
-    ax[0].boxplot(D, 0, 'ro', 0);
-    ax[1].hist(D, N, density=True);
-    ax[1].axvline(mean, color='r', label='mean')
-    ax[1].axvline(mean + std, color='r', linestyle='--', label='1$\\sigma$')
-    ax[1].axvline(mean - std, color='r', linestyle='--', label='1$\\sigma$')
+    ax[0].boxplot(D, 0, "ro", 0)
+    ax[1].hist(D, N, density=True)
+    ax[1].axvline(mean, color="r", label="mean")
+    ax[1].axvline(mean + std, color="r", linestyle="--", label="1$\\sigma$")
+    ax[1].axvline(mean - std, color="r", linestyle="--", label="1$\\sigma$")
     if mean - 2 * std >= U[0]:
-        ax[1].axvline(mean - 2 * std, color='r', linestyle=':', label='2$\\sigma$')
+        ax[1].axvline(mean - 2 * std, color="r", linestyle=":", label="2$\\sigma$")
     if mean + 2 * std <= U[-1]:
-        ax[1].axvline(mean + 2 * std, color='r', linestyle=':', label='2$\\sigma$')
-    ax[1].legend();
+        ax[1].axvline(mean + 2 * std, color="r", linestyle=":", label="2$\\sigma$")
+    ax[1].legend()
     print("Stats")
     print("\tAverage:", mean)
     print("\tStandard-deviation:", std)
@@ -264,11 +284,28 @@ def asymm_ellipse(left, right, upper, lower, phi):
     a = np.where(np.logical_or(phi <= np.pi / 2, phi >= 3 * np.pi / 2), right, left)
     m = np.logical_and(a != 0, b != 0)
     r = np.zeros(phi.shape)  # if a & b is zero, result is zero
-    r[m] = a[m] * b[m] / np.sqrt((b[m] * np.cos(phi[m])) ** 2 + (a[m] * np.sin(phi[m])) ** 2)
+    r[m] = (
+        a[m]
+        * b[m]
+        / np.sqrt((b[m] * np.cos(phi[m])) ** 2 + (a[m] * np.sin(phi[m])) ** 2)
+    )
     return r
 
 
-def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0, LG_y=0, assym_x=1, assym_y=1, bg=0):
+def LG2D(
+    XY,
+    amplitude=1,
+    angle=0,
+    sig_x=10,
+    sig_y=10,
+    x0=None,
+    y0=None,
+    LG_x=0,
+    LG_y=0,
+    assym_x=1,
+    assym_y=1,
+    bg=0,
+):
     """
     Return a 2D Lorentz-Gauss.
     XY: (X,Y) tuple
@@ -287,7 +324,7 @@ def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0,
     X1 = (XY[0] - x0) * np.cos(angle) - (XY[1] - y0) * np.sin(angle)
     Y1 = (XY[0] - x0) * np.sin(angle) + (XY[1] - y0) * np.cos(angle)
 
-    R1 = np.sqrt(X1 ** 2 + Y1 ** 2)
+    R1 = np.sqrt(X1**2 + Y1**2)
     angle = np.arctan2(Y1, X1)
     sig = asymm_ellipse(sig_x, sig_x * assym_x, sig_y, sig_y * assym_y, angle)
     gamma = np.sqrt(2 * np.log(2)) * sig
@@ -301,8 +338,22 @@ def LG2D(XY, amplitude=1, angle=0, sig_x=10, sig_y=10, x0=None, y0=None, LG_x=0,
     return out
 
 
-def LG2Da(XY, amplitude=1, angle=0, sigN=10, sigS=None, sigE=10, sigW=None, x0=None, y0=None, LGN=0, LGS=None, LGE=0,
-          LGW=None, bg=0):
+def LG2Da(
+    XY,
+    amplitude=1,
+    angle=0,
+    sigN=10,
+    sigS=None,
+    sigE=10,
+    sigW=None,
+    x0=None,
+    y0=None,
+    LGN=0,
+    LGS=None,
+    LGE=0,
+    LGW=None,
+    bg=0,
+):
     if x0 is None:
         x0 = XY[0][0, XY[0].shape[1] // 2]
     if y0 is None:
@@ -319,7 +370,7 @@ def LG2Da(XY, amplitude=1, angle=0, sigN=10, sigS=None, sigE=10, sigW=None, x0=N
     X1 = (XY[0] - x0) * np.cos(angle) - (XY[1] - y0) * np.sin(angle)
     Y1 = (XY[0] - x0) * np.sin(angle) + (XY[1] - y0) * np.cos(angle)
 
-    R1 = np.sqrt(X1 ** 2 + Y1 ** 2)
+    R1 = np.sqrt(X1**2 + Y1**2)
     angle = np.arctan2(Y1, X1)
     sig = asymm_ellipse(sigW, sigE, sigN, sigS, angle)
     gamma = np.sqrt(2 * np.log(2)) * sig  # HFHM
@@ -335,13 +386,21 @@ def LG2Da(XY, amplitude=1, angle=0, sigN=10, sigS=None, sigE=10, sigW=None, x0=N
 
 def MaxwellBoltzmann(E, T):
     from . import constants as const
-    return 2 * const.qe * np.sqrt(E / np.pi) * np.exp(-E / (const.kb * T)) / (const.kb * T) ** 1.5
+
+    return (
+        2
+        * const.qe
+        * np.sqrt(E / np.pi)
+        * np.exp(-E / (const.kb * T))
+        / (const.kb * T) ** 1.5
+    )
 
 
 def Voigt(x, x0, sig, gamma, A=1):
     import scipy
+
     L = Lorentz(x, x0, gamma, A=1)
     G = Gauss(x, x0, sig)
-    out = scipy.signal.convolve(L, G, 'same')
+    out = scipy.signal.convolve(L, G, "same")
     out /= np.max(out)
     return A * out

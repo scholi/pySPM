@@ -1,5 +1,3 @@
-# -- coding: utf-8 --
-
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
 """
@@ -16,19 +14,32 @@ import numpy as np
 import pySPM
 
 Elements = {
-    'H': {1: (1.00782503223, .999885), 2: (2.01410177812, .000115)},
-    'Li': {6: (6.0151228874, .0759), 7: (7.0160034366, .9241)},
-    'Be': {9: (9.012183065, 1)},
-    'B': {10: (10.01293695, .199), 11: (11.00930536, .801)},
-    'C': {12: (12, .9893), 13: (13.00335483507, .01107)},
-    'N': {14: (14.00307400443, .99636), 15: (15.00010889888, .00364)},
-    'O': {16: (15.99491461957, .99757), 17: (16.99913175650, .00038), 18: (17.99915961286, .00205)},
-    'F': {19: (18.9984036273, 1)},
-    'Ag': {107: (106.9050916, .51839), 109: (108.9047553, .48161)},
-    'Au': {197: (196.96656879, 1)},
-    'Si': {28: (27.97692653465, .92223), 29: (28.97649466490, .04685), 30: (29.973770136, 0.3092)},
-    'Ti': {46: (45.95262772, .0825), 47: (46.95175879, 0.0744), 48: (47.94794198, .7372), 49: (48.94786568, .0541),
-           50: (49.94478689, .0518)},
+    "H": {1: (1.00782503223, 0.999885), 2: (2.01410177812, 0.000115)},
+    "Li": {6: (6.0151228874, 0.0759), 7: (7.0160034366, 0.9241)},
+    "Be": {9: (9.012183065, 1)},
+    "B": {10: (10.01293695, 0.199), 11: (11.00930536, 0.801)},
+    "C": {12: (12, 0.9893), 13: (13.00335483507, 0.01107)},
+    "N": {14: (14.00307400443, 0.99636), 15: (15.00010889888, 0.00364)},
+    "O": {
+        16: (15.99491461957, 0.99757),
+        17: (16.99913175650, 0.00038),
+        18: (17.99915961286, 0.00205),
+    },
+    "F": {19: (18.9984036273, 1)},
+    "Ag": {107: (106.9050916, 0.51839), 109: (108.9047553, 0.48161)},
+    "Au": {197: (196.96656879, 1)},
+    "Si": {
+        28: (27.97692653465, 0.92223),
+        29: (28.97649466490, 0.04685),
+        30: (29.973770136, 0.3092),
+    },
+    "Ti": {
+        46: (45.95262772, 0.0825),
+        47: (46.95175879, 0.0744),
+        48: (47.94794198, 0.7372),
+        49: (48.94786568, 0.0541),
+        50: (49.94478689, 0.0518),
+    },
 }
 
 
@@ -49,8 +60,8 @@ def getSpecElt(Elts):
 
 def SplitElts(elt):
     elts = []
-    for x, i in re.findall('([A-Z][a-z]?)([0-9]*)', elt):
-        if i == '':
+    for x, i in re.findall("([A-Z][a-z]?)([0-9]*)", elt):
+        if i == "":
             i = 1
         else:
             i = int(i)
@@ -66,19 +77,21 @@ def showElts(Elts):
 
 class BIF6:
     def __init__(self, filename):
-        self.f = open(filename, 'rb')
-        self.header = struct.unpack('xx4s5H', self.f.read(16))
+        self.f = open(filename, "rb")
+        self.header = struct.unpack("xx4s5H", self.f.read(16))
         self.size = (self.header[2], self.header[3])
         self.N = self.size[0] * self.size[1]
         self.cat = []
         for i in range(self.header[1]):
             self.f.seek(16 + i * (4 * self.N + 16))
-            self.cat.append(struct.unpack('4f', self.f.read(16)))
+            self.cat.append(struct.unpack("4f", self.f.read(16)))
 
     def getImgID(self, ID):
-        assert ID >= 0 and ID <= self.header[1]
+        assert ID >= 0 and self.header[1] >= ID
         self.f.seek(32 + ID * (4 * self.N + 16))
-        return np.array(struct.unpack(str(self.N) + 'I', self.f.read(4 * self.N))).reshape(self.size)
+        return np.array(
+            struct.unpack(str(self.N) + "I", self.f.read(4 * self.N))
+        ).reshape(self.size)
 
     def getImgMass(self, masses, raw=False):
         if type(masses) is float or type(masses) is int:
@@ -86,7 +99,7 @@ class BIF6:
         SUM = None
         for i, x in enumerate(self.cat):
             for m in masses:
-                if m >= x[0] - .5 and m <= x[1] + .5:
+                if m >= x[0] - 0.5 and m <= x[1] + 0.5:
                     if SUM is None:
                         SUM = self.getImgID(i)
                     else:
@@ -103,50 +116,48 @@ class BIF6:
         for k in A:
             I = self.getImgMass(k)
             if I is not None:
-                r[k] = {
-                    'data': I,
-                    'mass': A[k][0],
-                    'abund': A[k][1]}
+                r[k] = {"data": I, "mass": A[k][0], "abund": A[k][1]}
         return r
 
     def showImgElt(self, elt, size=10, abundCorr=False, tot=True):
         A = self.getImgElt(elt)
-        ks = [z for z in A if A[z]['data'] != None]
-        fig, ax = plt.subplots((len(ks) + 1) // 4 + 1, 4,
-                               figsize=(10 * ((len(ks) + 1) // 4 + 1), 10))
-        mi = np.min(A[ks[0]]['data'].pixels)
-        ma = np.max(A[ks[0]]['data'].pixels)
-        A[ks[0]]['CT'] = ma
+        ks = [z for z in A if A[z]["data"] != None]
+        fig, ax = plt.subplots(
+            (len(ks) + 1) // 4 + 1, 4, figsize=(10 * ((len(ks) + 1) // 4 + 1), 10)
+        )
+        mi = np.min(A[ks[0]]["data"].pixels)
+        ma = np.max(A[ks[0]]["data"].pixels)
+        A[ks[0]]["CT"] = ma
         for i, k in enumerate(ks[1:]):
-            M = np.min(A[k]['data'].pixels)
+            M = np.min(A[k]["data"].pixels)
             mi = min(mi, M)
-            A[k]['minCT'] = M
-            M = np.max(A[k]['data'].pixels)
+            A[k]["minCT"] = M
+            M = np.max(A[k]["data"].pixels)
             ma = max(ma, M)
-            A[k]['CT'] = M
+            A[k]["CT"] = M
         ks.sort()
         di = 0
         if tot:
-            SUM = sum([A[k]['data'].pixels for k in ks])
+            SUM = sum([A[k]["data"].pixels for k in ks])
             ax[0][0].imshow(SUM, vmin=0)
             ax[0][0].set_title("Total")
             di = 1
         for i, k in enumerate(ks):
             if abundCorr:
-                ax[(i + di) // 4][(i + di) % 4].imshow(A[k]
-                                                       ['data'].pixels / A[k]['abund'], vmin=0, vmax=ma)
+                ax[(i + di) // 4][(i + di) % 4].imshow(
+                    A[k]["data"].pixels / A[k]["abund"], vmin=0, vmax=ma
+                )
             else:
-                A[k]['data'].show(ax=ax[(i + di) // 4][(i + di) %
-                                                       4], vmin=0, vmax=ma)
+                A[k]["data"].show(ax=ax[(i + di) // 4][(i + di) % 4], vmin=0, vmax=ma)
             ax[(i + di) // 4][(i + di) % 4].set_title(
-                'mass: {mass:.3} - abundancy: {abund:.3f} - CT: {CT}'.format(**A[k]))
+                "mass: {mass:.3} - abundancy: {abund:.3f} - CT: {CT}".format(**A[k])
+            )
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.f.close()
 
 
 class BIF3D:
-
     def __init__(self, path):
         self.Peaks = {}
         self.RPeaks = {}
@@ -154,9 +165,9 @@ class BIF3D:
         self.Basename = os.path.basename(path)
         self.size = None
         for x in os.listdir(self.Path):
-            if x[:len(self.Basename)] == self.Basename:
+            if x[: len(self.Basename)] == self.Basename:
                 if x[-6:] == ".BIF3D":
-                    s = self.Basename + r' \(([0-9]+)\)(?: - (.*?))?\.BIF3D'
+                    s = self.Basename + r" \(([0-9]+)\)(?: - (.*?))?\.BIF3D"
                     r = re.search(s, x)
                     ID = int(r.group(1))
                     self.Peaks[ID] = r.group(2)
@@ -183,11 +194,15 @@ class BIF3D:
             return self.data[k]
         v = self.Peaks[k]
         if v != None:
-            path = '{path}{sep}{basename} ({ID}) - {Peak}.BIF3D'
+            path = "{path}{sep}{basename} ({ID}) - {Peak}.BIF3D"
         else:
-            path = '{path}{sep}{basename} ({ID}).BIF3D'
-        f = open(path.format(path=self.Path, sep=os.sep,
-                             basename=self.Basename, ID=k, Peak=v), 'rb')
+            path = "{path}{sep}{basename} ({ID}).BIF3D"
+        f = open(
+            path.format(
+                path=self.Path, sep=os.sep, basename=self.Basename, ID=k, Peak=v
+            ),
+            "rb",
+        )
         A = f.read()
         f.close()
         size = struct.unpack("II", A[32:40])
@@ -195,15 +210,17 @@ class BIF3D:
             self.size = size
         else:
             assert self.size == size
-        return np.array(struct.unpack("{0}d".format(self.size[0] * self.size[1]), A[640:])).reshape(self.size)
+        return np.array(
+            struct.unpack(f"{self.size[0] * self.size[1]}d", A[640:])
+        ).reshape(self.size)
 
     def loadChannel(self, channel):
         k = self.getIDs(channel)
-        if not k in self.data:
+        if k not in self.data:
             self.data[k] = self.getChannel(channel)
 
     def loadChannels(self, channels):
-        if not type(channels) in [list, tuple]:
+        if type(channels) not in [list, tuple]:
             self.loadChannel(channels)
         else:
             for x in channels:
@@ -226,6 +243,6 @@ class BIF3D:
         D = self.getChannels(*channels)
         ax.imshow(D)
         if len(channels) > 1:
-            ax.set_title(','.join([str(z) for z in channels]))
+            ax.set_title(",".join([str(z) for z in channels]))
         else:
             ax.set_title(str(channels[0]))

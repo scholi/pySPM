@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Form implementation generated from reading ui file 'C:\Users\ols\Dropbox\Python\pySPM\slicer.ui'
 #
 # Created by: PyQt5 UI code generator 5.6
@@ -9,14 +7,16 @@
 from PyQt5 import QtCore, QtWidgets
 
 
-class Ui_slicer(object):
+class Ui_slicer:
     def setupUi(self, slicer):
         slicer.setObjectName("slicer")
         slicer.resize(802, 547)
         self.gridLayout = QtWidgets.QGridLayout(slicer)
         self.gridLayout.setObjectName("gridLayout")
         self.peakList = QtWidgets.QTableWidget(slicer)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.peakList.sizePolicy().hasHeightForWidth())
@@ -33,7 +33,9 @@ class Ui_slicer(object):
         self.peakList.setHorizontalHeaderItem(2, item)
         self.gridLayout.addWidget(self.peakList, 0, 0, 1, 1)
         self.mpl = MplWidget(slicer)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.mpl.sizePolicy().hasHeightForWidth())
