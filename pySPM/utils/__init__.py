@@ -38,7 +38,7 @@ def funit(value, unit=None):
     >>> funit({'value':2340, 'unit': 'um'})
     {'value': 2.34, 'unit': 'mm'}
     """
-    if unit == None:
+    if unit is None:
         unit = value["unit"]
         value = value["value"]
     import math
@@ -264,12 +264,14 @@ def getToFimg(I, N=100, prog=False):
     L = range(N)
     if prog:
         L = PB(L)
-    for i in L:
+    for _i in L:
         R += np.random.rand(*I.shape) < (1 - np.exp(-I))
     return R
 
 
-def getToFsimg(I, N=[10, 50, 100, 300, 500], prog=False):
+def getToFsimg(I, N=None, prog=False):
+    if N is None:
+        N = [10, 50, 100, 300, 500]
     Ns = np.insert(np.diff(N), 0, N[0])
     T = [getToFimg(I, n) for n in Ns]
     return dict(zip(N, np.cumsum(T, axis=0)))

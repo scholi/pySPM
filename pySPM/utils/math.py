@@ -131,7 +131,7 @@ def Lorentz(x, x0, gamma, amp=None, **kargs):
         from warnings import warn
 
         warn("Parameter A is deprecated. Please use amp in order to set the amplitude!")
-        Amp = kargs["A"]
+        kargs["A"]
     elif "Amp" in kargs:
         from warnings import warn
 
@@ -209,15 +209,9 @@ def FT(x, ufunc=np.real, real=False):
     """
     assert isinstance(x, np.ndarray)
     if len(x.shape) == 1:
-        if real:
-            F = np.fft.rfft(x)
-        else:
-            F = np.fft.fft(x)
+        F = np.fft.rfft(x) if real else np.fft.fft(x)
     elif len(x.shape) == 2:
-        if real:
-            F = np.fft.rfft2(x)
-        else:
-            F = np.fft.fft2(x)
+        F = np.fft.rfft2(x) if real else np.fft.fft2(x)
     else:
         raise TypeError("The array should be 1D or 2D")
     return ufunc(np.fft.fftshift(F))

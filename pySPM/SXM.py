@@ -41,17 +41,17 @@ class SXM:
         assert self.header["SCANIT_TYPE"][0][0] in ["FLOAT", "INT", "UINT", "DOUBLE"]
         self.data_offset = self.f.tell()
         self.f.close()
-        self.size = dict(
-            pixels={
+        self.size = {
+            "pixels": {
                 "x": int(self.header["SCAN_PIXELS"][0][0]),
                 "y": int(self.header["SCAN_PIXELS"][0][1]),
             },
-            real={
+            "real": {
                 "x": float(self.header["SCAN_RANGE"][0][0]),
                 "y": float(self.header["SCAN_RANGE"][0][1]),
                 "unit": "m",
             },
-        )
+        }
 
     def list_channels(self):
         print("Channels")

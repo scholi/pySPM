@@ -233,7 +233,7 @@ class ITA_PCA(PCA):
             Nx = min(ncols, N)
             from matplotlib.gridspec import GridSpec
 
-            fig = plt.figure(
+            plt.figure(
                 figsize=(width, (Ny - 1) * width / Nx + width * N / len(L.columns))
             )
             gs = GridSpec(
@@ -265,6 +265,6 @@ class ITA_PCA(PCA):
 
     @alias("getPCA")
     def get_pca(self, id=0):
-        s = list(self.col.channels.values())[0].pixels.shape
+        s = next(iter(self.col.channels.values())).pixels.shape
         PC = self.pc(id).reshape(s)
         return PC

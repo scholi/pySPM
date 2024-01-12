@@ -17,15 +17,15 @@ class ITAX:
             "CommonDataObjects/MeasurementOptions/{name}[{id}]/pickle".format(**mo)
         ).unpickle()
         self.size = {
-            "pixels": dict(
-                x=self.meas_options["raster_resolution"],
-                y=self.meas_options["raster_resolution"],
-            ),
-            "real": dict(
-                x=self.meas_options["raster_fov"],
-                y=self.meas_options["raster_fov"],
-                unit="m",
-            ),
+            "pixels": {
+                "x": self.meas_options["raster_resolution"],
+                "y": self.meas_options["raster_resolution"],
+            },
+            "real": {
+                "x": self.meas_options["raster_fov"],
+                "y": self.meas_options["raster_fov"],
+                "unit": "m",
+            },
         }
 
     def getSnapshots(self):

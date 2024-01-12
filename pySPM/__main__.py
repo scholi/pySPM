@@ -12,7 +12,7 @@ def run_script(func):
     import importlib
 
     mod = importlib.import_module("pySPM.tools." + func)
-    sys.argv = [sys.argv[0]] + [x for x in sys.argv[2:]]
+    sys.argv = [sys.argv[0], *list(sys.argv[2:])]
     mod.main()
 
 

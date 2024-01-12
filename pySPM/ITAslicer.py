@@ -102,10 +102,10 @@ class SlicerApp(QWidget):
         for i in range(self.ITA.Nscan):
             x = self.ITA.getImage(id, i)
             vol.append(x)
-        self.volume = np.stack([x for x in vol], axis=2)
+        self.volume = np.stack(list(vol), axis=2)
         if self.level is not None:
             self.corrected = np.zeros(self.volume.shape)
-            z = np.arange(self.ITA.Nscan)
+            np.arange(self.ITA.Nscan)
             self.ui.pb.setMaximum(self.level.shape[0])
             for y in np.arange(self.level.shape[0]):
                 self.ui.pb.setValue(y)
@@ -119,10 +119,7 @@ class SlicerApp(QWidget):
         self.ui.status.setText("IDLE")
 
     def plot(self):
-        if self.ui.correction.isChecked():
-            A = self.corrected
-        else:
-            A = self.volume
+        A = self.corrected if self.ui.correction.isChecked() else self.volume
         cmap = self.ui.cmap.currentText()
         self.axXY.clear()
         self.axXZ.clear()
@@ -158,7 +155,7 @@ class SlicerApp(QWidget):
             return
         x = event.xdata
         y = event.ydata
-        axis = [self.axYZ, self.axXZ, self.axXY].index(event.inaxes)
+        [self.axYZ, self.axXZ, self.axXY].index(event.inaxes)
         xdata = int(x)
         ydata = int(y)
 

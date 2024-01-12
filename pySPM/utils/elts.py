@@ -138,10 +138,7 @@ def get_mass(elt, mz=True):
     c = conn.cursor()
     m = 0
     for A, x, n in re.findall("(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)", elt):
-        if n == "":
-            n = 1
-        else:
-            n = int(n)
+        n = 1 if n == "" else int(n)
         if A == "":
             c.execute(
                 f"SELECT mass from elements where symbol='{x}' and abund=(SELECT max(abund) from elements where symbol='{x}')"
@@ -202,14 +199,8 @@ def _formula2dict(elt, iso=True):
     """
     elts = {}
     for A, x, n in re.findall("(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)", elt):
-        if A == "":
-            A = get_main_isotope(x)
-        else:
-            A = int(A)
-        if n == "":
-            n = 1
-        else:
-            n = int(n)
+        A = get_main_isotope(x) if A == "" else int(A)
+        n = 1 if n == "" else int(n)
         if iso:
             if (A, x) not in elts:
                 elts[(A, x)] = n
@@ -226,10 +217,7 @@ def _formula2dict(elt, iso=True):
 def is_fragment_of(fragment, element):
     f = _formula2dict(fragment, iso=False)
     e = _formula2dict(element, iso=False)
-    for x in f:
-        if x not in e or e[x] < f[x]:
-            return False
-    return True
+    return all(not (x not in e or e[x] < f[x]) for x in f)
 
 
 def simplify_formula(elt, debug=False):
@@ -270,10 +258,7 @@ def _dict2formula(elts, debug=False):
         n = elts[(A, sym)]
         if n == 0:
             continue
-        if is_main_isotope(sym, A):
-            fmt = "{sym}"
-        else:
-            fmt = "^{A}{sym}"
+        fmt = "{sym}" if is_main_isotope(sym, A) else "^{A}{sym}"
         if n > 1:
             fmt += "{n}"
         res += fmt.format(A=A, sym=sym, n=n)
@@ -286,8 +271,7 @@ def _get_isotopes_elt(n, x, min_abund=0):
     """
     res = {"": 1}
     iso = get_isotopes_of_element(x)
-    for i in range(n):
-        r = []
+    for _i in range(n):
         Nres = {}
         for x in res:
             for y in iso:
@@ -305,11 +289,8 @@ def _get_isotopes_elt(n, x, min_abund=0):
 def get_isotopes(elt, min_abund=0):
     charges = "+" * elt.count("+") + "-" * elt.count("-")
     res = {"": 1}
-    for A, x, n in re.findall("(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)", elt):
-        if n == "":
-            n = 1
-        else:
-            n = int(n)
+    for _A, x, n in re.findall("(?:\\^([0-9]+))?([A-Z][a-z]?)_?([0-9]*)", elt):
+        n = 1 if n == "" else int(n)
         R = _get_isotopes_elt(n, x, min_abund=min_abund)
         Nres = {}
         for x0 in res:
@@ -467,7 +448,7 @@ class Molecule:
 
     def inc(self, elt="H"):
         r = Molecule(self.formula())
-        k = list(_formula2dict(elt).keys())[0]
+        k = next(iter(_formula2dict(elt).keys()))
         if k in r.atoms:
             r.atoms[k] += 1
         else:
@@ -476,7 +457,7 @@ class Molecule:
 
     def dec(self, elt="H"):
         r = Molecule(self.formula())
-        k = list(_formula2dict(elt).keys())[0]
+        k = next(iter(_formula2dict(elt).keys()))
         if k not in r.atoms or r.atoms[k] < 1:
             raise Exception("Cannot decrement molecule below 0 atoms")
         r.atoms[k] -= 1

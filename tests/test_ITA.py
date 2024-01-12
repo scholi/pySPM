@@ -11,7 +11,7 @@ import unittest
 
 class TestITA(unittest.TestCase):
     def test_ITA_loading(self):
-        TOF = pySPM.ITA(data)
+        pySPM.ITA(data)
 
     def test_SI_image(self):
         TOF = pySPM.ITA(data)

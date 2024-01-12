@@ -44,7 +44,7 @@ def get_curve(filename, channel="Normal Deflection", backward=False):
             namespace,
         )[0].text
     )
-    unit = root.findall(
+    root.findall(
         "spm:vector/spm:contents/spm:axis/spm:vector/spm:contents" "/spm:unit/spm:v",
         namespace,
     )[0].text
@@ -85,7 +85,7 @@ class Nanoscan:
             udisps = float(
                 self.__grab(".//spm:area/spm:contents/spm:display_scale/spm:v")
             )
-            uname = self.__grab(".//spm:area/spm:contents/spm:unit/spm:v")
+            self.__grab(".//spm:area/spm:contents/spm:unit/spm:v")
             x = funit(uval * udisps, udispu)
             uval = float(
                 self.__grab(
@@ -163,7 +163,7 @@ class Nanoscan:
                 )
             )
         except:
-            raise "Channel {0} in {1} scan not found".format(
+            raise "Channel {} in {} scan not found".format(
                 channel, "backward" if backward else "forward"
             )
 
@@ -192,7 +192,7 @@ class Nanoscan:
 
     @deprecated("arraySummary")
     def array_summary(self):
-        res = [
+        [
             y.format(**self.__dict__)
             for y in [
                 "{filename}",

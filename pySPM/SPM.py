@@ -201,18 +201,14 @@ class SPM_image:
         import matplotlib.patheffects as PathEffects
 
         fL = length / self.size["real"]["x"]
-        L = self.size["pixels"]["x"] * fL
+        self.size["pixels"]["x"] * fL
         fH = height / self.size["pixels"]["y"]
         if ax is None:
             ax = plt.gca()
         if pixels is None:
-            if hasattr(ax, "isPixel"):
-                pixels = ax.isPixel
-            else:
-                pixels = False
-        flipped = False
+            pixels = ax.isPixel if hasattr(ax, "isPixel") else False
         if hasattr(ax, "flipped"):
-            flipped = ax.flipped
+            pass
         if type(loc) is int:
             assert loc in [1, 2, 3, 4]
             ref = ax.transAxes.transform(
@@ -239,7 +235,7 @@ class SPM_image:
         WH = inv.transform(ax.transAxes.transform((fL, fH))) - inv.transform(
             ax.transAxes.transform((0, 0))
         )
-        rect = ax.add_patch(
+        ax.add_patch(
             matplotlib.patches.Rectangle(ref, width=WH[0], height=WH[1], color=color)
         )
 
@@ -583,8 +579,8 @@ class SPM_image:
         """
         work_image = self.pixels
         ny, nx = self.pixels.shape
-        dx = self.size["real"]["x"] / self.size["pixels"]["x"]
-        dy = self.size["real"]["y"] / self.size["pixels"]["y"]
+        self.size["real"]["x"] / self.size["pixels"]["x"]
+        self.size["real"]["y"] / self.size["pixels"]["y"]
 
         k = self.dist_v2()
         k[0, 0] = 1e-10
@@ -684,7 +680,7 @@ class SPM_image:
         if ax is None:
             ax = plt.gca()
         ax.src = self
-        if title == None:
+        if title is None:
             title = f"{self.type} - {self.channel}"
         if wrap is not None:
             title = "\n".join(
@@ -707,7 +703,7 @@ class SPM_image:
         fact = int(np.floor(np.log(W) / np.log(10) / 3))
         isunit += fact
         W, H = W / 10 ** (fact * 3), H / 10 ** (fact * 3)
-        if cmap == None:
+        if cmap is None:
             cmap = "gray"
             if unit == "m" and self.channel == "Topography":
                 cmap = "hot"
@@ -721,7 +717,7 @@ class SPM_image:
             mi *= mul
             ma *= mul
 
-        if sig == None:
+        if sig is None:
             vmin = mi + dmin
             vmax = ma + dmax
         else:
@@ -811,7 +807,7 @@ class SPM_image:
             else:
                 ax.set_xlabel(f"x [{unit}]")
                 ax.set_ylabel(f"y [{unit}]")
-        if title != None:
+        if title is not None:
             ax.set_title(title)
         return r
 
@@ -920,10 +916,7 @@ class SPM_image:
                 color=scalarMap.to_rgba(i),
                 **kargs,
             )
-            if width == 0:
-                profile = p
-            else:
-                profile = np.mean(p, axis=1)
+            profile = p if width == 0 else np.mean(p, axis=1)
             if ToFcorr:
                 profile = -np.log(1.001 - profile / ToFcorr)
             if p0 is None:
@@ -1043,9 +1036,8 @@ class SPM_image:
         """
         if kargs.get("debug", False):
             print("get_profile input coordinates:", x1, y1, x2, y2)
-        if ax is not None and axPixels is None:
-            if hasattr(ax, "isPixel"):
-                axPixels = ax.isPixel
+        if ax is not None and axPixels is None and hasattr(ax, "isPixel"):
+            axPixels = ax.isPixel
         if axPixels is None:
             axPixels = pixels
         W = self.size["real"]["x"]
@@ -1193,7 +1185,7 @@ class SPM_image:
         col = kargs.get("color", kargs.get("col", "C0"))
         W = self.size["real"]["x"]
         fact = int(np.floor(np.log(W) / np.log(10) / 3)) * 3
-        if ax == None:
+        if ax is None:
             ax = plt.gca()
         xvalues, p = self.get_profile(
             x1, y1, x2, y2, width=width, color=imgColor, ax=img, pixels=pixels, **kargs
@@ -1216,10 +1208,7 @@ class SPM_image:
             else:
                 isunit = 6
             isunit += fact // 3
-            if isunit != 6:
-                u = sunit[isunit]
-            else:
-                u = ""
+            u = sunit[isunit] if isunit != 6 else ""
             if u == "u":
                 u = "µ"
             rd = np.sqrt(dx**2 + dy**2)
@@ -1315,10 +1304,7 @@ class SPM_image:
             return threshold_local(self.pixels, percent)
         mi = np.min(self.pixels)
         norm = (self.pixels - mi) / (np.max(self.pixels) - mi)
-        if high:
-            r = norm > percent
-        else:
-            r = norm < percent
+        r = norm > percent if high else norm < percent
         if not img:
             if binary:
                 return r
@@ -1441,12 +1427,11 @@ class SPM_image:
                     y0 = topo[yi, xi]
                     if y2 == y1:
                         x_cut = (y1 + slope * x0 - y0) / slope
-                        y_cut = y1
                     else:
                         numerator = x1 / (x2 - x1) + (y0 - slope * x0 - y1) / (y2 - y1)
                         denominator = 1 / (x2 - x1) - slope / (y2 - y1)
                         x_cut = numerator / denominator
-                        y_cut = slope * (x_cut - x0) + y0
+                        slope * (x_cut - x0) + y0
                     if x_cut >= x1 and x_cut <= x2:
                         y1 = BIN[yi, cut]
                         y2 = BIN[yi, cut + 1]
@@ -1492,7 +1477,7 @@ class SPM_image:
         New.pixels = tf.warp(self.pixels, tform, preserve_range=True)
         if not cut:
             return New
-        cut = [0, 0] + list(self.pixels.shape)
+        cut = [0, 0, *list(self.pixels.shape)]
         if tform.translation[0] >= 0:
             cut[2] -= tform.translation[0]
         elif tform.translation[0] < 0:
@@ -1624,10 +1609,7 @@ class SPM_image:
         """
         Filter function to remove scars from images.
         """
-        if not inline:
-            C = copy.deepcopy(self)
-        else:
-            C = self
+        C = copy.deepcopy(self) if not inline else self
         for y in range(1, self.pixels.shape[0] - 1):
             b = self.pixels[y - 1, :]
             c = self.pixels[y, :]
@@ -1788,7 +1770,7 @@ def imshow_sig(img, sig=1, ax=None, **kargs):
     **kargs : additional parameters
         will be passed to the imshow function of matplotls2 = pySPM.Nanoscan("%s/CyI5b_PCB_ns.xml"%(Path))ib
     """
-    if ax == None:
+    if ax is None:
         fig, ax = plt.subplots(1, 1)
     std = np.std(img)
     avg = np.mean(img)
@@ -2062,7 +2044,7 @@ def warp_and_cut(img, tform, cut=True):
         Should the data be cutted?
     """
     New = tf.warp(img, tform, preserve_range=True)
-    Cut = [0, 0] + list(img.shape)
+    Cut = [0, 0, *list(img.shape)]
     if tform.translation[0] >= 0:
         Cut[2] -= tform.translation[0]
     elif tform.translation[0] < 0:

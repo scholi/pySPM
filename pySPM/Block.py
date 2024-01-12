@@ -5,6 +5,7 @@ Module to handle block type used in iontof file formats ITA,ITM,ITS, etc...
 """
 
 import binascii
+import contextlib
 import os
 import struct
 import sys
@@ -127,10 +128,8 @@ class Block:
         # Check the available size of the block
         header_length = 41 + 33 * self.head["N"]
 
-        children_names_length = 0
-        last_id = None
         lowest_index = struct.unpack("<I", self.value[:4])[0]
-        children_names_length = self.head["length1"] - lowest_index
+        self.head["length1"] - lowest_index
         free_space = lowest_index - header_length
         new_name = blk.name not in self
 
@@ -200,11 +199,9 @@ class Block:
         if self.Type[0] not in [1, 3]:
             raise Exception("The current block should be of type 01 or 03 (folder)")
 
-        header_length = 41 + 33 * self.head["N"]
-        children_names_length = 0
-        last_id = None
+        41 + 33 * self.head["N"]
         lowest_index = struct.unpack("<I", self.value[:4])[0]
-        children_names_length = self.head["length1"] - lowest_index
+        self.head["length1"] - lowest_index
         found = False
         for i in range(self.head["N"]):
             self.f.seek(self.offset + 25 + len(self.name) + 41 + 33 * i)
@@ -373,7 +370,7 @@ class Block:
                 struct.unpack("<5x5I", self.f.read(25)),
             )
         )
-        name = self.f.read(head["name_length"])
+        self.f.read(head["name_length"])
         length, nums, NextBlock = struct.unpack("<II25xQ", self.f.read(41))
         if NextBlock == 0:
             return None
@@ -409,7 +406,7 @@ class Block:
                     struct.unpack("<5x5I", data),
                 )
             )
-            name = self.f.read(head["name_length"])
+            self.f.read(head["name_length"])
             data = self.f.tell()
             length, nums, next_block = struct.unpack("<II25xQ", self.f.read(41))
             N = head["N"]
@@ -446,7 +443,7 @@ class Block:
         As the type of the data is not known, this function is very helpful for debugging purpose
         """
         d = {}
-        for i, l in enumerate(self.get_list()):
+        for _i, l in enumerate(self.get_list()):
             self.f.seek(l["bidx"])
             child = Block(self.f, parent=self)
             if child.Type[0:1] == b"\x00":
@@ -470,7 +467,7 @@ class Block:
         It will also display the value/data of all the children (if any)
         """
         print("List of", len(self.get_list()))
-        for i, l in enumerate(self.List):
+        for _i, l in enumerate(self.List):
             self.f.seek(l["bidx"])
             other = ""
             try:
@@ -699,7 +696,7 @@ class Block:
 
         if ex is not None:
             ex(self)
-        if parent == None:
+        if parent is None:
             parent = self.name
         if digraph and level == 0:
             out.write(
@@ -719,7 +716,7 @@ class Block:
                             "{tab}{name} ({id}) @{bidx}\n".format(tab="\t" * level, **l)
                         )
                 if level < maxlevel:
-                    try:
+                    with contextlib.suppress(Exception):
                         self.goto_item(l["name"], l["id"]).show(
                             maxlevel,
                             level + 1,
@@ -729,8 +726,6 @@ class Block:
                             parent=parent + "-" + l["name"],
                             ex=ex,
                         )
-                    except:
-                        pass
         if digraph and level == 0:
             out.write("}")
 
@@ -753,10 +748,7 @@ class Block:
 
     @deprecated("getData")
     def get_data(self, fmt="I", decompress=True):
-        if decompress:
-            raw = self.decompress()
-        else:
-            raw = self.value
+        raw = self.decompress() if decompress else self.value
         L = len(raw) // int(struct.calcsize(fmt))
         return struct.unpack("<" + str(L) + fmt, raw)
 
@@ -852,7 +844,7 @@ class Block:
                 N = current.head["N"]
                 # if N == 0:
                 #    N = SubHeader[1]
-                for i in range(N):
+                for _i in range(N):
                     X, index, slen, id, Y, blen, bidx = struct.unpack(
                         "<B4I2Q", self.f.read(33)
                     )

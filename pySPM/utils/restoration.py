@@ -169,10 +169,7 @@ def richardson_lucy(
     g1 = g2 = None
 
     for i in range(N):
-        if acceleration:
-            y = _rl_accelerate(x, x1, x2, g1, g2, order=acceleration)
-        else:
-            y = x
+        y = _rl_accelerate(x, x1, x2, g1, g2, order=acceleration) if acceleration else x
         x_new = _rl(
             positify(y),
             image=image,

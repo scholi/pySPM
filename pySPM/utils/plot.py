@@ -86,7 +86,7 @@ def Xdist(
 
     ax.axvline(left, color=color, linestyle=linestyle)
     ax.axvline(right, color=color, linestyle=linestyle)
-    ann = dict(va=va, ha=ha, color=color)
+    ann = {"va": va, "ha": ha, "color": color}
     ann.update({k[3:]: kargs[k] for k in kargs if k.startswith("an_")})
     ax.annotate(
         fmt.format(dist=xtransf(right - left), unit=kargs.get("unit", "")),
@@ -95,7 +95,7 @@ def Xdist(
         textcoords="offset pixels",
         **ann,
     )
-    arr = dict(arrowstyle="<->", color=color)
+    arr = {"arrowstyle": "<->", "color": color}
     arr.update({k[4:]: kargs[k] for k in kargs if k.startswith("arr_")})
     ax.annotate("", (left, y), (right, y), arrowprops=arr)
 
@@ -138,7 +138,7 @@ def Ydist(
 
     ax.axhline(down, color=color, linestyle=linestyle)
     ax.axhline(up, color=color, linestyle=linestyle)
-    ann = dict(va=va, ha=ha, color=color)
+    ann = {"va": va, "ha": ha, "color": color}
     ann.update({k[3:]: kargs[k] for k in kargs if k.startswith("an_")})
     ax.annotate(
         fmt.format(dist=ytransf(up - down), unit=kargs.get("unit", "")),
@@ -148,7 +148,7 @@ def Ydist(
         rotation=rotation,
         **ann,
     )
-    arr = dict(arrowstyle="<->", color=color)
+    arr = {"arrowstyle": "<->", "color": color}
     arr.update({k[4:]: kargs[k] for k in kargs if k.startswith("arr_")})
     ax.annotate("", (x, down), (x, up), arrowprops=arr)
 
@@ -214,7 +214,7 @@ def sublegend(*ax, **kargs):
     titles: set to False to remove all titles. (Useful to keep the set_title info in the code to remember what is plotted)
     fontsize: The font size of the labels
     """
-    props = dict(boxstyle="round", facecolor=color, alpha=1)
+    props = {"boxstyle": "round", "facecolor": color, "alpha": 1}
     if not hasattr(margin, "__getitem__") and not hasattr(margin, "__iter__"):
         margin = (margin, margin)
 
@@ -479,11 +479,10 @@ def pixel2img(xy, ax=None):
     if ax is None:
         ax = plt.gca()
 
-    if hasattr(ax, "isPixel"):
-        if not ax.isPixel:
-            pixel_shape = ax.images[0].get_array().shape
-            extent = ax.images[0].get_extent()
-            eW = extent[1] - extent[0]
-            eH = extent[3] - extent[2]
-            return (xy[0] * eW / pixel_shape[1], xy[1] * eH / pixel_shape[0])
+    if hasattr(ax, "isPixel") and not ax.isPixel:
+        pixel_shape = ax.images[0].get_array().shape
+        extent = ax.images[0].get_extent()
+        eW = extent[1] - extent[0]
+        eH = extent[3] - extent[2]
+        return (xy[0] * eW / pixel_shape[1], xy[1] * eH / pixel_shape[0])
     return xy

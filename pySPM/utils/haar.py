@@ -41,6 +41,6 @@ def htrans(A):
     res = []
     while h0.shape[0] > 1 and h0.shape[1] > 1:
         h0, (hx, hy, hc) = pywt.dwt2(h0, "haar")
-        res = [(h0, h0, h0)] + res
-    out, _ = pywt.coeffs_to_array([h0] + res, padding=1)
+        res = [(h0, h0, h0), *res]
+    out, _ = pywt.coeffs_to_array([h0, *res], padding=1)
     return out

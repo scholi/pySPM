@@ -34,10 +34,7 @@ class Fpanel:
             log = logs[0]
         else:
             logs2 = [x for x in logs if "log" in x]
-            if len(logs) == 1:
-                log = logs2[0]
-            else:
-                log = logs[0]
+            log = logs2[0] if len(logs) == 1 else logs[0]
         return log
 
     def openInstrumentPanel(self):
@@ -48,9 +45,9 @@ class Fpanel:
             h = bbox[3] - bbox[1]
             if w != 28 or h != 28:
                 continue
-            controls.append([x] + bbox)
-        Y = sorted(list(set([x[2] for x in controls])))
-        hInstrumentButton = [x[0] for x in controls if x[2] == Y[3]][0]
+            controls.append([x, *bbox])
+        Y = sorted({x[2] for x in controls})
+        hInstrumentButton = next(x[0] for x in controls if x[2] == Y[3])
         clickButton(hInstrumentButton)
         clickButton(hInstrumentButton)
 

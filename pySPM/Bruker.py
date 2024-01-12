@@ -4,6 +4,7 @@
 Module to handle SPM images recorded by a Bruker AFM
 """
 
+import contextlib
 import re
 import struct
 
@@ -44,7 +45,7 @@ class Bruker:
                     break
 
     def _get_bpp(self, i):
-        off = int(self.layers[i][b"Data offset"][0])
+        int(self.layers[i][b"Data offset"][0])
         cols = int(self.layers[i][b"Number of lines"][0])
         rows = int(self.layers[i][b"Samps/line"][0])
         byte_length = int(self.layers[i][b"Data length"][0])
@@ -80,15 +81,11 @@ class Bruker:
         print("========")
 
         for layer in self.layers:
-            try:
+            with contextlib.suppress(KeyError):
                 print(layer[b"@2:Image Data"][0].decode(encoding))
-            except KeyError:
-                pass
         for layer in self.layers:
-            try:
+            with contextlib.suppress(KeyError):
                 print(layer[b"@3:Image Data"][0].decode(encoding) + " (MFM)")
-            except KeyError:
-                pass
 
     def get_channel(
         self,
@@ -150,10 +147,7 @@ class Bruker:
                         if debug:
                             print("result2", result2)
                         scale2 = float(result2[1])
-                        if len(result2) > 2:
-                            zscale = result2[2]
-                        else:
-                            zscale = result2[0]
+                        zscale = result2[2] if len(result2) > 2 else result2[0]
                         if b"/V" in zscale:
                             zscale = zscale.replace(b"/V", b"")
                         if debug:

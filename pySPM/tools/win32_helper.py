@@ -14,7 +14,7 @@ from win32gui import PyGetString, SendMessage
 def getText(hwnd):
     buffer_len = SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0) + 1
     buffer = array.array("b", b"\x00\x00" * buffer_len)
-    text_len = SendMessage(hwnd, WM_GETTEXT, buffer_len, buffer)
+    SendMessage(hwnd, WM_GETTEXT, buffer_len, buffer)
     text = PyGetString(buffer.buffer_info()[0], buffer_len - 1)
     return text
 
@@ -226,8 +226,8 @@ def selectHoriz(hwnds, i):
     controls = []
     for x in hwnds:
         bbox = getBBox(x)
-        controls.append([x] + bbox)
-    x0 = sorted(list(set([x[1] for x in controls])))[i]
+        controls.append([x, *bbox])
+    x0 = sorted({x[1] for x in controls})[i]
     return [x[0] for x in controls if x[1] == x0]
 
 
@@ -235,8 +235,8 @@ def selectVert(hwnds, i):
     controls = []
     for x in hwnds:
         bbox = getBBox(x)
-        controls.append([x] + bbox)
-    y0 = sorted(list(set([x[2] for x in controls])))[i]
+        controls.append([x, *bbox])
+    y0 = sorted({x[2] for x in controls})[i]
     return [x[0] for x in controls if x[2] == y0]
 
 

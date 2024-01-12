@@ -48,7 +48,7 @@ class Plotter(QMainWindow):
             self.cwd = dirs
             self.fileDrop.clear()
             for x in os.listdir(dirs):
-                if x.endswith(".itm") or x.endswith(".ITM"):
+                if x.endswith((".itm", ".ITM")):
                     self.fileDrop.addItem(x)
 
     def __init__(self):

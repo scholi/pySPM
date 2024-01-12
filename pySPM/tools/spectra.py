@@ -20,7 +20,7 @@ DPI = 100.0
 
 class SpectraViewer(QMainWindow):
     def __init__(self, filename=None, parent=None):
-        super(SpectraViewer, self).__init__(parent)
+        super().__init__(parent)
         self.ui = Ui_SpectraViewer()
         self.ui.setupUi(self)
         self.sf = 7200
@@ -68,7 +68,7 @@ class SpectraViewer(QMainWindow):
         self.DoMassCal()
 
     def refresh(self):
-        r = self.ax.get_xlim()
+        self.ax.get_xlim()
         self.yAxisScaleChanged()
         self.canvas.draw()
         self.canvas.flush_events()
@@ -91,7 +91,9 @@ class SpectraViewer(QMainWindow):
             self.ax.lines.remove(x)
         self.lab_lines[:] = []
 
-    def plot_labels(self, colors=["r", "g", "b"]):
+    def plot_labels(self, colors=None):
+        if colors is None:
+            colors = ["r", "g", "b"]
         r = self.ax.get_xlim()
         E = []
         for nm in range(int(np.round(r[0], 0)), int(np.round(r[1], 0)) + 1):
@@ -169,7 +171,7 @@ class SpectraViewer(QMainWindow):
 
     def scrolling(self, event):
         r = self.ax.get_xlim()
-        delta = r[1] - r[0]
+        r[1] - r[0]
         m0 = event.xdata
         zfact = 2
         if event.button == "down":
@@ -217,7 +219,7 @@ class SpectraViewer(QMainWindow):
                 time = self.ita.root.goto(
                     "MassScale/pySPM/" + str(i) + "/time"
                 ).get_double()
-                self.MassCal.append(dict(elt=elt, mass=mass, time=time))
+                self.MassCal.append({"elt": elt, "mass": mass, "time": time})
         else:
             self.MassCal = []
             for x in self.ita.root.goto("MassScale/calib"):
@@ -233,10 +235,7 @@ class SpectraViewer(QMainWindow):
         if self.ita is not None and not (
             formula.endsWith("+") or formula.endsWith("-")
         ):
-            if self.ita.polarity == "Negative":
-                pol = "-"
-            else:
-                pol = "+"
+            pol = "-" if self.ita.polarity == "Negative" else "+"
             formula = formula + pol
         return pySPM.utils.get_mass(formula)
 
@@ -254,8 +253,8 @@ class SpectraViewer(QMainWindow):
             while i != last:
                 last = i
                 i = i - 10 + np.argmax(self.S[i - 10 : i + 10])
-            I = self.S[i]
-            self.MassCal.append(dict(time=self.t[i]))
+            self.S[i]
+            self.MassCal.append({"time": self.t[i]})
             print(f"clicked @{x}u (t={self.t[i]})")
         elif event.button == Qt.LeftButton:
             self.action = ("move", event.xdata)
@@ -264,13 +263,12 @@ class SpectraViewer(QMainWindow):
 
     def on_motion(self, event):
         r = self.ax.get_xlim()
-        if self.action is not None:
-            if self.action[0] == "move":
-                if event.xdata is not None:
-                    delta = r[1] - r[0]
-                    dx = event.xdata - self.action[1]
-                    self.ax.set_xlim((r[0] - dx, r[1] - dx))
-                    self.refresh()
+        if self.action is not None and self.action[0] == "move":
+            if event.xdata is not None:
+                r[1] - r[0]
+                dx = event.xdata - self.action[1]
+                self.ax.set_xlim((r[0] - dx, r[1] - dx))
+                self.refresh()
 
     def onMouseRelease(self, event):
         if event.button == 3:
@@ -309,8 +307,6 @@ class SpectraViewer(QMainWindow):
             )
         else:
             self.k0 = ts[0] - self.sf * np.sqrt(ms[0])
-            dsf = 0
-            dk0 = 0
         self.ui.lab_k0.setText(f"k0 = {self.k0} ± {self.dk0}")
         self.ui.lab_sf.setText(f"sf = {self.sf} ± {self.dsf}")
 

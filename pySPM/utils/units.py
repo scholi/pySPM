@@ -250,7 +250,9 @@ class unit:
 
 
 class SIunit(np.ndarray):
-    def __new__(cls, input_array, u={}):
+    def __new__(cls, input_array, u=None):
+        if u is None:
+            u = {}
         obj = np.asarray(input_array).view(cls)
         obj.unit = unit(u)
         # Finally, we must return the newly created object:

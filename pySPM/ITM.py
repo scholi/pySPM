@@ -1,6 +1,7 @@
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
 
+import contextlib
 import os
 import os.path
 import struct
@@ -102,13 +103,11 @@ class ITM:
         except:
             s = self.get_value("Registration.Raster.Resolution")["int"]
             fov = self.get_value("Registration.Raster.FieldOfView")["float"]
-            self.size = {"pixels": dict(x=s, y=s), "real": dict(x=fov, y=fov, unit="m")}
-        try:
+            self.size = {"pixels": {"x": s, "y": s}, "real": {"x": fov, "y": fov, "unit": "m"}}
+        with contextlib.suppress(Exception):
             self.size["Scans"] = self.root.goto(
                 "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfScans"
             ).get_ulong()
-        except:
-            pass
         self.polarity = self.get_value("Instrument.Analyzer_Polarity_Switch")["string"]
         self.peaks = {}
         self.meas_data = {}
@@ -133,7 +132,7 @@ class ITM:
                 for z in self.root.goto("MassIntervalList").get_list()
                 if z["name"] == "mi"
             ]
-            N = len(R)
+            len(R)
             for x in R:
                 try:
                     X = self.root.goto("MassIntervalList/mi[" + str(x["id"]) + "]")
@@ -407,7 +406,7 @@ class ITM:
         rs = self.get_values(start=True)
         re = self.get_values()
         Val = [["Parameter name", "Value at start", "Value at end"]]
-        for i, x in enumerate(rs):
+        for _i, x in enumerate(rs):
             Val.append([x, rs[x], re[x]])
 
     @alias("getValue")
@@ -422,7 +421,7 @@ class ITM:
         prog=False,
         start=False,
         end=True,
-        names=[],
+        names=None,
         startsWith="",
         nest=False,
         hidePrefix=True,
@@ -431,6 +430,8 @@ class ITM:
         """
         Beta function: Retrieve a list of the values
         """
+        if names is None:
+            names = []
         Vals = {}
         startEnd = []
         if start:
@@ -448,17 +449,11 @@ class ITM:
                 r = Node.get_key_value()
                 del Node
                 S = Vals
-                if numeric:
-                    value = r["float"]
-                else:
-                    value = r["string"]
+                value = r["float"] if numeric else r["string"]
                 if r["key"] in names or (
                     names == [] and r["key"].startswith(startsWith)
                 ):
-                    if hidePrefix:
-                        key_name = r["key"][len(startsWith) :]
-                    else:
-                        key_name = r["key"]
+                    key_name = r["key"][len(startsWith):] if hidePrefix else r["key"]
                     if nest:
                         K = key_name.split(".")
                         for k in K:
@@ -482,7 +477,7 @@ class ITM:
         debug=False,
         error=False,
         Range=5000,
-        fitting_peaks=["C", "CH", "CH2", "CH3", "Na"],
+        fitting_peaks=None,
         apply=False,
         **kargs,
     ):
@@ -490,6 +485,8 @@ class ITM:
         perform an auto calibration for spectrum. (in test, might be unreliable)
         """
         # old parameter name compatibility
+        if fitting_peaks is None:
+            fitting_peaks = ["C", "CH", "CH2", "CH3", "Na"]
         if "FittingPeaks" in kargs:
             fitting_peaks = kargs["FittingPeaks"]
         if type(fitting_peaks) is str:
@@ -516,22 +513,16 @@ class ITM:
         tH = times[0]
         mask = (t >= tH - time_width) * (t <= tH + time_width)
         tH = t[mask][np.argmax(S[mask])]
-        if "sf" not in kargs:
-            sf = self.sf
-        else:
-            sf = kargs.pop("sf")
-        if "k0" not in kargs:
-            k0 = self.k0
-        else:
-            k0 = kargs.pop("k0")
+        sf = self.sf if "sf" not in kargs else kargs.pop("sf")
+        k0 = self.k0 if "k0" not in kargs else kargs.pop("k0")
 
         if sf is None or k0 is None:
             sf = 72000
-            for i in range(3):
+            for _i in range(3):
                 k0 = tH - sf * np.sqrt(
                     get_mass("H" + ["+", "-"][self.polarity == "Negative"])
                 )
-                m = time2mass(t, sf=sf, k0=k0)
+                time2mass(t, sf=sf, k0=k0)
                 mP = time2mass(times, sf=sf, k0=k0)
                 t0 = times[np.argmin(np.abs(mP - 12))]
                 t1 = times[np.argmin(np.abs(mP - 12)) + 1]
@@ -750,11 +741,8 @@ class ITM:
         i = 1
         while L[-i]["name"] != "  20":
             i += 1
-        max_index = L[-i]["id"]
-        if prog:
-            T = PB(L)
-        else:
-            T = L
+        L[-i]["id"]
+        T = PB(L) if prog else L
         for i, elt in enumerate(T):
             if elt["name"] != "  20":
                 continue
@@ -796,7 +784,7 @@ class ITM:
         S = self.get_meas_data("Measurement.ScanNumber")
         idx = [x[0] for x in t]
         time = [x[1] for x in t]
-        ScanData = [x[1] for x in S]
+        [x[1] for x in S]
         ScanIdx = [x[0] for x in S]
         s = np.interp(ScanIdx, idx, time)
 
@@ -925,9 +913,11 @@ class ITM:
 
         if prog:
             pb = PB(total=3, postfix={"task": "Calculating total spectrum"})
-            IT = lambda x: PB(x, leave=False)
+            def IT(x):
+                return PB(x, leave=False)
         else:
-            IT = lambda x: x
+            def IT(x):
+                return x
 
         pixel_size = (
             (self.size["pixels"]["x"] + pixel_aggregation - 1) // pixel_aggregation
@@ -964,7 +954,7 @@ class ITM:
 
         # calculate the extreme cases
         max_time = np.nonzero(m)[0][-1]
-        max_count = np.max(m)
+        np.max(m)
 
         if prog:
             pb.update(1)
@@ -973,7 +963,7 @@ class ITM:
         # Select the peaks which are higher that peak_lim counts
         t = np.arange(channels)
         tx = t[m > peak_lim]  # reduced time vector
-        mx = m[m > peak_lim]  # reduced mass vector
+        m[m > peak_lim]  # reduced mass vector
         rev = {x: -1 for x in range(max_time + 1)}
         for k in range(len(tx)):
             rev[tx[k]] = k
@@ -1091,7 +1081,7 @@ class ITM:
         ax.plot(M, S, **kargs)
         self.get_masses()
         if show_peaks:
-            ymax = ax.get_ylim()[1]
+            ax.get_ylim()[1]
             labels = []
             pos = []
             index = 0
@@ -1119,16 +1109,10 @@ class ITM:
         """
         retrieve the peak list as a dictionnary
         """
-        if mass_list is None:
-            masses = self.peaks
-        else:
-            masses = mass_list
+        masses = self.peaks if mass_list is None else mass_list
         result = []
         for P in masses:
-            if mass_list is None:
-                p = self.peaks[P]
-            else:
-                p = P
+            p = self.peaks[P] if mass_list is None else P
             result.append(
                 {
                     "id": p["id"]["long"],
@@ -1221,10 +1205,7 @@ class ITM:
             )
         )
 
-        if kargs.get("prog", False):
-            T = PB(scans)
-        else:
-            T = scans
+        T = PB(scans) if kargs.get("prog", False) else scans
         if kargs.get("debug", False):
             import time
 
@@ -1272,7 +1253,6 @@ class ITM:
                         Spectrum[b - ip - 1, id] += fp
                         i += 1
         elif type(ROI) in [list, tuple]:
-            multi_roi = True
             Spectrum = np.zeros((number_channels, len(ROI)), dtype=np.float32)
             for s in T:
                 raw = self.get_raw_raw_data(s)
@@ -1338,7 +1318,6 @@ class ITM:
     @alias("getRawRawData")
     def get_raw_raw_data(self, scan=0):
         assert scan < self.Nscan
-        found = False
         RAW = b""
         if self.rawlist is None:
             self.rawlist = self.root.goto("rawdata").get_list()
@@ -1458,7 +1437,7 @@ class ITM:
                                 xy=pos,
                                 xytext=(-15, -25),
                                 textcoords="offset points",
-                                arrowprops=dict(arrowstyle="->", facecolor="black"),
+                                arrowprops={"arrowstyle": "->", "facecolor": "black"},
                             )
             pos = toXY((X, Y), W, H)
             ax.plot(pos[0], pos[1], "xr")
@@ -1553,7 +1532,7 @@ class ITM:
         for s in scans:
             Data = self.get_raw_data(s)
             for xy in Data:
-                for i, ch in enumerate(channels):
+                for i, _ch in enumerate(channels):
                     Counts[i][xy[1], xy[0]] += np.sum(
                         (Data[xy] >= left[i]) * (Data[xy] <= right[i])
                     )
@@ -1618,7 +1597,7 @@ class ITM:
             )
             + 1
         )
-        new_id2 = (
+        (
             max(
                 [
                     x.goto("id").get_ulong()
@@ -1647,7 +1626,7 @@ class ITM:
             "attr.Sticky": ("B", 0),
             "attr.Visible": ("B", 1),
         }
-        p = dict(new_index=new_index, new_index2=new_index2)
+        p = {"new_index": new_index, "new_index2": new_index2}
         self.root.edit_block(
             "Measurement Options/massintervals/mi[{new_index2}]".format(**p),
             "id",

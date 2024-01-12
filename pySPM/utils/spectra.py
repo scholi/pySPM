@@ -45,7 +45,7 @@ def show_peak(
     label=None,
     include=None,
     include_only=None,
-    exclude=[],
+    exclude=None,
     polarity="+",
     colors="rgb",
     pretty=True,
@@ -112,6 +112,8 @@ def show_peak(
     from . import LG, get_mass, get_peaklist
     from .elts import formulafy
 
+    if exclude is None:
+        exclude = []
     if "showElts" in kargs:
         from warnings import warn
 
@@ -133,7 +135,7 @@ def show_peak(
     if do_debug(debug):
         import time
 
-        t0 = time.time()
+        time.time()
 
     if type(exclude) is str:
         exclude = exclude.split(",")
@@ -163,10 +165,7 @@ def show_peak(
         negative = True
     if show_elts:
         if include_only is not None:
-            if type(include_only) is str:
-                E = include_only.split(",")
-            else:
-                E = include_only
+            E = include_only.split(",") if type(include_only) is str else include_only
         else:
             E = [
                 x
@@ -174,7 +173,7 @@ def show_peak(
                 for x in get_peaklist(NM, negative)
             ]
             E = [x for x in E if x not in exclude] + include
-        E = list(set([x + [["+", "-"][negative], ""]["+" in x or "-" in x] for x in E]))
+        E = list({x + [["+", "-"][negative], ""]["+" in x or "-" in x] for x in E})
     else:
         E = []
     if negative:
@@ -184,10 +183,7 @@ def show_peak(
     m0s = [get_mass(x) for x in E]
     E = [x for x, y in zip(E, m0s) if y >= lower_mass and y <= upper_mass]
     m0s = [get_mass(x) for x in E]
-    if formula:
-        E_labels = [formulafy(x) for x in E]
-    else:
-        E_labels = E
+    E_labels = [formulafy(x) for x in E] if formula else E
     if do_debug(debug):
         print("Displayed elements:", ", ".join(E))
 
@@ -523,7 +519,7 @@ def plot_isotopes(
     m, y = L.get_xdata(), L.get_ydata()
     if hasattr(ax, "log") and ax.log:
         y = 10**y
-    r = main.get_xlim()
+    main.get_xlim()
     s = m * 0
 
     for iso in isos:

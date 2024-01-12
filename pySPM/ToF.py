@@ -61,10 +61,7 @@ def getSpecElt(Elts):
 def SplitElts(elt):
     elts = []
     for x, i in re.findall("([A-Z][a-z]?)([0-9]*)", elt):
-        if i == "":
-            i = 1
-        else:
-            i = int(i)
+        i = 1 if i == "" else int(i)
         elts += [x for k in range(i)]
     return elts
 
@@ -121,7 +118,7 @@ class BIF6:
 
     def showImgElt(self, elt, size=10, abundCorr=False, tot=True):
         A = self.getImgElt(elt)
-        ks = [z for z in A if A[z]["data"] != None]
+        ks = [z for z in A if A[z]["data"] is not None]
         fig, ax = plt.subplots(
             (len(ks) + 1) // 4 + 1, 4, figsize=(10 * ((len(ks) + 1) // 4 + 1), 10)
         )
@@ -171,7 +168,7 @@ class BIF3D:
                     r = re.search(s, x)
                     ID = int(r.group(1))
                     self.Peaks[ID] = r.group(2)
-                    if r.group(2) != None:
+                    if r.group(2) is not None:
                         self.RPeaks[r.group(2)] = ID
         self.data = {}
 
@@ -180,7 +177,7 @@ class BIF3D:
         if type(channels) == int:
             return channels
         if type(channels) == str:
-            assert channels in self.RPeaks.keys()
+            assert channels in self.RPeaks
             return self.RPeaks[channels]
         if type(channels) == list or type(channels) == tuple:
             ID = []
@@ -193,7 +190,7 @@ class BIF3D:
         if k in self.data:
             return self.data[k]
         v = self.Peaks[k]
-        if v != None:
+        if v is not None:
             path = "{path}{sep}{basename} ({ID}) - {Peak}.BIF3D"
         else:
             path = "{path}{sep}{basename} ({ID}).BIF3D"
@@ -206,7 +203,7 @@ class BIF3D:
         A = f.read()
         f.close()
         size = struct.unpack("II", A[32:40])
-        if self.size == None:
+        if self.size is None:
             self.size = size
         else:
             assert self.size == size

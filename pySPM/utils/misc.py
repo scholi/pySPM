@@ -135,66 +135,65 @@ def getBAM(x, x0, N=10, least_one=False):
         if True each GaAlAs strip are at least 1px wide.
     """
     P = x * 0
-    l = 0
 
     # Here are the certified known distances
-    d = dict(
-        W1=691,
-        W2=691,
-        W3=293,
-        W4=294,
-        W5=19.5,
-        W6=195,
-        W7=195,
-        W8=38,
-        W9=3.6,
-        W10=14.2,
-        W11=3.5,
-        W12=96,
-        W13=5,
-        W14=1,
-        P1=587,
-        P2=389,
-        P3=273,
-        P4=193,
-        P5=136,
-        P6=97,
-        P7=67.5,
-        P8=48.5,
-        P9=76.5,
-        P10=57,
-        P11=42,
-        P12=31,
-        P13=23,
-        P14=17.5,
-        P15=13.3,
-        P16=9.4,
-        P17=6.9,
-        P18=4.6,
-        P19=3,
-        P20=2,
-    )
+    d = {
+        "W1": 691,
+        "W2": 691,
+        "W3": 293,
+        "W4": 294,
+        "W5": 19.5,
+        "W6": 195,
+        "W7": 195,
+        "W8": 38,
+        "W9": 3.6,
+        "W10": 14.2,
+        "W11": 3.5,
+        "W12": 96,
+        "W13": 5,
+        "W14": 1,
+        "P1": 587,
+        "P2": 389,
+        "P3": 273,
+        "P4": 193,
+        "P5": 136,
+        "P6": 97,
+        "P7": 67.5,
+        "P8": 48.5,
+        "P9": 76.5,
+        "P10": 57,
+        "P11": 42,
+        "P12": 31,
+        "P13": 23,
+        "P14": 17.5,
+        "P15": 13.3,
+        "P16": 9.4,
+        "P17": 6.9,
+        "P18": 4.6,
+        "P19": 3,
+        "P20": 2,
+    }
     # The prelines
     lines = [(-147 * i, 80) for i in range(N, 0, -1)]
 
     # Estimated coordinates of the starting of lines
-    pos = dict(
-        W1=0,
-        P1=d["W1"] + d["W2"],
-        W5=2683,
-        P9=8760,
-        W8=7300,
-        W9=7800,
-        W10=8250,
-        W11=9500,
-        W12=9840,
-        W14=8100,
-    )
-    pos_rel = dict(
-        W5=dict(P2=397, P3=1380, P4=2140, P5=2730, P6=3200, P7=3535, P8=3730),
-        P9=dict(P10=231, P11=402, P12=539, P13=642, P14=710),
-        W11=dict(P15=60, P16=104, P17=141, P18=162, P19=182, P20=191),
-    )
+    pos = {
+        "W1": 0,
+        "P1": d["W1"] + d["W2"],
+        "W5": 2683,
+        "P9": 8760,
+        "W8": 7300,
+        "W9": 7800,
+        "W10": 8250,
+        "W11": 9500,
+        "W12": 9840,
+        "W14": 8100,
+    }
+    pos_rel = {
+        "W5": {"P2": 397, "P3": 1380, "P4": 2140, "P5": 2730, "P6": 3200, "P7": 3535, "P8": 3730},
+        "P9": {"P10": 231, "P11": 402, "P12": 539, "P13": 642, "P14": 710},
+        "W11": {"P15": 60, "P16": 104, "P17": 141, "P18": 162, "P19": 182, "P20": 191},
+    }
     for rel in pos_rel:
         for key in pos_rel[rel]:
             pos[key] = pos[rel] + pos_rel[rel][key]
@@ -216,10 +215,7 @@ def in_ipynb():
     try:
         # noinspection PyUnresolvedReferences
         cfg = get_ipython().config
-        if "IPKernelApp" in cfg:
-            return True
-        else:
-            return False
+        return "IPKernelApp" in cfg
     except NameError:
         return False
 
@@ -232,12 +228,14 @@ if in_ipynb():
             from tqdm import tqdm
         except:
             warn("the library tqdm cannot be found. All progressbar will be disabled.")
-            tqdm = lambda x: x
+            def tqdm(x):
+                return x
     PB = tqdm
 else:
     try:
         from tqdm import tqdm
     except:
         warn("the library tqdm cannot be found. All progressbar will be disabled.")
-        tqdm = lambda x: x
+        def tqdm(x):
+            return x
     PB = tqdm

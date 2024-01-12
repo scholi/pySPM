@@ -98,9 +98,9 @@ def lgCDF_fit(x, y, p0, dic=False):
     popt, pcov = opt.curve_fit(lgCDF, x, y, p0, bounds=bounds)
     if dic:
         d = np.diag(pcov)
-        return dict(
-            bg=popt[0], lg=popt[1], A=popt[2::3], x0=popt[3::3], sig=popt[4::3]
-        ), dict(bg=d[0], lg=d[1], A=d[2::3], x0=d[3::3], sig=d[4::3])
+        return {
+            "bg": popt[0], "lg": popt[1], "A": popt[2::3], "x0": popt[3::3], "sig": popt[4::3]
+        }, {"bg": d[0], "lg": d[1], "A": d[2::3], "x0": d[3::3], "sig": d[4::3]}
     return popt, pcov
 
 
@@ -112,9 +112,9 @@ def CDF_fit(x, y, p0, dic=False):
     popt, pcov = opt.curve_fit(CDF, x, y, p0, bounds=bounds)
     if dic:
         d = np.diag(pcov)
-        return dict(bg=popt[0], A=popt[1::3], x0=popt[2::3], sig=popt[3::3]), dict(
-            bg=d[0], A=d[2::3], x0=d[3::3], sig=d[4::3]
-        )
+        return {"bg": popt[0], "A": popt[1::3], "x0": popt[2::3], "sig": popt[3::3]}, {
+            "bg": d[0], "A": d[2::3], "x0": d[3::3], "sig": d[4::3]
+        }
     return popt, pcov
 
 
@@ -165,10 +165,7 @@ def LG2Dr(A, ratio=np.sqrt(2), Rweight=None, sigma=None, dic=False, **kargs):
     X, Y = np.meshgrid(x, y)
     R = np.sqrt((X - Center[1]) ** 2 + (Y - Center[0]) ** 2)
     if Rweight is not None:
-        if Rweight == "R":
-            sigma = 0.001 + R
-        else:
-            sigma = Rweight(R)
+        sigma = 0.001 + R if Rweight == "R" else Rweight(R)
     if sigma is not None:
         sigma = np.ravel(sigma)
     pfit = curve_fit(fit, (X, Y), np.ravel(A), p0=p0, sigma=sigma, bounds=bounds)
@@ -177,7 +174,7 @@ def LG2Dr(A, ratio=np.sqrt(2), Rweight=None, sigma=None, dic=False, **kargs):
     pout = []
     dpout = []
     j = 0
-    for i, x in enumerate(params):
+    for _i, x in enumerate(params):
         if x in kargs:
             pout.append(kargs[x])
             dpout.append(0)
@@ -263,10 +260,7 @@ def LG2D(A, Rweight=None, sigma=None, dic=False, **kargs):
     X, Y = np.meshgrid(x, y)
     R = np.sqrt((X - Center[1]) ** 2 + (Y - Center[0]) ** 2)
     if Rweight is not None:
-        if Rweight == "R":
-            sigma = 0.001 + R
-        else:
-            sigma = Rweight(R)
+        sigma = 0.001 + R if Rweight == "R" else Rweight(R)
     if sigma is not None:
         sigma = np.ravel(sigma)
     pfit = curve_fit(fit, (X, Y), np.ravel(A), p0=p0, sigma=sigma, bounds=bounds)
@@ -275,7 +269,7 @@ def LG2D(A, Rweight=None, sigma=None, dic=False, **kargs):
     pout = []
     dpout = []
     j = 0
-    for i, x in enumerate(params):
+    for _i, x in enumerate(params):
         if x in kargs:
             pout.append(kargs[x])
             dpout.append(0)
@@ -364,10 +358,7 @@ def LG2Da(A, Rweight=None, sigma=None, dic=False, **kargs):
     X, Y = np.meshgrid(x, y)
     R = np.sqrt((X - Center[1]) ** 2 + (Y - Center[0]) ** 2)
     if Rweight is not None:
-        if Rweight == "R":
-            sigma = 0.001 + R
-        else:
-            sigma = Rweight(R)
+        sigma = 0.001 + R if Rweight == "R" else Rweight(R)
     if sigma is not None:
         sigma = np.ravel(sigma)
     pfit = curve_fit(fit, (X, Y), np.ravel(A), p0=p0, sigma=sigma, bounds=bounds)
@@ -376,7 +367,7 @@ def LG2Da(A, Rweight=None, sigma=None, dic=False, **kargs):
     pout = []
     dpout = []
     j = 0
-    for i, x in enumerate(params):
+    for _i, x in enumerate(params):
         if x in kargs:
             pout.append(kargs[x])
             dpout.append(0)

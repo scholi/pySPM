@@ -157,7 +157,7 @@ class Collection:
 
         if channels is None:
             channels = self.channels.keys()
-        if isinstance(list(self.channels.values())[0], SPM_image):
+        if isinstance(next(iter(self.channels.values())), SPM_image):
             data = pd.DataFrame({k: self.channels[k].pixels.ravel() for k in channels})
         else:
             data = pd.DataFrame({k: self.channels[k].ravel() for k in channels})
@@ -213,7 +213,7 @@ class Collection:
         result = copy.deepcopy(self)
         del result.channels
         result.channels = {}
-        size = list(self.channels.values())[0]
+        size = next(iter(self.channels.values()))
         S = np.zeros((size[0] / stitches[0], size[1] / stitches[1]))
         for i in range(stitches[0]):
             for j in range(stitches[1]):

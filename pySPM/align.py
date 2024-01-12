@@ -112,7 +112,6 @@ class Aligner:
     def ImproveRotation(self, delta=0.1, count=0, prog=False):
         IDX1 = self.getMatchingIndex()
         IDX2 = IDX1
-        init = self.rotation
         if prog:
             print(
                 f"Progress [{prog}/4] Improve Rotation. Passes: {count + 1} (max 11)",

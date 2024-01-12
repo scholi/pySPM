@@ -372,7 +372,8 @@ class ITA(ITM):
         """
         Shifts = [(0, 0)]
         if Filter is None:
-            Filter = lambda z: z
+            def Filter(z):
+                return z
         S0 = Filter(self.get_added_image_by_mass(masses, 0))
         Y = range(1, self.Nscan)
         if prog:
@@ -446,9 +447,8 @@ class ITA(ITM):
         y = np.linspace(y1, y2, N)
         out = np.zeros((self.Nscan, N))
         Y = range(self.Nscan)
-        if ax is not None:
-            if not flip:
-                ax.plot([x1, x2], [self.sy - 1 - y1, self.sy - 1 - y2], col)
+        if ax is not None and not flip:
+            ax.plot([x1, x2], [self.sy - 1 - y1, self.sy - 1 - y2], col)
         if prog:
             Y = PB(Y)
         from scipy.ndimage import map_coordinates
@@ -775,14 +775,14 @@ class ITA(ITM):
             "Presentation/Imaging Worksheet/Worksheet/PAGES/COUNT"
         ).get_ulong()
         assert page < num_pages
-        Nitems = self.root.goto(
+        self.root.goto(
             f"Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{page}]/ItemCount"
         ).get_ulong()
         sett = self.root.goto(
             f"Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{page}]/SETTINGS"
         ).dict_list()
-        Nx = sett["Xsize"]["ulong"]
-        Ny = sett["Ysize"]["ulong"]
+        sett["Xsize"]["ulong"]
+        sett["Ysize"]["ulong"]
         items = self.root.goto(
             f"Presentation/Imaging Worksheet/Worksheet/PAGES/Page[{page}]/Items"
         ).get_data()
@@ -826,7 +826,7 @@ class ITA(ITM):
         SN = miblock.goto("SN").get_string()
         if added is None:
             added_img = np.zeros((sy, sx), dtype=np.uint32)
-        chID = miblock.goto("id").get_ulong()
+        miblock.goto("id").get_ulong()
         if scans is not None:
             N = self.root.goto(
                 "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfImages"
@@ -868,10 +868,7 @@ class ITA(ITM):
                 if added is None:
                     added_img += img
 
-        if added is None:
-            added = added_img
-        else:
-            added = np.flipud(added)
+        added = added_img if added is None else np.flipud(added)
         data = zlib.compress(
             struct.pack(
                 f"<{sx * sy}I", *np.ravel(added.astype(np.uint32, casting="unsafe"))
@@ -1101,10 +1098,7 @@ class ITA_collection(Collection):
         """
         if self.PCA is None:
             self.run_pca()
-        if num is None:
-            L = self.PCA.loadings()
-        else:
-            L = self.PCA.loadings()[:num]
+        L = self.PCA.loadings() if num is None else self.PCA.loadings()[:num]
         if ax is not None:
             if ax is True:
                 self.PCA.hinton(matrix=L)
@@ -1140,7 +1134,7 @@ class ITA_collection(Collection):
         from scipy.ndimage.filters import gaussian_filter
 
         N = ITA_collection(self.filename, [], name=self.name)
-        size = list(self.channels.values())[0].pixels.shape
+        size = next(iter(self.channels.values())).pixels.shape
         S = np.zeros((int(size[0] / stitches[0]), int(size[1] / stitches[1])))
         sy, sx = S.shape
         for i in range(stitches[0]):
