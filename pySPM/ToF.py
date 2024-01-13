@@ -91,7 +91,7 @@ class BIF6:
         ).reshape(self.size)
 
     def getImgMass(self, masses, raw=False):
-        if type(masses) is float or type(masses) is int:
+        if isinstance(masses, (float, int)):
             masses = [masses]
         SUM = None
         for i, x in enumerate(self.cat):
@@ -125,7 +125,7 @@ class BIF6:
         mi = np.min(A[ks[0]]["data"].pixels)
         ma = np.max(A[ks[0]]["data"].pixels)
         A[ks[0]]["CT"] = ma
-        for i, k in enumerate(ks[1:]):
+        for _i, k in enumerate(ks[1:]):
             M = np.min(A[k]["data"].pixels)
             mi = min(mi, M)
             A[k]["minCT"] = M
@@ -139,14 +139,14 @@ class BIF6:
             ax[0][0].imshow(SUM, vmin=0)
             ax[0][0].set_title("Total")
             di = 1
-        for i, k in enumerate(ks):
+        for _i, k in enumerate(ks):
             if abundCorr:
-                ax[(i + di) // 4][(i + di) % 4].imshow(
+                ax[(_i + di) // 4][(_i + di) % 4].imshow(
                     A[k]["data"].pixels / A[k]["abund"], vmin=0, vmax=ma
                 )
             else:
-                A[k]["data"].show(ax=ax[(i + di) // 4][(i + di) % 4], vmin=0, vmax=ma)
-            ax[(i + di) // 4][(i + di) % 4].set_title(
+                A[k]["data"].show(ax=ax[(_i + di) // 4][(_i + di) % 4], vmin=0, vmax=ma)
+            ax[(_i + di) // 4][(_i + di) % 4].set_title(
                 "mass: {mass:.3} - abundancy: {abund:.3f} - CT: {CT}".format(**A[k])
             )
 
@@ -174,12 +174,12 @@ class BIF3D:
 
     def getIDs(self, channels):
         assert type(channels) in [str, int, list, tuple]
-        if type(channels) == int:
+        if isinstance(channels, int):
             return channels
-        if type(channels) == str:
+        if isinstance(channels, str):
             assert channels in self.RPeaks
             return self.RPeaks[channels]
-        if type(channels) == list or type(channels) == tuple:
+        if isinstance(channels, (list, tuple)):
             ID = []
             for x in channels:
                 ID.append(self.getIDs(x))
@@ -226,7 +226,7 @@ class BIF3D:
     def getChannels(self, *channels):
         k = self.getIDs(channels)
         self.loadChannels(k)
-        if type(k) == int:
+        if isinstance(k, int):
             return self.data[k]
         D = np.zeros(self.size)
         for x in k:

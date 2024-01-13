@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 
 from . import constants as const
@@ -48,7 +50,6 @@ _unit_scale = {
 }
 
 _unit_revert_scale = {}
-import re
 
 _SI_units = ["kg", "m", "s", "A", "K", "cd", "mol"]
 
@@ -109,7 +110,7 @@ def par_parse(s):
 def op_parse(s):
     r = []
     for x in s:
-        if type(x) is list:
+        if isinstance(x, list):
             r.append(op_parse(x))
         else:
             r += [x for x in re.split(r"(\*|/|\^)", x) if len(x) > 0]
@@ -129,7 +130,7 @@ def num_parse(s):
 
 
 def u_parse(s):
-    if type(s) is list:
+    if isinstance(s, list):
         sub = [u_parse(y) for y in s]
         return sub
     for x in "*/^":
@@ -158,7 +159,7 @@ def u_parse(s):
 
 
 def op_exec(s):
-    s = [op_exec(x) if type(x) is list else x for x in s]
+    s = [op_exec(x) if isinstance(x, list) else x for x in s]
     while "^" in s:
         i = s.index("^")
         a = s[i - 1]
@@ -176,14 +177,14 @@ def op_exec(s):
 class unit:
     def __init__(self, u, value=1):
         self.value = 1
-        if type(u) is str:
+        if isinstance(u, str):
             if u in _SI_units:
                 self.units = {u: 1}
             else:
                 p = parse(u)
                 self.units = p.units
                 self.value = p.value
-        elif type(u) is dict:
+        elif isinstance(u, dict):
             self.units = {x: u[x] for x in u}
         else:
             raise TypeError(type(u))

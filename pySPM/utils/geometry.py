@@ -34,13 +34,13 @@ class Bbox:
             self.top = kargs["top"]
             self.bottom = kargs["bottom"]
         elif len(args) == 1:
-            assert type(args[0]) is dict
+            assert isinstance(args[0], dict)
             self.left = args[0]["left"]
             self.right = args[0]["right"]
             self.top = args[0]["top"]
             self.bottom = args[0]["bottom"]
         elif len(args) == 3:
-            assert type(args[0]) in [list, tuple]
+            assert isinstance(args[0], (list, tuple))
             self.left = args[0][0]
             self.bottom = args[0][1]
             self.right = self.left + args[1]

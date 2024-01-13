@@ -4,6 +4,7 @@
 #
 # WARNING! All changes made in this file will be lost!
 
+from mplwidget import MplWidget
 from PyQt5 import QtCore, QtWidgets
 
 
@@ -105,6 +106,3 @@ class Ui_slicer:
         self.cmap.setItemText(1, _translate("slicer", "gray"))
         self.cmap.setItemText(2, _translate("slicer", "hot"))
         self.cmap.setItemText(3, _translate("slicer", "jet"))
-
-
-from mplwidget import MplWidget

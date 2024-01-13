@@ -12,7 +12,7 @@ import zlib
 
 import numpy as np
 
-from .Block import MissingBlock
+from .Block import MissingBlockError
 from .collection import Collection
 from .ITM import ITM
 from .utils.misc import PB, alias, aliased, deprecated
@@ -48,7 +48,7 @@ class ITA(ITM):
             self.sy = self.root.goto(
                 "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.YSize"
             ).get_ulong()
-        except MissingBlock:
+        except MissingBlockError:
             self.sx = self.size["pixels"]["x"]
             self.sy = self.size["pixels"]["y"]
         try:
@@ -66,7 +66,7 @@ class ITA(ITM):
 
         try:
             self.fov = self.root.goto("Meta/SI Image[0]/fieldofview").get_double()
-        except MissingBlock:
+        except MissingBlockError:
             self.fov = self.get_value("Registration.Raster.FieldOfView")["float"]
 
     @alias("getIntensity")
@@ -94,7 +94,7 @@ class ITA(ITM):
                 except:
                     import warnings
 
-                    warnings.warn("SI image cannot be retrieved")
+                    warnings.warn("SI image cannot be retrieved", stacklevel=2)
                     return None
         return img
 
@@ -179,7 +179,7 @@ class ITA(ITM):
                 name = ["^" + n + "[+-]?$" for n in name]
             else:
                 name = "^" + name + "[+-]?$"
-        if type(name) is not list:
+        if not isinstance(name, list):
             name = [name]
         for n in name:
             for P in self.peaks:
@@ -291,7 +291,7 @@ class ITA(ITM):
         """
         if scans is None:
             scans = range(self.Nscan)
-        if type(scans) == int:
+        if isinstance(scans, int):
             scans = [scans]
         if prog:
             scans = PB(scans)
@@ -331,7 +331,7 @@ class ITA(ITM):
         """
         if scans is None:
             scans = range(self.Nscan)
-        if type(scans) == int:
+        if isinstance(scans, int):
             scans = [scans]
 
         channels = self.get_added_image_by_name(names, strict)
@@ -372,8 +372,10 @@ class ITA(ITM):
         """
         Shifts = [(0, 0)]
         if Filter is None:
+
             def Filter(z):
                 return z
+
         S0 = Filter(self.get_added_image_by_mass(masses, 0))
         Y = range(1, self.Nscan)
         if prog:
@@ -534,9 +536,9 @@ class ITA(ITM):
         """
         if scans is None:
             scans = range(self.Nscan)
-        if type(scans) is int:
+        if isinstance(scans, int):
             scans = [scans]
-        if type(masses) is int or type(masses) is float:
+        if isinstance(masses, (int, float)):
             masses = [masses]
         if prog:
             scans = PB(scans, leave=False)
@@ -575,7 +577,7 @@ class ITA(ITM):
             List of all selected peaks used to compute the image.
             Note: Pass this list to pySPM.ITA.showChannels in order to print a human readable representation of it.
         """
-        if type(masses) is int or type(masses) is float:
+        if isinstance(masses, (int, float)):
             masses = [masses]
         Z = np.zeros((self.sy, self.sx))
         channels = []
@@ -632,7 +634,7 @@ class ITA(ITM):
         Retrieve the numpy 2D array of a given channel ID for the sum of all scan (precomputed by iontof, but not shift-corrected)
         Note: It is preferable to use the pySPM.ITA.getAddedImageByMass or pySPM.ITA.getAddedImageByName
         """
-        assert type(channel) is int
+        assert isinstance(channel, int)
         assert channel >= 0 and channel < self.Nimg
         c = self.root.goto(
             "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScansAdded"
@@ -721,8 +723,8 @@ class ITA(ITM):
         if "ShiftMode" in kargs:
             shift_mode = kargs.pop("ShiftMode")
 
-        assert type(channel) is int
-        assert type(scan) is int
+        assert isinstance(channel, int)
+        assert isinstance(scan, int)
         assert channel >= 0 and channel < self.Nimg
         assert scan >= 0 and scan < self.Nscan
         c = self.root.goto(
@@ -983,7 +985,7 @@ class ITA_collection(Collection):
         for channels in CHS:
             if channels is channels2:
                 strict = False
-            if type(channels) is list:
+            if isinstance(channels, list):
                 for x in channels:
                     if mass:
                         try:
@@ -1006,7 +1008,7 @@ class ITA_collection(Collection):
                                 upper=z["umass"],
                             )
                         self.add(Z, x)
-            elif type(channels) is dict:
+            elif isinstance(channels, dict):
                 for x in channels:
                     if mass:
                         self.add(self.ita.get_added_image_by_mass(channels[x]), x)
@@ -1071,7 +1073,7 @@ class ITA_collection(Collection):
         Returns
         -------
         None
-            Plot num PCA into a 1×num subplots
+            Plot num PCA into a 1 x num subplots
 
         """
         if self.PCA is None:
@@ -1117,7 +1119,7 @@ class ITA_collection(Collection):
         channel : string
             name of a channel with a known homogeneous yield (i.e. where the visible variation of the yield is only due to charging and not to a material density variation
         stitches : list or tuple of two ints
-            stitches=(N,M) where N×M is the numer of images stitched
+            stitches=(N,M) where N x M is the numer of images stitched
         gauss : float
             if >0 a gauss filter will be applied on the reference image
         debug : bool

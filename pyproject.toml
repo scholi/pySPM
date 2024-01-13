@@ -58,5 +58,15 @@ extend-select = [
 ignore = [
     "N806", # variable in function should be lowercase
     "N802", # function name should be lowercase
-    "N801" # class name should use CapWords convention
+    "N801", # class name should use CapWords convention
+    "ERA001", # eradicate: Found commented out code
+    "N803", # argument name should be lowercase
+    "E741", # ambiguous variable name
+    "E722", # do not use bare except
+    "RUF001",
+    "RUF003",
+    "N999",
+    "F405",
+    "F403",
+    "SIM115",
 ]

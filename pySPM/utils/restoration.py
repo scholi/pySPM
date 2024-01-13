@@ -158,7 +158,7 @@ def richardson_lucy(
 
     # Is iterations a number of a list of number?
     dict_output = True
-    if type(iterations) is int:
+    if isinstance(iterations, int):
         dict_output = False
         iterations = [iterations]
 

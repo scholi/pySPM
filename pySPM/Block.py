@@ -14,7 +14,7 @@ from .utils import dec_debug, do_debug
 from .utils.misc import aliased, deprecated
 
 
-class MissingBlock(Exception):
+class MissingBlockError(Exception):
     def __init__(self, parent, name, index):
         self.block_name = parent.path + parent.name + "/" + name
         self.index = index
@@ -270,7 +270,7 @@ class Block:
                     idx = e["id"]
                 try:
                     parent = parent.goto_item(p, idx)
-                except MissingBlock:
+                except MissingBlockError:
                     parent = parent.create_dir(p, children=[], id=idx)
         try:
             if do_debug(debug):
@@ -290,7 +290,7 @@ class Block:
                 raise Exception(
                     "Use the force=True parameter if you wish to replace an existing block with another data size"
                 )
-        except MissingBlock:
+        except MissingBlockError:
             if do_debug(debug):
                 print("create new block")
             return parent.add_child(
@@ -303,7 +303,7 @@ class Block:
         """
         if do_debug(debug):
             print(f'Creating new block "{name}" of size {len(value)}')
-        if type(name) is str:
+        if isinstance(name, str):
             name = name.encode("utf8")
         self.f.seek(0, 2)  # goto end of file
         offset = self.f.tell()
@@ -556,7 +556,7 @@ class Block:
         Sometimes the id does not start with 0, but with random high values.
         Instead of looking at the correct id, you can use lazy=True with idx=0 in order to fetch the first one saved.
         """
-        if type(name) is bytes:
+        if isinstance(name, bytes):
             name = name.decode("ascii")
         i = 0
         if name == "*":
@@ -566,7 +566,7 @@ class Block:
                 if (lazy and i == idx) or (not lazy and l["id"] == idx):
                     return l["bidx"]
                 i += 1
-        raise MissingBlock(self, name, idx)
+        raise MissingBlockError(self, name, idx)
 
     def goto(self, path, lazy=False):
         """
@@ -731,7 +731,7 @@ class Block:
 
     @deprecated("getIndexes")
     def get_indexes(self, key, debug=False):
-        if type(key) is str:
+        if isinstance(key, str):
             key = key.encode("utf8")
         r = []
         for x in self.get_list():

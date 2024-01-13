@@ -25,7 +25,7 @@ class GUI_values(QWidget):
         for k in sorted(elements.keys()):
             item = QStandardItem(k)
             parent.appendRow(item)
-            if type(elements[k]) == dict:
+            if isinstance(elements[k], dict):
                 self.addItems(item, elements[k])
             else:
                 child = QStandardItem(str(elements[k]))

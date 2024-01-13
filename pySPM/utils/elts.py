@@ -394,7 +394,7 @@ def elts_nm(elts, NM):
 
     r = [({}, 0)]
     res = []
-    if type(elts) is str:
+    if isinstance(elts, str):
         elts = re.compile(r"((?:^[0-9]+)?[A-Z][a-z]?(?:_[0-9]+)?)").findall(elts)
     me = [get_mass(x) for x in elts]
     while r:
@@ -429,7 +429,7 @@ class Molecule:
     __radd__ = __add__
 
     def __mul__(self, n):
-        assert type(n) is int
+        assert isinstance(n, int)
         r = Molecule(self.formula())
         for x in r.atoms:
             r.atoms[x] *= n

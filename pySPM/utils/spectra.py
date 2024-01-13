@@ -117,18 +117,18 @@ def show_peak(
     if "showElts" in kargs:
         from warnings import warn
 
-        warn("Parameter showElts is deprecated. Please use show_elts")
+        warn("Parameter showElts is deprecated. Please use show_elts", stacklevel=2)
         show_elts = kargs.pop("showElts")
 
     if include is None:
         include = []
 
-    if type(include) is str:
+    if isinstance(include, str):
         include = include.split(",")
 
-    assert type(include) is list
+    assert isinstance(include, list)
 
-    if type(m0) is str:
+    if isinstance(m0, str):
         include.append(m0)
         m0 = get_mass(m0)
 
@@ -137,7 +137,7 @@ def show_peak(
 
         time.time()
 
-    if type(exclude) is str:
+    if isinstance(exclude, str):
         exclude = exclude.split(",")
 
     if fakefit:
@@ -165,7 +165,11 @@ def show_peak(
         negative = True
     if show_elts:
         if include_only is not None:
-            E = include_only.split(",") if type(include_only) is str else include_only
+            E = (
+                include_only.split(",")
+                if isinstance(include_only, str)
+                else include_only
+            )
         else:
             E = [
                 x
@@ -201,8 +205,8 @@ def show_peak(
             i = np.argmin(
                 abs(
                     np.array(
-                        [get_mass(x) for x in E if type(x) is str]
-                        + [x for x in E if type(x) is float]
+                        [get_mass(x) for x in E if isinstance(x, str)]
+                        + [x for x in E if isinstance(x, float)]
                     )
                     - mp
                 )
@@ -426,7 +430,7 @@ def show_peak(
 
             # Add the Intensity=0 line in case there is negative intensities (happens when plotting PCA components)
     if zero_axis:
-        if type(zero_axis) is dict:
+        if isinstance(zero_axis, dict):
             ax.achline(0, **zero_axis)
         else:
             ax.axhline(0, color="k", alpha=0.5, lw=0.5)
@@ -459,13 +463,14 @@ def plot_isotopes(
         from warnings import warn
 
         warn(
-            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!"
+            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!",
+            stacklevel=2,
         )
         amp = kargs.pop("Amp")
     if "showElts" in kargs:
         from warnings import warn
 
-        warn("Parameter showElts is deprecated. Please use show_elts")
+        warn("Parameter showElts is deprecated. Please use show_elts", stacklevel=2)
         show_elts = kargs.pop("showElts")
     import re
 

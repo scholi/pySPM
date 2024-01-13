@@ -5,7 +5,7 @@ import os.path
 from .Block import Block
 
 
-class InvalidRAWdataformat(Exception):
+class InvalidRawDataFormatError(Exception):
     def __init__(self, block, msg):
         self.block = block
         self.msg = msg

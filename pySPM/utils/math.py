@@ -1,12 +1,11 @@
 # Copyright 2018 Olivier Scholder <o.scholder@gmail.com>
 
+import numpy as np
 import scipy.optimize as opt
 
 """
 Provides some useful mathematical functions which are not present in numpy.
 """
-
-import numpy as np
 
 
 def prod(x):
@@ -108,13 +107,17 @@ def Gauss(x, x0, s, amp=None, **kargs):
     if "A" in kargs:
         from warnings import warn
 
-        warn("Parameter A is deprecated. Please use amp in order to set the amplitude!")
+        warn(
+            "Parameter A is deprecated. Please use amp in order to set the amplitude!",
+            stacklevel=2,
+        )
         amp = kargs.pop("A")
     elif "Amp" in kargs:
         from warnings import warn
 
         warn(
-            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!"
+            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!",
+            stacklevel=2,
         )
         amp = kargs.pop("Amp")
     R = np.exp(-((x - x0) ** 2) / (2 * s**2))
@@ -130,13 +133,17 @@ def Lorentz(x, x0, gamma, amp=None, **kargs):
     if "A" in kargs:
         from warnings import warn
 
-        warn("Parameter A is deprecated. Please use amp in order to set the amplitude!")
+        warn(
+            "Parameter A is deprecated. Please use amp in order to set the amplitude!",
+            stacklevel=2,
+        )
         kargs["A"]
     elif "Amp" in kargs:
         from warnings import warn
 
         warn(
-            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!"
+            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!",
+            stacklevel=2,
         )
         amp = kargs.pop("Amp")
     R = 1 / ((x - x0) ** 2 + (0.5 * gamma) ** 2)
@@ -150,7 +157,8 @@ def CDF(x, mu, sig, amp=1, lg=0, **kargs):
         from warnings import warn
 
         warn(
-            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!"
+            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!",
+            stacklevel=2,
         )
         amp = kargs.pop("Amp")
     from scipy.special import erf
@@ -166,7 +174,8 @@ def LG(x, x0, sig=None, amp=None, lg=0.5, asym=1, FWHM=None, **kargs):
         from warnings import warn
 
         warn(
-            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!"
+            "Parameter Amp is deprecated. Please use amp in order to set the amplitude!",
+            stacklevel=2,
         )
         amp = kargs.pop("Amp")
 

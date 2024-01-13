@@ -14,7 +14,7 @@ from .Block import Block
 from .utils.misc import PB, alias, aliased, deprecated
 
 
-class InvalidRAWdataformat(Exception):
+class InvalidRawDataFormatError(Exception):
     def __init__(self, block, msg):
         self.block = block
         self.msg = msg
@@ -103,7 +103,10 @@ class ITM:
         except:
             s = self.get_value("Registration.Raster.Resolution")["int"]
             fov = self.get_value("Registration.Raster.FieldOfView")["float"]
-            self.size = {"pixels": {"x": s, "y": s}, "real": {"x": fov, "y": fov, "unit": "m"}}
+            self.size = {
+                "pixels": {"x": s, "y": s},
+                "real": {"x": fov, "y": fov, "unit": "m"},
+            }
         with contextlib.suppress(Exception):
             self.size["Scans"] = self.root.goto(
                 "filterdata/TofCorrection/ImageStack/Reduced Data/ImageStackScans/Image.NumberOfScans"
@@ -453,7 +456,7 @@ class ITM:
                 if r["key"] in names or (
                     names == [] and r["key"].startswith(startsWith)
                 ):
-                    key_name = r["key"][len(startsWith):] if hidePrefix else r["key"]
+                    key_name = r["key"][len(startsWith) :] if hidePrefix else r["key"]
                     if nest:
                         K = key_name.split(".")
                         for k in K:
@@ -489,7 +492,7 @@ class ITM:
             fitting_peaks = ["C", "CH", "CH2", "CH3", "Na"]
         if "FittingPeaks" in kargs:
             fitting_peaks = kargs["FittingPeaks"]
-        if type(fitting_peaks) is str:
+        if isinstance(fitting_peaks, str):
             fitting_peaks = fitting_peaks.split(",")
         negative = self.polarity == "Negative"
         fitting_peaks = [
@@ -589,7 +592,7 @@ class ITM:
         except:
             import warnings
 
-            warnings.warn("Failed to get sf,k0, find alternative")
+            warnings.warn("Failed to get sf,k0, find alternative", stacklevel=2)
             if not alt:
                 sf = self.root.goto("MassScale/sf").get_double()
                 k0 = self.root.goto("MassScale/k0").get_double()
@@ -679,7 +682,8 @@ class ITM:
             100, 0.05 * self.Nscan * self.size["pixels"]["x"] * self.size["pixels"]["y"]
         ):
             warn(
-                "the initial mass calibration seems to be wrong, let's try to perform it from scratch"
+                "the initial mass calibration seems to be wrong, let's try to perform it from scratch",
+                stacklevel=2,
             )
             self.sf, self.k0 = self.auto_mass_cal(sf=72000, k0=0)
             m, s = self.getSpectrum()
@@ -801,7 +805,7 @@ class ITM:
         ax.set_xlabel("Time [s]")
         ax.set_ylabel(name)
         if scans:
-            assert type(scans) is int
+            assert isinstance(scans, int)
             lim = ax.get_ylim()
             axs = ax.twiny()
             axs.set_xticks(0.5 * s[:-1:scans] + 0.5 * s[1::scans])
@@ -913,9 +917,11 @@ class ITM:
 
         if prog:
             pb = PB(total=3, postfix={"task": "Calculating total spectrum"})
+
             def IT(x):
                 return PB(x, leave=False)
         else:
+
             def IT(x):
                 return x
 
@@ -1059,7 +1065,10 @@ class ITM:
         """
         # old notation compatibility
         if "showPeaks" in kargs:
-            warn("The parameter showPeaks is deprecated. Please use show_peaks")
+            warn(
+                "The parameter showPeaks is deprecated. Please use show_peaks",
+                stacklevel=2,
+            )
             show_peaks = kargs.pop("showPeaks")
 
         m, s = self.get_spectrum(sf=sf, k0=k0, **kargs)
@@ -1332,7 +1341,7 @@ class ITM:
                 self.root.f.seek(x["bidx"])
                 child = Block(self.root.f)
                 RAW += zlib.decompress(child.value)
-        if type(RAW) is str:
+        if isinstance(RAW, str):
             return bytearray(RAW)
         return RAW
 

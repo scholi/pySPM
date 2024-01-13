@@ -15,7 +15,7 @@ def peak_fit(m, s, m0, delta=0.02):
     from . import LG, get_mass
 
     assert len(m) == len(s)
-    if type(m0) is str:
+    if isinstance(m0, str):
         m0 = get_mass(m0)
     assert m0 < m[-1] and m0 > m[0]
     assert delta > 0
@@ -99,7 +99,11 @@ def lgCDF_fit(x, y, p0, dic=False):
     if dic:
         d = np.diag(pcov)
         return {
-            "bg": popt[0], "lg": popt[1], "A": popt[2::3], "x0": popt[3::3], "sig": popt[4::3]
+            "bg": popt[0],
+            "lg": popt[1],
+            "A": popt[2::3],
+            "x0": popt[3::3],
+            "sig": popt[4::3],
         }, {"bg": d[0], "lg": d[1], "A": d[2::3], "x0": d[3::3], "sig": d[4::3]}
     return popt, pcov
 
@@ -113,12 +117,15 @@ def CDF_fit(x, y, p0, dic=False):
     if dic:
         d = np.diag(pcov)
         return {"bg": popt[0], "A": popt[1::3], "x0": popt[2::3], "sig": popt[3::3]}, {
-            "bg": d[0], "A": d[2::3], "x0": d[3::3], "sig": d[4::3]
+            "bg": d[0],
+            "A": d[2::3],
+            "x0": d[3::3],
+            "sig": d[4::3],
         }
     return popt, pcov
 
 
-def LG2Dr(A, ratio=np.sqrt(2), Rweight=None, sigma=None, dic=False, **kargs):
+def LG2Dr(A, ratio=None, Rweight=None, sigma=None, dic=False, **kargs):
     """
     Perform a 2D Lorentz-Gauss fitting on a 2D array A with a fix ration between σx and σy
     dic: if True return the solution as a dictionary
@@ -127,6 +134,9 @@ def LG2Dr(A, ratio=np.sqrt(2), Rweight=None, sigma=None, dic=False, **kargs):
     The parameter order is:
     Amplitude, Angle, Sigma_x, Sigma_y, Center_x, Center_y, LGx, LGy
     """
+    if ratio is None:
+        ratio = np.sqrt(2)
+
     from scipy.optimize import curve_fit
 
     params = ["amplitude", "angle", "sig_y", "x0", "y0", "LG_x", "LG_y", "bg"]

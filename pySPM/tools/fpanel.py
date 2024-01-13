@@ -1,4 +1,17 @@
-from .win32_helper import *
+import psutil
+
+from .win32_helper import (
+    click,
+    clickButton,
+    findControl,
+    findControls,
+    findTopWindow,
+    findWindow,
+    getBBox,
+    getPID,
+    selectHoriz,
+    selectVert,
+)
 
 
 class Fpanel:

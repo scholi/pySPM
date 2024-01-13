@@ -198,7 +198,7 @@ class SPM_image:
         """
 
         import matplotlib.patches
-        import matplotlib.patheffects as PathEffects
+        import matplotlib.patheffects
 
         fL = length / self.size["real"]["x"]
         self.size["pixels"]["x"] * fL
@@ -209,7 +209,7 @@ class SPM_image:
             pixels = ax.isPixel if hasattr(ax, "isPixel") else False
         if hasattr(ax, "flipped"):
             pass
-        if type(loc) is int:
+        if isinstance(loc, int):
             assert loc in [1, 2, 3, 4]
             ref = ax.transAxes.transform(
                 {1: (1 - fL, 0), 2: (0, 0), 3: (0, 1 - fH), 4: (1 - fL, 1 - fH)}[loc]
@@ -264,7 +264,11 @@ class SPM_image:
                     ha="center",
                 )
             ann.set_path_effects(
-                [PathEffects.withStroke(linewidth=edge_width, foreground=edge_color)]
+                [
+                    matplotlib.patheffects.withStroke(
+                        linewidth=edge_width, foreground=edge_color
+                    )
+                ]
             )
 
     def offset(self, profiles, width=1, ax=None, col="w", inline=True, **kargs):
@@ -1963,8 +1967,8 @@ def zoom_center(img, sx, sy=None):
     """
     if sy is None:
         sy = sx
-    assert type(sx) is int
-    assert type(sy) is int
+    assert isinstance(sx, int)
+    assert isinstance(sy, int)
     return img[
         img.shape[0] // 2 - sy // 2 : img.shape[0] // 2 + sy // 2,
         img.shape[1] // 2 - sx // 2 : img.shape[1] // 2 + sx // 2,

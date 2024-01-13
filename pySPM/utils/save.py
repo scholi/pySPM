@@ -102,7 +102,7 @@ def load(filename, *keys):
 
     res = []
     for key in keys:
-        if type(key) is int:
+        if isinstance(key, int):
             key = str(key)
         try:
             raw = f.read(key)
@@ -198,7 +198,7 @@ class BidirData:
         save(self.filename, **{key: value})
 
     def __delitem__(self, key):
-        delf.local.delitem(key)
+        del self.local[key]
 
     def keys(self):
         f = zipfile.ZipFile(self.filename, "r")

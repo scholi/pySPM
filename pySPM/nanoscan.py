@@ -3,7 +3,7 @@
 import base64
 import os
 import struct
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ElementTree
 
 import numpy as np
 
@@ -19,7 +19,7 @@ def get_curve(filename, channel="Normal Deflection", backward=False):
     function to retrieve data which are not in the form of images.
     This is typically used for 1D channel where the normal deflection is recorded while z is swept.
     """
-    tree = ET.parse(filename)
+    tree = ElementTree.parse(filename)
     root = tree.getroot()
     namespace = {"spm": "http://www.nanoscan.ch/SPM"}
     RAW = root.findall(
@@ -63,7 +63,7 @@ class Nanoscan:
         if filename[-4:] != ".xml":
             raise TypeError("Nanoscan files should be xml files")
         self.filename = filename
-        tree = ET.parse(filename)
+        tree = ElementTree.parse(filename)
         self.root = tree.getroot()
 
         if self.root.tag == "{http://www.nanoscan.ch/SPM}scan":

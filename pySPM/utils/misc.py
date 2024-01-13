@@ -1,3 +1,4 @@
+import functools
 from warnings import warn
 
 import numpy as np
@@ -63,9 +64,6 @@ def smiley(
     return smiley * 1.0
 
 
-import functools
-
-
 def aliased(cls):
     original_methods = cls.__dict__.copy()
     for name in original_methods:
@@ -108,7 +106,7 @@ class deprecated:
         def wrapper(*args, **kargs):
             from warnings import warn
 
-            warn(msg)
+            warn(msg, stacklevel=2)
             return func(*args, **kargs)
 
         setattr(module, self.alias, wrapper)
@@ -190,7 +188,15 @@ def getBAM(x, x0, N=10, least_one=False):
         "W14": 8100,
     }
     pos_rel = {
-        "W5": {"P2": 397, "P3": 1380, "P4": 2140, "P5": 2730, "P6": 3200, "P7": 3535, "P8": 3730},
+        "W5": {
+            "P2": 397,
+            "P3": 1380,
+            "P4": 2140,
+            "P5": 2730,
+            "P6": 3200,
+            "P7": 3535,
+            "P8": 3730,
+        },
         "P9": {"P10": 231, "P11": 402, "P12": 539, "P13": 642, "P14": 710},
         "W11": {"P15": 60, "P16": 104, "P17": 141, "P18": 162, "P19": 182, "P20": 191},
     }
@@ -227,15 +233,25 @@ if in_ipynb():
         try:
             from tqdm import tqdm
         except:
-            warn("the library tqdm cannot be found. All progressbar will be disabled.")
+            warn(
+                "the library tqdm cannot be found. All progressbar will be disabled.",
+                stacklevel=2,
+            )
+
             def tqdm(x):
                 return x
+
     PB = tqdm
 else:
     try:
         from tqdm import tqdm
     except:
-        warn("the library tqdm cannot be found. All progressbar will be disabled.")
+        warn(
+            "the library tqdm cannot be found. All progressbar will be disabled.",
+            stacklevel=2,
+        )
+
         def tqdm(x):
             return x
+
     PB = tqdm

@@ -140,7 +140,7 @@ class Collection:
                     Nx,
                     figsize=(width, ((channels_number - 1) // ncols + 1) * width / Nx),
                 )
-        if type(ax) is not list:
+        if isinstance(ax, list):
             ax = np.array(ax).ravel()
         for i, x in enumerate(channels):
             self[x].show(ax=ax[i], cmap=cmap, **kargs)
@@ -217,6 +217,7 @@ class Collection:
         S = np.zeros((size[0] / stitches[0], size[1] / stitches[1]))
         for i in range(stitches[0]):
             for j in range(stitches[1]):
+                # TODO: sx and sy are undefined
                 S += self.channels[channel][
                     sy * i : sy * (i + 1), sx * j : sx * (j + 1)
                 ]
