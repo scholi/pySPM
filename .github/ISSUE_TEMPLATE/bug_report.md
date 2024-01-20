@@ -5,35 +5,24 @@ about: Create a report to help us improve
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+A clear and concise description of what the bug is, add screenshots if applicable.
 
 **To Reproduce**
-Snippet of code creating the error
+Snippet of code creating the error along with the error message.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**Files**
+If applicable, upload or link the file you are having a problem with.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Information:**
-
-- OS: [e.g. windows]
-- Python and pySPM version.
-
-Please run the following and attach the result to your issue
+**System Information**
+Run the following and attach the result with your issue:
 
 ```python
 import sys
 import pySPM
-import numpy as np
-import scipy
-import matplotlib as mpl
-print("Python",sys.version)
-print("pySPM",pySPM.__version__)
-print("numpy",np.__version__)
-print("scipy",scipy.__version__)
-print("matplotlib", mpl.__version__)
+
+print("Platform", sys.platform)
+print("Python", sys.version)
+print("pySPM", pySPM.__version__)
 ```
 
 **Additional context**
