@@ -20,29 +20,29 @@ class Bruker:
 
     def __init__(self, path):
         self.path = path
-        self.file = open(self.path, "rb")
-        self.layers = []
-        self.scanners = []
-        mode = ""
-        while True:
-            line = self.file.readline().rstrip().replace(b"\\", b"")
-            if line == b"*Ciao image list":
-                self.layers.append({})
-                mode = "Image"
-            elif line == b"*Scanner list":
-                self.scanners.append({})
-                mode = "Scanner"
-            elif line.startswith(b"*EC"):
-                mode = "EC"
-            else:
-                args = line.split(b": ")
-                if len(args) > 1:
-                    if mode == "Image":
-                        self.layers[-1][args[0]] = args[1:]
-                    elif mode == "Scanner":
-                        self.scanners[-1][args[0]] = args[1:]
-                if line == b"*File list end":
-                    break
+        with open(self.path, "rb") as file:
+            self.layers = []
+            self.scanners = []
+            mode = ""
+            while True:
+                line = file.readline().rstrip().replace(b"\\", b"")
+                if line == b"*Ciao image list":
+                    self.layers.append({})
+                    mode = "Image"
+                elif line == b"*Scanner list":
+                    self.scanners.append({})
+                    mode = "Scanner"
+                elif line.startswith(b"*EC"):
+                    mode = "EC"
+                else:
+                    args = line.split(b": ")
+                    if len(args) > 1:
+                        if mode == "Image":
+                            self.layers[-1][args[0]] = args[1:]
+                        elif mode == "Scanner":
+                            self.scanners[-1][args[0]] = args[1:]
+                    if line == b"*File list end":
+                        break
 
     def _get_bpp(self, i):
         int(self.layers[i][b"Data offset"][0])
@@ -66,14 +66,15 @@ class Bruker:
         bpp = byte_length // length
         byte_length = length * bpp
 
-        self.file.seek(off)
-        return np.array(
-            struct.unpack(
-                "<" + str(length) + {2: "h", 4: "i", 8: "q"}[bpp],
-                self.file.read(byte_length),
-            ),
-            dtype="float64",
-        ).reshape((rows, cols))
+        with open(self.path, "rb") as file: 
+            file.seek(off)
+            return np.array(
+                struct.unpack(
+                    "<" + str(length) + {2: "h", 4: "i", 8: "q"}[bpp],
+                    file.read(byte_length),
+                ),
+                dtype="float64",
+            ).reshape((rows, cols))
 
     def list_channels(self, encoding="latin1"):
         print("Channels")
