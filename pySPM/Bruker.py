@@ -67,8 +67,8 @@ class Bruker:
         byte_length = length * bpp
         if mock_data:
             return np.zeros((rows, cols))
-        
-        with open(self.path, "rb") as file: 
+
+        with open(self.path, "rb") as file:
             file.seek(off)
             return np.array(
                 struct.unpack(
@@ -91,39 +91,47 @@ class Bruker:
 
     def _get_layer_val(self, index: int, name: str, first=True):
         lname = name.lower()
-        lname2 = name[0]+lname[1:]
+        lname2 = name[0] + lname[1:]
         if name.encode() in self.layers[index]:
             val = self.layers[index][name.encode()]
         elif lname.encode() in self.layers[index]:
-                val = self.layers[index][lname.encode()]
+            val = self.layers[index][lname.encode()]
         elif lname2.encode() in self.layers[index]:
             val = self.layers[index][lname2.encode()]
         if first:
             return val[0]
         return val
 
-
     def _get_res(self, layer_index):
-        row_key = 'Valid data len X' if b'Valid data len X' in self.layers[layer_index] else 'Number of lines'
-        col_key = 'Valid data len Y' if b'Valid data len Y' in self.layers[layer_index] else 'Samps/line'
+        row_key = (
+            "Valid data len X"
+            if b"Valid data len X" in self.layers[layer_index]
+            else "Number of lines"
+        )
+        col_key = (
+            "Valid data len Y"
+            if b"Valid data len Y" in self.layers[layer_index]
+            else "Samps/line"
+        )
         xres = int(self._get_layer_val(layer_index, row_key))
         yres = int(self._get_layer_val(layer_index, col_key))
         return xres, yres
-    
+
     def _get_layer_size(self, layer_index, encoding, debug=False):
-        scan_size = self._get_layer_val(layer_index,'Scan Size').split()
+        scan_size = self._get_layer_val(layer_index, "Scan Size").split()
         xres, yres = self._get_res(layer_index)
         if scan_size[2][0] == 126:
-            scan_size[2] = b'u' + scan_size[2][1:]
+            scan_size[2] = b"u" + scan_size[2][1:]
         size = {}
         size = {
-            'x': float(scan_size[0]),
-            'y': float(scan_size[1])*yres/xres,
-            'unit': scan_size[2].decode(encoding)}
+            "x": float(scan_size[0]),
+            "y": float(scan_size[1]) * yres / xres,
+            "unit": scan_size[2].decode(encoding),
+        }
         if debug:
             print("scan size", scan_size)
 
-        return size 
+        return size
 
     def get_channel(
         self,
@@ -134,7 +142,7 @@ class Bruker:
         encoding="latin1",
         lazy=True,
         mfm=False,
-        mock_data=False
+        mock_data=False,
     ):
         """
         Load the SPM image contained in a channel
@@ -145,13 +153,17 @@ class Bruker:
                 backward = True
                 _type = "Bruker MFM"
                 try:
-                    layer_name = self._get_layer_val(i, "@3:Image Data").decode(encoding)
+                    layer_name = self._get_layer_val(i, "@3:Image Data").decode(
+                        encoding
+                    )
                 except KeyError:
                     continue
             else:
                 _type = "Bruker AFM"
                 try:
-                    layer_name = self._get_layer_val(i, "@2:Image Data").decode(encoding)
+                    layer_name = self._get_layer_val(i, "@2:Image Data").decode(
+                        encoding
+                    )
                 except KeyError:
                     continue
             result = re.match(r'([^ ]+) \[([^]]*)] "([^"]*)"', layer_name).groups()
@@ -215,13 +227,18 @@ class Bruker:
                         offset = float(result[0])
                     if debug:
                         print("Offset:", offset)
-                    data = self._get_raw_layer(i, debug=debug, mock_data=mock_data) * scale * scale2
+                    data = (
+                        self._get_raw_layer(i, debug=debug, mock_data=mock_data)
+                        * scale
+                        * scale2
+                    )
                     xres, yres = self._get_res(i)
                     if debug:
                         print("xres/yres", xres, yres)
                     scan_size = self._get_layer_val(i, "Scan Size").split()
                     aspect_ratio = [
-                        float(x) for x in self._get_layer_val(i, "Aspect Ratio").split(b":")
+                        float(x)
+                        for x in self._get_layer_val(i, "Aspect Ratio").split(b":")
                     ]
                     if debug:
                         print("aspect ratio", aspect_ratio)
@@ -250,6 +267,6 @@ class Bruker:
                 debug=debug,
                 encoding=encoding,
                 lazy=False,
-                mock_data=mock_data
+                mock_data=mock_data,
             )
         raise Exception(f"Channel {channel} not found")
