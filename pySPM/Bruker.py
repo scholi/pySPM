@@ -53,19 +53,21 @@ class Bruker:
         bpp = byte_length // length
         return bpp
 
-    def _get_raw_layer(self, i, debug=False):
+    def _get_raw_layer(self, i, debug=False, mock_data=False):
         """
         Internal function to retrieve raw data of a layer
         """
-        off = int(self.layers[i][b"Data offset"][0])
+        off = int(self._get_layer_val(i, "Data offset"))
         if debug:
             print("RAW offset: ", off)
         cols, rows = self._get_res(i)
-        byte_length = int(self.layers[i][b"Data length"][0])
+        byte_length = int(self._get_layer_val(i, "Data length"))
         length = rows * cols
         bpp = byte_length // length
         byte_length = length * bpp
-
+        if mock_data:
+            return np.zeros((rows, cols))
+        
         with open(self.path, "rb") as file: 
             file.seek(off)
             return np.array(
@@ -132,6 +134,7 @@ class Bruker:
         encoding="latin1",
         lazy=True,
         mfm=False,
+        mock_data=False
     ):
         """
         Load the SPM image contained in a channel
@@ -212,7 +215,7 @@ class Bruker:
                         offset = float(result[0])
                     if debug:
                         print("Offset:", offset)
-                    data = self._get_raw_layer(i, debug=debug) * scale * scale2
+                    data = self._get_raw_layer(i, debug=debug, mock_data=mock_data) * scale * scale2
                     xres, yres = self._get_res(i)
                     if debug:
                         print("xres/yres", xres, yres)
@@ -247,5 +250,6 @@ class Bruker:
                 debug=debug,
                 encoding=encoding,
                 lazy=False,
+                mock_data=mock_data
             )
         raise Exception(f"Channel {channel} not found")

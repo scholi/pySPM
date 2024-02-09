@@ -1,0 +1,908 @@
+\*File list
+\Version: 0x05120000
+\Date: 09:39:11 AM Wed Dec 20 2017
+\Start context: OL2BIG
+\Data length: 40960
+\Text: 
+\History: 
+\Navigator note: 
+\Engage X Pos: -19783.4 um
+\Engage Y Pos: -42151.3 um
+\*Equipment list
+\Description: Dimension Icon
+\Extender: None
+\Torsion: No
+\Sensor: None
+\Vision: uEye UI148xLE-C #1
+\EC Pot: None
+\Scanner file: 1a005c.scn
+\*Scanner list
+\Scanner type: Dim 4000
+\Head Type: SG
+\Serial Number: 1a005c
+\Part Number: 931-021-216
+\Piezo size: G
+\File name: 1a005c.scn
+\Retracted offset der: -7.40681
+\Extended offset der: 10.1909
+\Allow rotation: Allow
+\Piezo cal: 440
+\X sensitivity: 141.322
+\X derate: 0.186519
+\X mag: 1.05
+\X mag1: 0.8
+\X arg: 3.5
+\Fast arg derate: 0
+\Orthogonality: -0.00698132
+\Y sensitivity: 139.96
+\Y derate: 0.19
+\Y mag: 0.9
+\Y mag1: 0.9
+\Y arg: 3.3
+\Slow arg derate: 0.005
+\X slow sensitivity: 153.504
+\X slow derate: 0.218901
+\Y fast sensitivity: 138.229
+\Y fast derate: 0.186844
+\X slow-fast coupling: 0.494431
+\X slow-fast coupling derating: -0
+\Y slow-fast coupling: 0.350157
+\Y slow-fast coupling derating: -4.45805e-005
+\Fast cal freq: 2.44141
+\Slow cal freq: 4.76838
+\Xs-Yf coupling: 0.0703571
+\Xs-Yf coupling derating: -0
+\Ys-Xf coupling: 0.114882
+\Ys-Xf coupling derating: -0
+\X offset sens: 223.4
+\Y offset sens: 220.4
+\Max scan size: 93
+\Z min: -220
+\Z max: 110
+\Z engage position: -55
+\Z to X coupling: 6
+\Z to Y coupling: 0.5
+\StrainXY Scanner: Yes
+\OptoXY x sensitivity: 350.14
+\OptoXY y sensitivity: 338.3
+\OptoXY orthogonality: 0
+\OptoXY x sens fitted: 370.8
+\OptoXY y sens fitted: 374.5
+\OptoXY orthog fitted: 0
+\OptoXY scan angle cor: 0
+\OptoXY pgain/igain: 0.05
+\Optoxy FitVersion: V1
+\OptoXY xsenscal_x: 0
+\OptoXY xsenscal_y: 0
+\OptoXY xsenscal_xy: 0
+\OptoXY xsenscal_xx: 0
+\OptoXY xsenscal_yy: 0
+\OptoXY xsenscal_xxy: 0
+\OptoXY xsenscal_xyy: 0
+\OptoXY xsenscal_xxx: 0
+\OptoXY xsenscal_yyy: 0
+\OptoXY xsenscal_xxyy: 0
+\OptoXY xsenscal_xxxy: 0
+\OptoXY xsenscal_xyyy: 0
+\OptoXY xsenscal_xxxx: 0
+\OptoXY xsenscal_yyyy: 0
+\OptoXY ysenscal_x: 0
+\OptoXY ysenscal_y: 0
+\OptoXY ysenscal_xy: 0
+\OptoXY ysenscal_xx: 0
+\OptoXY ysenscal_yy: 0
+\OptoXY ysenscal_xxy: 0
+\OptoXY ysenscal_xyy: 0
+\OptoXY ysenscal_xxx: 0
+\OptoXY ysenscal_yyy: 0
+\OptoXY ysenscal_xxyy: 0
+\OptoXY ysenscal_xxxy: 0
+\OptoXY ysenscal_xyyy: 0
+\OptoXY ysenscal_xxxx: 0
+\OptoXY ysenscal_yyyy: 0
+\OptoXY orthocal_x: 0
+\OptoXY orthocal_y: 0
+\OptoXY orthocal_xy: 0
+\OptoXY orthocal_xx: 0
+\OptoXY orthocal_yy: 0
+\ClosedLoop xy threshold: 250
+\ClosedLoop x igain: 12
+\ClosedLoop x pgain: 0.59375
+\ClosedLoop y igain: 12
+\ClosedLoop y pgain: 0.59375
+\Z range sens: 40.5461
+\StrainZ Scanner: Yes
+\Z sensor sens: 488.06
+\Z sensor gain factor: 2
+\Z sensor offset gain: 3.356
+\Z CL IGain: 49
+\Z CL PGain: 77
+\Full Range Sensor Gain: 0.6
+\Z sensor LinOC: -0.39933
+\Z sensor LinC1: 1
+\Z sensor LinC2: -0.0296293
+\Z sensor LinC3: 0.0417851
+\Z sensor LinC4: -0.0612987
+\Z sensor Linearization: Yes
+\Adaptive XY Feedback Scanner: Yes
+\Adaptive ScanSizeExpRatio: 0.5
+\Adaptive Minimal Scan Size: 10
+\Adaptive Minimal Scan Rate: 0.2
+\Adaptive x RefPolarity: -1
+\Adaptive y RefPolarity: -1
+\Adaptive x PlantGain: 2
+\Adaptive y PlantGain: 2
+\Adaptive x SensorNoise: 320
+\Adaptive y SensorNoise: 320
+\Adaptive x CutOffFreq: 200
+\Adaptive y CutOffFreq: 200
+\Adaptive x Feedback BW: 2
+\Adaptive y Feedback BW: 2
+\Adaptive X DC Gain: 4
+\Adaptive Y DC Gain: 4
+\Illumination Scale Factor: 0.15
+\Illumination Range: 1023
+\Max tip velocity: 2000
+\@Sens. Zsens: V 33.53000 nm/V
+\@Sens. CurrentSens: V 10.00000 nA/V
+\@Sens. SECPMSens: V 100.0000 mV/V
+\@Sens. Xsensor: V 6419.234 nm/V
+\@Sens. Ysensor: V 6202.167 nm/V
+\*Ciao scan list
+\Parameter select: Main
+\Operating mode: Image
+\Tip Serial Number: A054/03 #8
+\Tip Scanned Distance: 103044
+\Tip Frame Count: 1
+\Scan Size: 93000 nm
+\X Offset: 0 nm
+\Y Offset: 0 nm
+\SPM Zoom X Offset: 0 nm
+\SPM Zoom Y Offset: 0 nm
+\SPM Zoom Applied X Offset: 0 nm
+\SPM Zoom Applied Y Offset: 0 nm
+\Live SPM Zoom Mode: No
+\Rotate Ang.: 0
+\Stage X: 74653
+\Stage Y: 123808
+\Stage Z: -20276.1
+\Stage Optics: -4515.61
+\X round: 0
+\NanoTrack X Offset Set: 0
+\NanoTrack Y Offset Set: 0
+\NanoTrack X Offset Actual: 0
+\NanoTrack Y Offset Actual: 0
+\Samps/line: 512
+\Lines: 512
+\Y disable: Enabled
+\Aspect Ratio: 1:1
+\Bidirectional Scan: Disabled
+\Scan line shift: 0
+\Scan Rate: 0.976563
+\Dark Lift Delay: 300
+\CD Mode: Disabled
+\PrpGain: 0.5
+\IntGain: 0.5
+\PIDErr: 0.0152588
+\tappFilterCutoff: 100
+\dithFilterCutoff: 100
+\LocHighLowDistance: 200
+\SlopeOutOffset: 0.5
+\SlopeOutLimit: 0.5
+\PointLag: 100
+\RcrsvAvg: 100
+\AvTipState: 100
+\microstepSize: 5
+\zxRatio: 10
+\dataStepAdj: 1
+\debugData: Standard
+\Amplitude X: 0
+\Amplitude Y: 0
+\Phase X: 0
+\Phase Y: 0
+\spare0: 0
+\spare1: 0
+\spare2: 0
+\spare3: 0
+\spare4: 0
+\spare5: 0
+\Tip Velocity: 181.641
+\Zoom in at Constant: Tip Velocity
+\Minimum scan rate: 0.1
+\Lift rate: 4
+\X drift: 0
+\Y drift: 0
+\Step XY size: 300
+\Cycles: 10
+\Step XY period: 0.005
+\Step size: 3
+\Units: Metric
+\Setpoint Units: nm
+\Clear Buffer for new Scan Area: No
+\Color table: 2
+\Scope dualtrace: Dual
+\Auto X Sep: 0
+\Auto Y Sep: 0
+\Auto pattern: Linear
+\Auto number: 2
+\Capture direction: Down
+\Capture prelines: 50
+\Engage Setpoint: 0.85
+\Min int. gain: 10
+\Parameter Update Retract: Disabled
+\Parameter Update FB: On
+\Capture mode : Continuous
+\Gain Normalization: None
+\Gain Factor: 1
+\Initial Setpoint: 16.821
+\Potential Feedback: Off
+\Potential Feedback Inter: Off
+\Frequency Feedback: Off
+\Frequency Feedback Inter: Off
+\Potential Type: Off
+\Potential Type Inter: Off
+\Freq. Control: Automatic
+\Freq. Control Inter: Automatic
+\Drive feedback: Disabled
+\Drive time: 0
+\Drive setpoint: 1
+\Drive gain: 80
+\Start size: 13199.8 nm
+\Pass 2 size: 10000 nm
+\Pass 3 size: 5000 nm
+\Pass 4 size: 2000 nm
+\Feature scan angle: 0
+\Feature Scan rate: 1
+\Feature step size: 0.138889
+\Feature setpoint: 0.8
+\Feature threshold: 2000
+\Pass delay: 5
+\Z offset: 0
+\Z tolerance: 245.821
+\Engage X offset: 0 nm
+\Engage Y offset: 0 nm
+\Engage step size: 0.138889
+\Engage Z sens.: 12.5
+\Engage Z avg.: 10
+\Engage Z delay: 0.5
+\Height engage: Disabled
+\Extended Current sens: 1 pA/V
+\PF Extended Current sens: 100 pA/V
+\Bias limit: 12 V
+\AFM Current Sensitivity: 1 nA/V
+\SECPM sens: 100 mV/V
+\Current range: 200 nA
+\Generic amp sens: 1 V/A
+\Z Range: 13.0174
+\Strip chart : Disabled
+\Strip Chart Rate: 500
+\Strip Chart Size: 100
+\XY Closed Loop: On
+\OptoXY Do Linear: Off
+\Z Closed Loop: Off
+\Analog2 High Voltage: 0
+\Analog22 High Voltage: 0
+\Output 1 Data Type: Off
+\Output 2 Data Type: Off
+\Meter display ctrl.: Hidden
+\Meter Display Mode: Vertical/Horiz
+\Stop motor: Disabled
+\Display level: 127
+\XY Feedback Control: On
+\Show Thermal Tune Button: Expanded Mode
+\Show HSDC Button: Expanded Mode
+\Show Point & Shoot Button: Expanded Mode
+\Show Potential Controls: Neither
+\Show Frame Rate Control: Hidden
+\Show Repulsion Time Indicator: Hidden
+\Torsional Freq: 950
+\Torsional Q: 1000
+\Sample Rate: 10
+\Sample Points: 256
+\Cycles to Average: 32
+\Harmonics To Correct: 1
+\Max Harmonics: 20
+\Force Data Points: 64
+\Calculation Period: 60
+\Interaction Time: 0.24
+\Invert Torsional: Yes
+\Invert Vertical: Yes
+\Unload Fit Region: 0.7
+\Lift Height: 88.0361
+\Sync Distance: 82.95
+\Sync Distance New: 82.95
+\Sync Distance QNM: 82.95
+\Peak Force Engage Amplitude: 150
+\Peak Force Engage Setpoint: 0.15
+\Top Fit Region: 0.3
+\Peak Force Amplitude: 150
+\QNM Calibration: DefaultByZ
+\Adhesion Algorithm: Threshold Crossing
+\Adhesion Fit %: 0.1
+\Cursor A: 0
+\Cursor B: 300
+\Fluid Cell: No
+\Medium: Air
+\Deformation Fit Region: 0.98
+\Tip Radius: 5
+\Sample Poisson's Ratio: 0.3
+\Tip Half Angle: 0.314159
+\Include Adhesion Force: Yes
+\Min Force Fit Boundary: 20
+\Max Force Fit Boundary: 80
+\Modulus Fit Model: Hertzian (Spherical)
+\ScanAsyst Setup: Allow
+\ScanAsyst Auto Control: On
+\ScanAsyst Auto Gain: On
+\ScanAsyst Auto Setpoint: On
+\ScanAsyst Auto Scan Rate: On
+\ScanAsyst Auto Z Limit: On
+\ScanAsyst Noise Threshold: 1
+\ScanAsyst AutoConfig Frames: 0
+\Scan Target Threshold: 0.005
+\Scan Acceptable Threshold: 0.1
+\Scan Max Optimizing Time: 30
+\Perfusion Cell Temperature: 
+\FalseDefl Scan DitheringBits: 0
+\Scan Single Frame Number: 1
+\Idle Depolarize Warning Time: 7200
+\Idle Depolarize Withdraw Time: 18000
+\Idle Depolarize Threshold: 0.05
+\Auto Adjust Rounding: No
+\Peak Current Average Region: 0.0001
+\I2C Test: Off
+\PFT Freq: 2 KHz
+\Tip Drive Noise Threshold: 0.2
+\Tip Drive PFT Amplitude: 100
+\ScanAsyst Min. Setpoint: 0.02
+\PeakForce Capture: Never
+\Reduced Z Delay: 2
+\Z Auto Center Boundary: 0
+\NanoTrack Path Simulation: Off
+\PseudoRT Path Simulation: Off
+\NanoTrack Max Row Shift: 10
+\NanoTrack Max Col Shift: 10
+\NanoTrack Channel: 1
+\NanoTrack Min Correlation: 0.8
+\@InterleaveList: S [InterleaveOffMode] "Disabled"
+\@LinearizeList: S [LinearizeOffMode] "modeLinearizeOff"
+\@DarkLiftList: S [] ""
+\@FPGA Z Feedback: S [] "On"
+\@MicroscopeList: S [SoftHarmoniXAutoPilot] "ScanAsyst"
+\@LP Deflection: S [] "Enabled"
+\@LP TM Deflection: S [] "Enabled"
+\@LP Current: S [] "Enabled"
+\@LP Vertical Deflection: S [] "Enabled"
+\@Low Pass Frequency: S [] "Enabled"
+\@LP Friction: S [] "Disabled"
+\@LP TM Friction: S [] "Enabled"
+\@PicoAnglerPollOnOff: S [PicoAnglerPollOff] "Disabled"
+\@ThermalTuneMaxFreq: S [ThermalTuneData500K] "1 - 100 KHz"
+\@TipBiasCntrlList: S [TipBiasCntrlGround] "Ground"
+\@Sample Bias Control: S [] "Ground"
+\@HSADCMuxOnOff: S [HSADCMuxAny] "modeHSADCMuxAny"
+\@HsdcChanADataType: S [HsdcDataTypeOff] "Off"
+\@HsdcChanBDataType: S [HsdcDataTypeOff] "Off"
+\@FastScan List: S [FastScanOff] "Disabled"
+\@FastZFeedback List: S [DigitalZFastScan] "Digital"
+\@TR Mode: S [] "Disabled"
+\@VerticalGainControlList: S [] "Disabled"
+\@SCM Feedback: S [] ""
+\@2:HsdcChanCDataType: S [HsdcDataTypeOff] "Off"
+\@3:HsdcChanCDataType: S [HsdcDataTypeOff] "Off"
+\@2:HsdcChanDDataType: S [HsdcDataTypeHeight] "Height"
+\@3:HsdcChanDDataType: S [HsdcDataTypeOff] "Off"
+\@2:HsdcTriggerChan: S [HsdcDataTypeHeight] "Height"
+\@3:HsdcTriggerChan: S [HsdcDataTypeHeight] "Height"
+\@2:SPMFeedbackList: S [SPMFb] "Peak Force"
+\@3:SPMFeedbackList: S [SPMFb] "Peak Force"
+\@2:DDS1RoutingTappingMode: S [] "Tapping Piezo"
+\@3:DDS1RoutingTappingMode: S [] "Tapping Piezo"
+\@4:DDS1RoutingFastScanAsystMode: S [] ""
+\@5:DDS1RoutingFastScanAsystMode: S [] ""
+\@2:Drive1Routing: S [] "Null"
+\@3:Drive1Routing: S [] "Null"
+\@2:Drive1Monitor: S [] "Not Available"
+\@3:Drive1Monitor: S [] "Not Available"
+\@2:MainLockInEnableContactMode: S [LockIn1Disabled] "Disabled"
+\@3:MainLockInEnableContactMode: S [LockIn1Disabled] "Disabled"
+\@4:MainLockInEnableFastScanAsystMode: S [] ""
+\@5:MainLockInEnableFastScanAsystMode: S [] ""
+\@2:MainLockInEnableNonContactMode: S [LockIn1Enabled] "Enabled"
+\@3:MainLockInEnableNonContactMode: S [LockIn1Enabled] "Enabled"
+\@2:LockIn1SourceTappingMode: S [] "Vertical"
+\@3:LockIn1SourceTappingMode: S [] "Vertical"
+\@4:LockIn1SourceFastScanAsystMode: S [] "Disabled"
+\@5:LockIn1SourceFastScanAsystMode: S [] ""
+\@2:MainLockInSource: S [] "Disabled"
+\@3:MainLockInSource: S [] "Disabled"
+\@2:Zmod: S [] "Disabled"
+\@3:Zmod: S [] "Disabled"
+\@2:LateralGainControl: S [LateralGainDisabled] "Disabled"
+\@3:LateralGainControl: S [LateralGainDisabled] "Disabled"
+\@2:InputFbList: S [InputFbOff] "Off"
+\@3:InputFbList: S [InputFbOff] "Off"
+\@4:TR Mode: S [] "Disabled"
+\@5:TR Mode: S [] "Disabled"
+\@4:TRCouplingCheck: S [] ""
+\@5:TRCouplingCheck: S [] ""
+\@2:LockIn2DDS2Enable: S [LockIn2Disabled] "Disabled"
+\@3:LockIn2DDS2Enable: S [LockIn2Disabled] "Disabled"
+\@4:DDS2HarmonicList: S [] "1"
+\@5:DDS2HarmonicList: S [] "1"
+\@2:LockIn2Source: S [] "Disabled"
+\@3:LockIn2Source: S [] "Disabled"
+\@2:Drive2Routing: S [] "Null"
+\@3:Drive2Routing: S [] "Null"
+\@2:Drive2Monitor: S [] "Not Available"
+\@3:Drive2Monitor: S [] "Not Available"
+\@4:PRLockInTypeList: S [] ""
+\@5:PRLockInTypeList: S [] ""
+\@4:PiezoACBiasCtrlList: S [] ""
+\@5:PiezoACBiasCtrlList: S [] ""
+\@4:VerticalGainControlList: S [] "Enabled"
+\@5:VerticalGainControlList: S [] "Enabled"
+\@4:SCM Feedback: S [] ""
+\@5:SCM Feedback: S [] ""
+\@4:TUNAList: S [TUNAOffMode] "Disabled"
+\@5:TUNAList: S [TUNAOffMode] "Disabled"
+\@2:Drive3RoutingSoftHarmoniX: S [] "Z Offset"
+\@3:Drive3RoutingSoftHarmoniX: S [] "Z Offset"
+\@2:Drive3Routing: S [] "Null"
+\@3:Drive3Routing: S [] "Null"
+\@2:Drive3Monitor: S [] "Not Available"
+\@3:Drive3Monitor: S [] "Not Available"
+\@2:LockIn3EnableList: S [LockIn3Enabled] "Enabled"
+\@3:LockIn3EnableList: S [LockIn3Disabled] "Disabled"
+\@2:LockIn3SourceSoftHarmoniX: S [] "Vertical"
+\@3:LockIn3SourceSoftHarmoniX: S [] "Disabled"
+\@2:LockIn3SourceNonSoftHarmoniX: S [] "Disabled"
+\@3:LockIn3SourceNonSoftHarmoniX: S [] "Disabled"
+\@Sens. DeflSens: V 60.00000 nm/V
+\@Sens. AmplSens: V 60.00000 nm/V
+\@Sens. DeflectionIn1BSens: V 1.000000 
+\@Sens. FVForceSens: V 1.000000 nN/Arb
+\@Sens. FVModulusSens: V 1.000000 Pa/Arb
+\@Sens. FVLogModulusSens: V 1.000000 log(Pa)/log(Arb)
+\@Sens. FVStiffnessSens: V 1.000000 N/m*Arb
+\@Sens. ECBiasSens: V 1000.000 mV/V
+\@Sens. AFMSetFastScanSens: V 1.000000 V/V
+\@Sens. ZsensSens: V 887.1802 nm/V
+\@Sens. ZPicoSens: V 1000.000 nm/V
+\@Sens. LSPRDataSensitivity: V 1.000000 
+\@Sens. LSPRAmplitudeSensitivity: V 1.000000 
+\@Sens. HSPRDataSensitivity: V 1.000000 
+\@Sens. HSPRAmplitudeSensitivity: V 1.000000 
+\@Sens. tunaSens: V 10.00000 pA/V
+\@Sens. biassens: V 1.000000 V/V
+\@Sens. testsens: V 1.000000 V/V
+\@Sens. Amplitude Error: V 60.00000 nm/V
+\@Sens. Phase: V 1.000000 
+\@Sens. Phase Error: V 1.000000 
+\@Sens. Friction: V 1.000000 
+\@Sens. TM Deflection: V 60.00000 nm/V
+\@Sens. TM Friction: V 1.000000 
+\@Sens. Inphase: V 1.000000 
+\@Sens. Quadrature: V 1.000000 
+\@Sens. Amplitude1: V 1.000000 
+\@Sens. Raw Deflection: V 1.000000 
+\@Sens. Raw Deflection Gain: V 1.000000 
+\@Sens. Counter 1: V 1.000000 
+\@Sens. Counter 2: V 1.000000 
+\@Sens. Freq. 1: V 1.000000 
+\@Sens. Freq. 2: V 1.000000 
+\@Sens. Fast Z Analog: V 1.000000 
+\@Sens. Fast Z: V 1.000000 
+\@Sens. Fast RMS: V 1.000000 
+\@Sens. Fast Deflection Analog: V 1.000000 
+\@Sens. Fast Deflection Error: V 1.000000 
+\@Sens. Frequency: V 1.000000 
+\@Sens. Potential: V 1.000000 
+\@Sens. Potential (HV): V 1.000000 
+\@Sens. dCdZ: V 1.000000 
+\@Sens. TR Amplitude: V 1.000000 
+\@Sens. TR Amplitude Error: V 1.000000 
+\@Sens. TR Phase: V 1.000000 
+\@Sens. Amplitude2: V 1.000000 
+\@Sens. HS PR Phase: V 1.000000 
+\@Sens. MFM Amplitude: V 1.000000 
+\@Sens. MFM Phase: V 1.000000 
+\@Sens. dC/dV Amplitude: V 1.000000 
+\@Sens. dC/dV Amplitude Error: V 1.000000 
+\@Sens. dC/dV I: V 1.000000 
+\@Sens. dC/dV Q: V 1.000000 
+\@Sens. dC/dV Phase: V 1.000000 
+\@Sens. Feedback Bias: V 1.000000 
+\@Sens. Log(Resistance): V 1.000000 
+\@Sens. Input1: V 1.000000 
+\@Sens. Input2: V 1.000000 
+\@Sens. Input3: V 1.000000 
+\@Sens. DriveAmplitude3Sens: V 737.6600 nm/V
+\@Sens. ForceDeflSens: V 24.00000 nN/V
+\@Sens. ForceSens: V 1.000000 
+\@Sens. DissipationSens: V 1.000000 
+\@Sens. DeformationSens: V 3688.300 nm/V
+\@Sens. StiffnessSens: V 1.000000 
+\@Sens. LogStiffnessSens: V 1.000000 
+\@Sens. SneddonModulusSens: V 1.000000 
+\@Sens. LogSneddonModulusSens: V 1.000000 
+\@Offset PotentialInputOffset: V [Sens. Potential] (0.0003051758 V/LSB)       0 V
+\@Sample period: V (0.1000000 us/LSB) 25.00000 us
+\@Z center: V [Sens. Zsens] (0.006713867 V/LSB) 55.00000 V
+\@1:ZLimit: V [Sens. Zsens] (0.006713867 V/LSB) 321.0528 V
+\@1:ZLimitRamp: V [Sens. Zsens] (0.006713867 V/LSB) 330.0000 V
+\@1:ForceLimit: V [Sens. ForceSens] (0.06250000 Arb/LSB) 4096.000 Arb
+\@1:DissipationLimit: V [Sens. DissipationSens] (0.06250000 Arb/LSB) 1024.000 Arb
+\@1:DeformationLimit: V [Sens. DeformationSens] (0.0000610352 V/LSB) 0.2000000 V
+\@1:StiffnessLimit: V [Sens. StiffnessSens] (0.06250000 Arb/LSB) 1024.000 Arb
+\@1:LogStiffnessLimit: V [Sens. LogStiffnessSens] (0.0004882813 log(Arb)/LSB) 32.00000 log(Arb)
+\@1:SneddonModulusLimit: V [Sens. SneddonModulusSens] (0.06250000 Arb/LSB) 128.0000 Arb
+\@1:LogSneddonModulusLimit: V [Sens. LogSneddonModulusSens] (0.0004882813 log(Arb)/LSB) 32.00000 log(Arb)
+\@1:FVModulusLimit: V [Sens. FVModulusSens] (1525879 Arb/LSB) 3000000000 Arb
+\@1:LogFVModulusLimit: V [Sens. FVLogModulusSens] (0.0004882813 log(Arb)/LSB) 3.200000 log(Arb)
+\@1:FVForceLimit: V [Sens. FVForceSens] (0.01525879 Arb/LSB) 1.000000 Arb
+\@1:FVStiffnessLimit: V [Sens. FVStiffnessSens] (0.01525879 Arb/LSB) 10.00000 Arb
+\@1:AmplitudeLimit1: V (0.0000009313 mV/LSB) 2000.000 mV
+\@1:TRAmplitudeLimit: V (0.0000009313 mV/LSB) 2500.000 mV
+\@1:SCMAmplitudeLimit: V (0.0000009313 mV/LSB) 4000.000 mV
+\@2:AmplitudeLimit1LockIn1and2: V (0.0000009313 mV/LSB) 4000.000 mV
+\@2:AmplitudeLimit1LockIn1: V (0.0000009313 mV/LSB) 4000.000 mV
+\@2:AmplitudeLimit1LockIn2: V (0.0000009313 mV/LSB) 4000.000 mV
+\@2:DeflectionLimitLockIn3LSADC1: V (0.0000000057 V/LSB) 24.57600 V
+\@2:DeflectionLimit: V (0.0000000057 V/LSB) 24.57600 V
+\@2:TMDeflectionLimitLockIn3LSADC1: V (0.0000000057 V/LSB) 24.57600 V
+\@2:TMDeflectionLimit: V (0.0000000057 V/LSB) 24.57600 V
+\@2:HSADC2GainLockIn2and1: V (0.0000009313 mV/LSB) 4000.000 mV
+\@2:HSADC2GainLockIn2: V (0.0000009313 mV/LSB) 4000.000 mV
+\@2:HSADC2GainLockIn1: V (0.0000009313 mV/LSB) 4000.000 mV
+\@2:LSADC2Gain: V (0.0000000057 V/LSB) 24.57600 V
+\@2:LSADC9Gain: V (0.0000000057 V/LSB) 24.57600 V
+\@Lift Start Height: V [Sens. Zsens] (0.004898877 V/LSB)       0 V
+\@Lift Scan Height: V [Sens. Zsens] (0.004898877 V/LSB) 4.506534 V
+\@Drive height: V [Sens. Zsens] (0.004898877 V/LSB)       0 V
+\@2:AFMSetDeflection: V [Sens. DeflSens] (0.0003662109 V/LSB) 0.5000000 V
+\@3:AFMSetDeflection: V [Sens. DeflSens] (0.0003662109 V/LSB) 0.5000000 V
+\@2:TMSetAmplitude: V [Sens. AmplSens] (0.01525879 mV/LSB) 359.9396 mV
+\@3:TMSetAmplitude: V [Sens. AmplSens] (0.01525879 mV/LSB)       0 mV
+\@2:TMSetDeflection: V [Sens. DeflSens] (0.0003662109 V/LSB)       0 V
+\@3:TMSetDeflection: V [Sens. DeflSens] (0.0003662109 V/LSB)       0 V
+\@2:TMSetFastScan: V (0.0003662109 V/LSB)       0 V
+\@3:TMSetFastScan: V (0.0003662109 V/LSB)       0 V
+\@2:AFMSetFastScanAnalog: V [Sens. AFMSetFastScanSens] (0.0003662109 V/LSB)       0 V
+\@3:AFMSetFastScanAnalog: V [Sens. AFMSetFastScanSens] (0.0003662109 V/LSB)       0 V
+\@2:AFMSetFastScanDigital: V [Sens. AFMSetFastScanSens] (0.0003662109 V/LSB)       0 V
+\@3:AFMSetFastScanDigital: V [Sens. AFMSetFastScanSens] (0.0003662109 V/LSB)       0 V
+\@2:STMSetCurrent: V [Sens. CurrentSens] (0.0003750000 V/LSB) 0.1000000 V
+\@3:STMSetCurrent: V [Sens. CurrentSens] (0.0003750000 V/LSB) 10.00000 V
+\@2:TRSetAmplitude: V (0.01525879 mV/LSB) 270.0000 mV
+\@3:TRSetAmplitude: V (0.01525879 mV/LSB) 270.0000 mV
+\@2:SetTRVertDefl: V (0.0003662109 V/LSB)       0 V
+\@3:SetTRVertDefl: V (0.0003662109 V/LSB)       0 V
+\@2:SECPMSetPotential: V [Sens. SECPMSens] (0.0003750000 V/LSB) 2.000000 V
+\@3:SECPMSetPotential: V [Sens. SECPMSens] (0.0003750000 V/LSB) 2.000000 V
+\@2:TMSetPhase: V (0.005493164 �/LSB)       0 �
+\@3:TMSetPhase: V (0.005493164 �/LSB)       0 �
+\@2:DigitalSetPoint: V [Sens. DeflectionIn1BSens] (0.0003750000 V/LSB) 0.2500000 V
+\@3:DigitalSetPoint: V [Sens. DeflectionIn1BSens] (0.0003750000 V/LSB) 0.2500000 V
+\@2:TRSetPhase: V (0.005493164 �/LSB)       0 �
+\@3:TRSetPhase: V (0.005493164 �/LSB)       0 �
+\@2:SoftHarmoniXSetpoint: V [Sens. ForceDeflSens] (0.0003750000 V/LSB) 0.6648750 V
+\@3:SoftHarmoniXSetpoint: V [Sens. ForceDeflSens] (0.0003750000 V/LSB)       0 V
+\@2:NanoTrenchSetPoint: V (0.0003750000 V/LSB)       0 V
+\@3:NanoTrenchSetPoint: V (0.0003750000 V/LSB)       0 V
+\@2:Sample Bias: V (0.3051758 mV/LSB)       0 mV
+\@3:Sample Bias: V (0.3051758 mV/LSB)       0 mV
+\@2:Tip Bias: V (0.0003662109 V/LSB)       0 V
+\@3:Tip Bias: V (0.0003662109 V/LSB)       0 V
+\@2:Analog2: V (0.0003662109 V/LSB)       0 V
+\@3:Analog2: V (0.0003662109 V/LSB)       0 V
+\@2:CantFrequency: V (0.0000116415 kHz/LSB) 83.20614 kHz
+\@3:CantFrequency: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@2:CantFrequencyContactMode: V (0.0000116415 kHz/LSB) 70.00000 kHz
+\@3:CantFrequencyContactMode: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@2:CantDrive: V (0.3051758 mV/LSB) 609.7412 mV
+\@3:CantDrive: V (0.3051758 mV/LSB)       0 mV
+\@2:CantDriveContactMode: V (0.3051758 mV/LSB)       0 mV
+\@3:CantDriveContactMode: V (0.3051758 mV/LSB)       0 mV
+\@2:CantDriveNulled: V (0.3051758 mV/LSB)       0 mV
+\@3:CantDriveNulled: V (0.3051758 mV/LSB)       0 mV
+\@2:DriveDCOffsetTappingMode: V (0.0003051758 V/LSB)       0 V
+\@3:DriveDCOffsetTappingMode: V (0.0003051758 V/LSB)       0 V
+\@2:DriveDCOffsetNonTapping: V (0.0003051758 V/LSB)       0 V
+\@3:DriveDCOffsetNonTapping: V (0.0003051758 V/LSB)       0 V
+\@2:DriveDCOffsetFastScanAsyst: V (0.0003051758 V/LSB)       0 V
+\@3:DriveDCOffsetFastScanAsyst: V (0.0003051758 V/LSB)       0 V
+\@2:ReferenceFrequencyTappingMode: V (0.0000116415 kHz/LSB) 83.20614 kHz
+\@3:ReferenceFrequencyTappingMode: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@2:ReferenceFrequency1: V (0.0000116415 kHz/LSB) 70.00000 kHz
+\@3:ReferenceFrequency1: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@2:CantPhase: V (0.005493164 �/LSB) -159.4501 �
+\@3:CantPhase: V (0.005493164 �/LSB)       0 �
+\@2:CantPhaseContactMode: V (0.005493164 �/LSB)       0 �
+\@3:CantPhaseContactMode: V (0.005493164 �/LSB)       0 �
+\@2:LockInBW1: V (0.001000000 kHz/LSB) 11.70600 kHz
+\@3:LockInBW1: V (0.001000000 kHz/LSB) 0.5000000 kHz
+\@2:LockInBW1ContactMode: V (0.001000000 kHz/LSB) 0.5000000 kHz
+\@3:LockInBW1ContactMode: V (0.001000000 kHz/LSB) 0.5000000 kHz
+\@2:TRCantileverFrequency: V (0.0000116415 kHz/LSB) 1000.000 kHz
+\@3:TRCantileverFrequency: V (0.0000116415 kHz/LSB) 1000.000 kHz
+\@2:ReferenceFrequencyTRMode: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@3:ReferenceFrequencyTRMode: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@2:TROnAnalog3: V (0.0003051758 V/LSB) 10.00000 V
+\@3:TROnAnalog3: V (0.0003051758 V/LSB) 10.00000 V
+\@2:ReferenceFrequency2: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@3:ReferenceFrequency2: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@2:ReferenceFrequency2Harmonic: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@3:ReferenceFrequency2Harmonic: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@2:DrivePhase2: V (0.005493164 �/LSB)       0 �
+\@3:DrivePhase2: V (0.005493164 �/LSB)       0 �
+\@2:LockIn2BW: V (0.001000000 kHz/LSB) 0.5000000 kHz
+\@3:LockIn2BW: V (0.001000000 kHz/LSB) 0.5000000 kHz
+\@2:LockIn2BWHarmonic: V (0.001000000 kHz/LSB) 0.2110000 kHz
+\@3:LockIn2BWHarmonic: V (0.001000000 kHz/LSB) 0.2110000 kHz
+\@2:DriveFrequency2: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@3:DriveFrequency2: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@2:DriveAmplitude2: V (0.3051758 mV/LSB)       0 mV
+\@3:DriveAmplitude2: V (0.3051758 mV/LSB)       0 mV
+\@2:Drive2 DC Offset: V (0.0003051758 V/LSB)       0 V
+\@3:Drive2 DC Offset: V (0.0003051758 V/LSB)       0 V
+\@2:PRLowSpeedLockinBW: V (0.001000000 kHz/LSB) 0.3000000 kHz
+\@3:PRLowSpeedLockinBW: V (0.001000000 kHz/LSB) 0.3000000 kHz
+\@2:PRLowSpeedDriveAmplitude: V (0.6103516 mV/LSB) 2000.000 mV
+\@3:PRLowSpeedDriveAmplitude: V (0.6103516 mV/LSB) 2000.000 mV
+\@2:PRLowSpeedDriveFrequency: V (0.0000001164 kHz/LSB) 15.00000 kHz
+\@3:PRLowSpeedDriveFrequency: V (0.0000001164 kHz/LSB) 15.00000 kHz
+\@2:PRLowSpeedDrivePhase: V (0.005493164 �/LSB)       0 �
+\@3:PRLowSpeedDrivePhase: V (0.005493164 �/LSB)       0 �
+\@2:PRHighSpeedLockinBW: V (0.001000000 kHz/LSB) 0.7500000 kHz
+\@3:PRHighSpeedLockinBW: V (0.001000000 kHz/LSB) 0.7500000 kHz
+\@2:PRHighSpeedDriveAmplitude: V (0.3051758 mV/LSB) 2000.000 mV
+\@3:PRHighSpeedDriveAmplitude: V (0.3051758 mV/LSB) 2000.000 mV
+\@2:PRHighSpeedDriveFrequency: V (0.0000116415 kHz/LSB) 60.00000 kHz
+\@3:PRHighSpeedDriveFrequency: V (0.0000116415 kHz/LSB) 60.00000 kHz
+\@2:PRHighSpeedDrivePhase: V (0.005493164 �/LSB)       0 �
+\@3:PRHighSpeedDrivePhase: V (0.005493164 �/LSB)       0 �
+\@2:MFMLockinBW: V (0.001000000 kHz/LSB) 0.2110000 kHz
+\@3:MFMLockinBW: V (0.001000000 kHz/LSB) 0.2110000 kHz
+\@2:MFMDriveAmplitude: V (0.3051758 mV/LSB)       0 mV
+\@3:MFMDriveAmplitude: V (0.3051758 mV/LSB)       0 mV
+\@2:MFMDriveFrequency: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@3:MFMDriveFrequency: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@2:MFMDrivePhase: V (0.005493164 �/LSB)       0 �
+\@3:MFMDrivePhase: V (0.005493164 �/LSB)       0 �
+\@2:MFMDriveDCOffset: V (0.0003051758 V/LSB)       0 V
+\@3:MFMDriveDCOffset: V (0.0003051758 V/LSB)       0 V
+\@2:ACBiasAmpl: V (0.3051758 mV/LSB)       0 mV
+\@3:ACBiasAmpl: V (0.3051758 mV/LSB)       0 mV
+\@2:BiasFrequency: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@3:BiasFrequency: V (0.0000116415 kHz/LSB) 0.5000000 kHz
+\@2:SCMLockInBW: V (0.001000000 kHz/LSB) 0.5000000 kHz
+\@3:SCMLockInBW: V (0.001000000 kHz/LSB) 0.5000000 kHz
+\@2:SCMLockInPhase: V (0.005493164 �/LSB)       0 �
+\@3:SCMLockInPhase: V (0.005493164 �/LSB)       0 �
+\@2:DCBias: V (0.0003051758 V/LSB)       0 V
+\@3:DCBias: V (0.0003051758 V/LSB)       0 V
+\@2:Capacitance Sensor Frequency: V (0.03204346 MHz/LSB) 880.0000 MHz
+\@3:Capacitance Sensor Frequency: V (0.03204346 MHz/LSB) 880.0000 MHz
+\@2:SCMIgain: V (0.001525879 1/LSB) 10.00000 
+\@3:SCMIgain: V (0.001525879 1/LSB) 10.00000 
+\@2:SCMPgain: V (0.001525879 1/LSB) 10.00000 
+\@3:SCMPgain: V (0.001525879 1/LSB) 10.00000 
+\@2:SCMFeedbackSetpoint: V (0.06103516 mV/LSB) 200.0000 mV
+\@3:SCMFeedbackSetpoint: V (0.06103516 mV/LSB) 200.0000 mV
+\@2:SCMFeedbackUpperLimit: V (0.0003051758 V/LSB) 6.000000 V
+\@3:SCMFeedbackUpperLimit: V (0.0003051758 V/LSB) 6.000000 V
+\@2:DC Test Bias: V [Sens. testsens] (0.0003051758 V/LSB)       0 V
+\@3:DC Test Bias: V [Sens. testsens] (0.0003051758 V/LSB)       0 V
+\@2:DC Sample Bias: V [Sens. biassens] (0.0003051758 V/LSB)       0 V
+\@3:DC Sample Bias: V [Sens. biassens] (0.0003051758 V/LSB)       0 V
+\@2:SampleBiasWithPiezo: V [Sens. biassens] (0.0003051758 V/LSB)       0 V
+\@3:SampleBiasWithPiezo: V [Sens. biassens] (0.0003051758 V/LSB)       0 V
+\@2:Bias Upper Limit: V (0.0003051758 V/LSB)       0 V
+\@3:Bias Upper Limit: V (0.0003051758 V/LSB)       0 V
+\@2:Bias Lower Limit: V (0.0003051758 V/LSB)       0 V
+\@3:Bias Lower Limit: V (0.0003051758 V/LSB)       0 V
+\@2:Feedback Igain: V (0.01525879 1/LSB)       0 
+\@3:Feedback Igain: V (0.01525879 1/LSB)       0 
+\@2:TunaFeedbackSetpoint: V [Sens. tunaSens] (0.0003750000 V/LSB)       0 V
+\@3:TunaFeedbackSetpoint: V [Sens. tunaSens] (0.0003750000 V/LSB)       0 V
+\@2:DriveFrequency3SoftHarmoniX: V (0.0000001164 kHz/LSB) 1.953125 kHz
+\@3:DriveFrequency3SoftHarmoniX: V (0.0000001164 kHz/LSB) 0.005000000 kHz
+\@2:DriveFrequency3NonSoftHarmoniX: V (0.0000001164 kHz/LSB) 0.005000000 kHz
+\@3:DriveFrequency3NonSoftHarmoniX: V (0.0000001164 kHz/LSB) 0.005000000 kHz
+\@2:DriveAmplitude3SoftHarmoniX: V [Sens. DriveAmplitude3Sens] (0.3051758 mV/LSB) 203.3457 mV
+\@3:DriveAmplitude3SoftHarmoniX: V [Sens. DriveAmplitude3Sens] (0.3051758 mV/LSB)       0 mV
+\@2:DriveAmplitude3NonSoftHarmoniX: V (0.3051758 mV/LSB)       0 mV
+\@3:DriveAmplitude3NonSoftHarmoniX: V (0.3051758 mV/LSB)       0 mV
+\@2:DriveAmplitude3NonSoftHarmoniX2X: V (0.6103516 mV/LSB)       0 mV
+\@3:DriveAmplitude3NonSoftHarmoniX2X: V (0.6103516 mV/LSB)       0 mV
+\@2:Drive3 DC Offset: V (0.0003051758 V/LSB)       0 V
+\@3:Drive3 DC Offset: V (0.0003051758 V/LSB)       0 V
+\@2:ReferenceFrequency3SoftHarmoniX: V (0.0000001164 kHz/LSB) 1.953125 kHz
+\@3:ReferenceFrequency3SoftHarmoniX: V (0.0000001164 kHz/LSB) 0.005000000 kHz
+\@2:ReferenceFrequency3NonSoftHarmoniX: V (0.0000001164 kHz/LSB) 0.005000000 kHz
+\@3:ReferenceFrequency3NonSoftHarmoniX: V (0.0000001164 kHz/LSB) 0.005000000 kHz
+\@2:LockIn3BWSoftHarmoniX: V (0.001000000 kHz/LSB) 0.8242188 kHz
+\@3:LockIn3BWSoftHarmoniX: V (0.001000000 kHz/LSB) 0.005000000 kHz
+\@2:LockIn3BWNonSoftHarmoniX: V (0.001000000 kHz/LSB) 0.005000000 kHz
+\@3:LockIn3BWNonSoftHarmoniX: V (0.001000000 kHz/LSB) 0.005000000 kHz
+\@2:Analog3: V (0.0003051758 V/LSB)       0 V
+\@3:Analog3: V (0.0003051758 V/LSB)       0 V
+\@2:Analog4: V (0.0003051758 V/LSB)       0 V
+\@3:Analog4: V (0.0003051758 V/LSB)       0 V
+\@2:TR Drive Amplitude: V (0.3051758 mV/LSB)       0 mV
+\@3:TR Drive Amplitude: V (0.3051758 mV/LSB)       0 mV
+\@2:TR Lock-In Phase: V (0.005493164 �/LSB)       0 �
+\@3:TR Lock-In Phase: V (0.005493164 �/LSB)       0 �
+\@2:DrivePhase3NonSoftHarmoniX: V (0.005493164 �/LSB)       0 �
+\@3:DrivePhase3NonSoftHarmoniX: V (0.005493164 �/LSB)       0 �
+\@2:SSRMSampleBias: V (0.0003051758 V/LSB)       0 V
+\@3:SSRMSampleBias: V (0.0003051758 V/LSB)       0 V
+\@2:TMFbIgain: V (0.3125000 1/LSB) 0.5000000 
+\@3:TMFbIgain: V (0.3125000 1/LSB) 0.5000000 
+\@2:TMFbPgain: V (0.3125000 1/LSB) 5.000000 
+\@3:TMFbPgain: V (0.3125000 1/LSB) 5.000000 
+\@2:AFMFbIgain: V (0.3125000 1/LSB) 2.000000 
+\@3:AFMFbIgain: V (0.3125000 1/LSB) 2.000000 
+\@2:AFMFbPgain: V (0.3125000 1/LSB) 5.000000 
+\@3:AFMFbPgain: V (0.3125000 1/LSB) 5.000000 
+\@2:SoftHarmoniXFbIgain: V (0.3125000 1/LSB) 9.348839 
+\@3:SoftHarmoniXFbIgain: V (0.3125000 1/LSB) 10.00000 
+\@2:SoftHarmoniXFbPgain: V (0.3125000 1/LSB)       0 
+\@3:SoftHarmoniXFbPgain: V (0.3125000 1/LSB)       0 
+\@2:STMFbIgain: V (0.3125000 1/LSB) 1.000000 
+\@3:STMFbIgain: V (0.3125000 1/LSB) 1.000000 
+\@2:STMFbPgain: V (0.3125000 1/LSB) 2.000000 
+\@3:STMFbPgain: V (0.3125000 1/LSB)       0 
+\@2:STMESFbIgain: V (0.3125000 1/LSB) 10.00000 
+\@3:STMESFbIgain: V (0.3125000 1/LSB) 10.00000 
+\@2:STMESFbPgain: V (0.3125000 1/LSB)       0 
+\@3:STMESFbPgain: V (0.3125000 1/LSB)       0 
+\@2:DriveAmplitude4SoftHarmoniX: V (0.3051758 mV/LSB) 6.713867 mV
+\@3:DriveAmplitude4SoftHarmoniX: V (0.3051758 mV/LSB)       0 mV
+\@2:BaselineAvgPtsSoftHarmoniX: V (1.000000 1/LSB) 17.00000 
+\@3:BaselineAvgPtsSoftHarmoniX: V (1.000000 1/LSB) 32.00000 
+\@2:DeflLowPassFrequency: V (0.001000000 kHz/LSB) 2.500000 kHz
+\@3:DeflLowPassFrequency: V (0.001000000 kHz/LSB) 2.500000 kHz
+\@2:DeflLowPassFrequencySoftHarmoniX: V (0.001000000 kHz/LSB) 40.00000 kHz
+\@3:DeflLowPassFrequencySoftHarmoniX: V (0.001000000 kHz/LSB) 40.00000 kHz
+\@2:FricLowPassFrequency: V (0.001000000 kHz/LSB) 2.539063 kHz
+\@3:FricLowPassFrequency: V (0.001000000 kHz/LSB) 2.000000 kHz
+\@2:TMDeflLowPassFrequency: V (0.001000000 kHz/LSB) 2.500000 kHz
+\@3:TMDeflLowPassFrequency: V (0.001000000 kHz/LSB) 2.000000 kHz
+\@2:CurrentLowPassFrequency: V (0.001000000 kHz/LSB) 10.00000 kHz
+\@3:CurrentLowPassFrequency: V (0.001000000 kHz/LSB) 10.00000 kHz
+\@2:OtherModesLowPassFrequency: V (0.001000000 kHz/LSB) 2.000000 kHz
+\@3:OtherModesLowPassFrequency: V (0.001000000 kHz/LSB) 2.000000 kHz
+\@2:TMFricLowPassFrequency: V (0.001000000 kHz/LSB) 2.500000 kHz
+\@3:TMFricLowPassFrequency: V (0.001000000 kHz/LSB) 10.00000 kHz
+\@2:FastZTMFbIgain: V (0.03125000 1/LSB) 1.000000 
+\@3:FastZTMFbIgain: V (0.03125000 1/LSB) 1.000000 
+\@2:FastZTMFbPgain: V (0.03125000 1/LSB) 1.000000 
+\@3:FastZTMFbPgain: V (0.03125000 1/LSB)       0 
+\@2:InputIgain: V (0.001525879 1/LSB) 10.00000 
+\@3:InputIgain: V (0.001525879 1/LSB) 10.00000 
+\@2:InputPgain: V (0.001525879 1/LSB) 10.00000 
+\@3:InputPgain: V (0.001525879 1/LSB) 10.00000 
+\@2:TRFbIgain: V (0.3125000 1/LSB) 0.5000000 
+\@3:TRFbIgain: V (0.3125000 1/LSB) 0.5000000 
+\@2:TRFbPgain: V (0.3125000 1/LSB) 5.000000 
+\@3:TRFbPgain: V (0.3125000 1/LSB) 5.000000 
+\@2:VertDeflLowPassFrequency: V (0.001000000 kHz/LSB) 10.00000 kHz
+\@3:VertDeflLowPassFrequency: V (0.001000000 kHz/LSB) 10.00000 kHz
+\@2:TRLockInBW1: V (0.001000000 kHz/LSB) 150.0000 kHz
+\@3:TRLockInBW1: V (0.001000000 kHz/LSB) 150.0000 kHz
+\@2:DrivePhase3SoftHarmoniX: V (0.005493164 �/LSB)       0 �
+\@3:DrivePhase3SoftHarmoniX: V (0.005493164 �/LSB)       0 �
+\@2:Output 1 Input Data: S [ImageOff] "Off"
+\@2:Output 2 Input Data: S [ImageOff] "Off"
+\@2:Output 1 Output Data: S [Analog3] "Analog3"
+\@2:Output 2 Output Data: S [Analog3] "Analog3"
+\@LogStiffnessOffset: V [Sens. LogStiffnessSens] (0.0004882813 log(Arb)/LSB)       0 log(Arb)
+\@LogSneddonModulusOffset: V [Sens. LogSneddonModulusSens] (0.0004882813 log(Arb)/LSB)       0 log(Arb)
+\*Fast Scan list
+\Phase Shift: 508
+\Fast Integral Gain: 20
+\Fast Proportional Gain: 20
+\Fast Interleave Igain: 0
+\Fast Interleave Pgain: 0
+\Contact Gain: 123
+\Q-Control Gain: 0
+\QC Interleave Gain: 0
+\QC Lift Gain: 0
+\Z Sensor CL IGain: 3
+\Z Sensor CL PGain: 3
+\Z Sensor Preamp Gain: 0.550125
+\Z Sensor Preamp Offset: -0.189255
+\Z Sensor Preamp Auto: Enabled
+\High Pass Filter: 1
+\Low Pass Filter: 1
+\All Pass Filter: 1
+\Interleave Mode: Disabled
+\Lift Mode: Disabled
+\QC Interleave Mode: Disabled
+\QC Lift Mode: Disabled
+\Closed Loop: Enabled
+\Tapping Engage Fast I Gain: 10
+\Tapping Engage Fast P Gain: 10
+\Contact Engage Fast I Gain: 5
+\Contact Engage Fast P Gain: 5
+\Tapping Minimum Scanning I Gain: 0.1
+\Tapping Minimum Scanning P Gain: 0.1
+\Contact Minimum Scanning I Gain: 0.1
+\Contact Minimum Scanning P Gain: 0.1
+\Tapping Maximum Scan Rate: 3
+\Contact Maximum Scan Rate: 4
+\Determine Contact Gain: Enabled
+\Check for active tip: Enabled
+\*Ciao image list
+\Data offset: 40960
+\Data length: 524288
+\Bytes/pixel: 2
+\Start context: OL
+\Data type: AFM
+\Data Type Description: 
+\Note: 
+\Plane fit: 0 0 0 5
+\Frame direction: Down
+\Capture start line: 0
+\Color Table Index: 12
+\Relative frame time: 1137.08
+\Samps/line: 512
+\Number of lines: 512
+\Aspect Ratio: 1:1
+\Scan Size: 93 93 ~m
+\Scan Line: Main
+\Line Direction: Retrace
+\Highpass: 0
+\Lowpass: 0
+\Realtime Planefit: Line
+\Offline Planefit: None
+\Valid data start X: 0
+\Valid data start Y: 0
+\Valid data len X: 512
+\Valid data len Y: 512
+\Tip x width correction factor: 1
+\Tip y width correction factor: 1
+\Tip x width correction factor sigma: 1
+\Tip y width correction factor sigma: 1
+\@2:Image Data: S [ZSensor] "Height Sensor"
+\@Z magnify: C [2:Z scale] 0.001421822 
+\@2:Z scale: V [Sens. ZsensSens] (0.0003750000 V/LSB) 24.57563 V
+\@2:Z offset: V [Sens. ZsensSens] (0.0003750000 V/LSB)       0 V
+\*Ciao image list
+\Data offset: 565248
+\Data length: 524288
+\Bytes/pixel: 2
+\Start context: OL
+\Data type: AFM
+\Data Type Description: 
+\Note: 
+\Plane fit: 0 0 0 5
+\Frame direction: Down
+\Capture start line: 0
+\Color Table Index: 12
+\Relative frame time: 1137.08
+\Samps/line: 512
+\Number of lines: 512
+\Aspect Ratio: 1:1
+\Scan Size: 93 93 ~m
+\Scan Line: Main
+\Line Direction: Retrace
+\Highpass: 0
+\Lowpass: 0
+\Realtime Planefit: Offset
+\Offline Planefit: None
+\Valid data start X: 0
+\Valid data start Y: 0
+\Valid data len X: 512
+\Valid data len Y: 512
+\Tip x width correction factor: 1
+\Tip y width correction factor: 1
+\Tip x width correction factor sigma: 1
+\Tip y width correction factor sigma: 1
+\@2:Image Data: S [] "Peak Force Error"
+\@Z magnify: C [2:Z scale] 0.002712715 
+\@2:Z scale: V [Sens. ForceDeflSens] (0.0003750000 V/LSB) 24.57563 V
+\@2:Z offset: V [Sens. ForceDeflSens] (0.0003750000 V/LSB)       0 V
+\*File list end
