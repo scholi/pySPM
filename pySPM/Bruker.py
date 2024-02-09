@@ -60,8 +60,7 @@ class Bruker:
         off = int(self.layers[i][b"Data offset"][0])
         if debug:
             print("RAW offset: ", off)
-        cols = int(self.layers[i][b"Number of lines"][0])
-        rows = int(self.layers[i][b"Samps/line"][0])
+        cols, rows = self._get_res(i)
         byte_length = int(self.layers[i][b"Data length"][0])
         length = rows * cols
         bpp = byte_length // length
@@ -74,7 +73,7 @@ class Bruker:
                 self.file.read(byte_length),
             ),
             dtype="float64",
-        ).reshape((cols, rows))
+        ).reshape((rows, cols))
 
     def list_channels(self, encoding="latin1"):
         print("Channels")
@@ -86,6 +85,42 @@ class Bruker:
         for layer in self.layers:
             with contextlib.suppress(KeyError):
                 print(layer[b"@3:Image Data"][0].decode(encoding) + " (MFM)")
+
+    def _get_layer_val(self, index: int, name: str, first=True):
+        lname = name.lower()
+        lname2 = name[0]+lname[1:]
+        if name.encode() in self.layers[index]:
+            val = self.layers[index][name.encode()]
+        elif lname.encode() in self.layers[index]:
+                val = self.layers[index][lname.encode()]
+        elif lname2.encode() in self.layers[index]:
+            val = self.layers[index][lname2.encode()]
+        if first:
+            return val[0]
+        return val
+
+
+    def _get_res(self, layer_index):
+        row_key = 'Valid data len X' if b'Valid data len X' in self.layers[layer_index] else 'Number of lines'
+        col_key = 'Valid data len Y' if b'Valid data len Y' in self.layers[layer_index] else 'Samps/line'
+        xres = int(self._get_layer_val(layer_index, row_key))
+        yres = int(self._get_layer_val(layer_index, col_key))
+        return xres, yres
+    
+    def _get_layer_size(self, layer_index, encoding, debug=False):
+        scan_size = self._get_layer_val(layer_index,'Scan Size').split()
+        xres, yres = self._get_res(layer_index)
+        if scan_size[2][0] == 126:
+            scan_size[2] = b'u' + scan_size[2][1:]
+        size = {}
+        size = {
+            'x': float(scan_size[0]),
+            'y': float(scan_size[1])*yres/xres,
+            'unit': scan_size[2].decode(encoding)}
+        if debug:
+            print("scan size", scan_size)
+
+        return size 
 
     def get_channel(
         self,
@@ -106,13 +141,13 @@ class Bruker:
                 backward = True
                 _type = "Bruker MFM"
                 try:
-                    layer_name = self.layers[i][b"@3:Image Data"][0].decode(encoding)
+                    layer_name = self._get_layer_val(i, "@3:Image Data").decode(encoding)
                 except KeyError:
                     continue
             else:
                 _type = "Bruker AFM"
                 try:
-                    layer_name = self.layers[i][b"@2:Image Data"][0].decode(encoding)
+                    layer_name = self._get_layer_val(i, "@2:Image Data").decode(encoding)
                 except KeyError:
                     continue
             result = re.match(r'([^ ]+) \[([^]]*)] "([^"]*)"', layer_name).groups()
@@ -120,12 +155,12 @@ class Bruker:
                 if debug:
                     print("channel " + channel + " Found!")
                 bck = False
-                if self.layers[i][b"Line Direction"][0] == b"Retrace":
+                if self._get_layer_val(i, "Line Direction") == b"Retrace":
                     bck = True
                 if bck == backward:
                     if debug:
                         print("Direction found")
-                    var = self.layers[i][b"@2:Z scale"][0].decode(encoding)
+                    var = self._get_layer_val(i, "@2:Z scale").decode(encoding)
                     if debug:
                         print("@2:Z scale", var)
                     if "[" in var:
@@ -135,7 +170,7 @@ class Bruker:
                         ).groups()
                         if debug:
                             print(result)
-                        bpp = int(self.layers[i][b"Bytes/pixel"][0])
+                        bpp = int(self._get_layer_val(i, "Bytes/pixel"))
                         if debug:
                             print("BPP", bpp)
                         # scale = float(result[1])
@@ -154,7 +189,7 @@ class Bruker:
                             print(f"scale: {scale:.3e}")
                             print(f"scale2: {scale2:.3e}")
                             print("zscale: " + str(zscale))
-                        var = self.layers[i][b"@2:Z offset"][0].decode(encoding)
+                        var = self._get_layer_val(i, "@2:Z offset").decode(encoding)
                         result = re.match(
                             r"[A-Z]+\s+\[[^]]+]\s+\(-?[0-9.]+ .*?\)\s+(-?[0-9.]+)\s+.*?$",
                             var,
@@ -171,25 +206,19 @@ class Bruker:
                         zscale = b"V"
                         result = re.match(
                             r"[A-Z]+ \(-?[0-9.]+ .*?\)\s+(-?[0-9.]+) .*?",
-                            self.layers[i][b"@2:Z offset"][0].decode(encoding),
+                            self._get_layer_val(i, "@2:Z offset").decode(encoding),
                         ).groups()
                         offset = float(result[0])
                     if debug:
                         print("Offset:", offset)
                     data = self._get_raw_layer(i, debug=debug) * scale * scale2
-                    xres = int(self.layers[i][b"Samps/line"][0])
-                    yres = int(self.layers[i][b"Number of lines"][0])
+                    xres, yres = self._get_res(i)
                     if debug:
                         print("xres/yres", xres, yres)
-                    scan_size = self.layers[i][b"Scan Size"][0].split()
+                    scan_size = self._get_layer_val(i, "Scan Size").split()
                     aspect_ratio = [
-                        float(x) for x in self.layers[i][b"Aspect Ratio"][0].split(b":")
+                        float(x) for x in self._get_layer_val(i, "Aspect Ratio").split(b":")
                     ]
-                    if len(aspect_ratio) == 2:
-                        aspect_ratio = aspect_ratio[1] / aspect_ratio[0]
-                    elif len(aspect_ratio) == 1:
-                        aspect_ratio = aspect_ratio[0]
-                    has_non_square_aspect_ratio = aspect_ratio < 1
                     if debug:
                         print("aspect ratio", aspect_ratio)
                         print("scan size", scan_size)
@@ -197,9 +226,7 @@ class Bruker:
                         scan_size[2] = b"u" + scan_size[2][1:]
                     size = {
                         "x": float(scan_size[0]),
-                        "y": [float(scan_size[1]), float(scan_size[1]) * yres / xres][
-                            has_non_square_aspect_ratio
-                        ],
+                        "y": float(scan_size[1]) * yres / xres,
                         "unit": scan_size[2].decode(encoding),
                     }
                     image = pySPM.SPM_image(
