@@ -41,12 +41,21 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
 extend-select = [
+    "E", # pycodestyle-error
+    "W", # pycodestyle-warning
+    "F", # pyflakes
+    "N", # pep8-naming
     "B", # flake8-bugbear
+    "I", # isort
+    "ASYNC", # flake8-async
+    "BLE", # flake8-blind-except
+    "A", # flake8-builtins
     "C4", # flake8-comprehensions
     "ERA", # flake8-eradicate/eradicate
-    "I", # isort
-    "N", # pep8-naming
     "PIE", # flake8-pie
     "PGH", # pygrep
     "RUF", # ruff checks
@@ -55,18 +64,6 @@ extend-select = [
     "TID", # flake8-tidy-imports
     "UP", # pyupgrade
 ]
-ignore = [
-    "N806", # variable in function should be lowercase
-    "N802", # function name should be lowercase
-    "N801", # class name should use CapWords convention
-    "ERA001", # eradicate: Found commented out code
-    "N803", # argument name should be lowercase
-    "E741", # ambiguous variable name
-    "E722", # do not use bare except
-    "RUF001",
-    "RUF003",
-    "N999",
-    "F405",
-    "F403",
-    "SIM115",
-]
+
+[tool.ruff.format]
+docstring-code-format = true
