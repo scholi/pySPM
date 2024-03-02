@@ -379,8 +379,12 @@ class ITM:
         Example
         -------
         >>> A = pySPM.ITA("myfile.ita")
-        >>> Au,_ = A.getAddedImageByName("Au") # retrieve the gold channel (total counts)
-        >>> Au_tofcorr = A.image(-np.log(1-np.fmin(.999, Au.pixels(A.Nscan))), "Au", zscale="yield") # Create a new image with the tof-corrected data
+        >>> Au, _ = A.getAddedImageByName(
+        ...     "Au"
+        ... )  # retrieve the gold channel (total counts)
+        >>> Au_tofcorr = A.image(
+        ...     -np.log(1 - np.fmin(0.999, Au.pixels(A.Nscan))), "Au", zscale="yield"
+        ... )  # Create a new image with the tof-corrected data
         """
         from .SPM import SPM_image
 

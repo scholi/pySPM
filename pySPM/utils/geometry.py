@@ -40,7 +40,7 @@ class Bbox:
             self.top = args[0]["top"]
             self.bottom = args[0]["bottom"]
         elif len(args) == 3:
-            assert isinstance(args[0], (list, tuple))
+            assert isinstance(args[0], list | tuple)
             self.left = args[0][0]
             self.bottom = args[0][1]
             self.right = self.left + args[1]

@@ -188,12 +188,12 @@ class SPM_image:
         -------
         >>> img = pySPM.SPM_image()
         >>> img.show()
-        >>> img.add_scale(50e-6, pixels=False);
+        >>> img.add_scale(50e-6, pixels=False)
         Add a scale of 50 μm on an image displayed with real units
 
         >>> img = pySPM.SPM_image()
         >>> img.show(pixels=True)
-        >>> img.add_scale(50e-6);
+        >>> img.add_scale(50e-6)
         Add a scale of 50 μm on an image displayed in pixels
         """
 
@@ -297,16 +297,16 @@ class SPM_image:
         Exampel if the data are plotted in pixels:
         >>> topo = pySPM.SPM_image(...)
         >>> fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-        >>> topoC = topo.offset([[150, 0, 220, 255]], inline=False,axPixels=True)
+        >>> topoC = topo.offset([[150, 0, 220, 255]], inline=False, axPixels=True)
         >>> topo.show(pixels=True, ax=ax[0])
-        >>> topoC.show(ax=ax[1]);
+        >>> topoC.show(ax=ax[1])
 
         Example if the data are plotted with real units
         >>> topo = pySPM.SPM_image(...)
         >>> fig, ax = plt.subplots(1, 2, figsize=(10, 5))
         >>> topoC = topo.offset([[150, 0, 220, 255]], inline=False)
         >>> topo.show(ax=ax[0])
-        >>> topoC.show(ax=ax[1]);
+        >>> topoC.show(ax=ax[1])
         """
         offset = np.zeros(self.pixels.shape[0])
         counts = np.zeros(self.pixels.shape[0])
@@ -672,12 +672,23 @@ class SPM_image:
         --------
         >>> topo = pySPM.SPM_image(...)
         >>> fig, (ax, ax2) = plt.subplots(2, 3, figsize=(15, 10))
-        >>> topo.show(ax=ax[0], cmap='gray', title="color map=\"gray\"")
+        >>> topo.show(ax=ax[0], cmap="gray", title='color map="gray"')
         >>> topo.show(ax=ax[1], sig=2, title="standard deviation=2")
         >>> topo.show(ax=ax[2], adaptive=True, title="Adaptive colormap")
-        >>> topo.show(ax=ax2[0], dmin=4e-8, cmap='gray', title="raise the lowest value for the colormap of +40nm")
-        >>> topo.show(ax=ax2[1], dmin=3e-8, dmax=-3e-8, cmap='gray',title="raise lower of +30nm and highest of -30nm")
-        >>> topo.show(ax=ax2[2], pixels=True, title="Set axis value in pixels");
+        >>> topo.show(
+        ...     ax=ax2[0],
+        ...     dmin=4e-8,
+        ...     cmap="gray",
+        ...     title="raise the lowest value for the colormap of +40nm",
+        ... )
+        >>> topo.show(
+        ...     ax=ax2[1],
+        ...     dmin=3e-8,
+        ...     dmax=-3e-8,
+        ...     cmap="gray",
+        ...     title="raise lower of +30nm and highest of -30nm",
+        ... )
+        >>> topo.show(ax=ax2[2], pixels=True, title="Set axis value in pixels")
         """
         mpl.rc("axes", grid=False)
 
@@ -1183,8 +1194,17 @@ class SPM_image:
         --------
         >>> topo = pySPM.SPM_image(...)
         >>> fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-        >>> topo.plot_profile(70, 100, 170, 200, ax=ax[1], img=ax[0], ztransf=lambda x:x*1e9, zunit='nm');
-        >>> topo.show(ax=ax[0], pixels=True);
+        >>> topo.plot_profile(
+        ...     70,
+        ...     100,
+        ...     170,
+        ...     200,
+        ...     ax=ax[1],
+        ...     img=ax[0],
+        ...     ztransf=lambda x: x * 1e9,
+        ...     zunit="nm",
+        ... )
+        >>> topo.show(ax=ax[0], pixels=True)
         """
         col = kargs.get("color", kargs.get("col", "C0"))
         W = self.size["real"]["x"]
@@ -1646,7 +1666,11 @@ class SPM_image:
         if kargs.get("debug", False):
             print("cut) Input coordinates:", c)
         if not pixels:
-            c = [z for s in zip(*self.real2pixels(c[0::2], c[1::2])) for z in s]
+            c = [
+                z
+                for s in zip(*self.real2pixels(c[0::2], c[1::2]), strict=False)
+                for z in s
+            ]
             if kargs.get("debug", False):
                 print("cut) pixel coordinates:", c)
         if not inline:

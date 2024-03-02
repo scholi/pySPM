@@ -47,7 +47,11 @@ def CDF(x, bg, *args, **kargs):
         CDF(x, 0.2, 0.5, -1, 5, -0.5, 1, 5)
     """
     if "A" in kargs and "x0" in kargs and "sig" in kargs:
-        args = [x for y in zip(kargs["A"], kargs["x0"], kargs["sig"]) for x in y]
+        args = [
+            x
+            for y in zip(kargs["A"], kargs["x0"], kargs["sig"], strict=False)
+            for x in y
+        ]
 
     r = bg * np.ones(x.shape)
     if len(args) % 3 != 0:
@@ -75,7 +79,11 @@ def lgCDF(x, bg, lg=0, *args, **kargs):
     """
 
     if "A" in kargs and "x0" in kargs and "sig" in kargs:
-        args = [x for y in zip(kargs["A"], kargs["x0"], kargs["sig"]) for x in y]
+        args = [
+            x
+            for y in zip(kargs["A"], kargs["x0"], kargs["sig"], strict=False)
+            for x in y
+        ]
 
     r = bg * np.ones(x.shape)
     if len(args) % 3 != 0:
@@ -196,7 +204,9 @@ def LG2Dr(A, ratio=None, Rweight=None, sigma=None, dic=False, **kargs):
     dpout = dpout[:2] + [ratio * dpout[2]] + dpout[2:]
     if dic:
         params2 = params[:2] + ["sig_x"] + params[2:]
-        return dict(zip(params2, pout)), dict(zip(params2, dpout))
+        return dict(zip(params2, pout, strict=False)), dict(
+            zip(params2, dpout, strict=False)
+        )
     return pout, dpout
 
 
@@ -289,7 +299,9 @@ def LG2D(A, Rweight=None, sigma=None, dic=False, **kargs):
             j += 1
 
     if dic:
-        return dict(zip(params, pout)), dict(zip(params, dpout))
+        return dict(zip(params, pout, strict=False)), dict(
+            zip(params, dpout, strict=False)
+        )
     return pout, dpout
 
 
@@ -387,5 +399,7 @@ def LG2Da(A, Rweight=None, sigma=None, dic=False, **kargs):
             j += 1
 
     if dic:
-        return dict(zip(params, pout)), dict(zip(params, dpout))
+        return dict(zip(params, pout, strict=False)), dict(
+            zip(params, dpout, strict=False)
+        )
     return pout, dpout

@@ -121,7 +121,7 @@ class PCA:
                 ("cumprop", "Cumulative Proportion"),
             ]
         )
-        Z = zip(a, b, c)
+        Z = zip(a, b, c, strict=False)
         summary = pd.DataFrame(list(Z), index=names, columns=columns)
         return summary
 
@@ -183,7 +183,8 @@ class PCA:
                 plt.scatter(foo[:, 0], foo[:, 1])
             else:
                 bar = pd.DataFrame(
-                    list(zip(foo[:, 0], foo[:, 1])), columns=["PC1", "PC2"]
+                    list(zip(foo[:, 0], foo[:, 1], strict=False)),
+                    columns=["PC1", "PC2"],
                 )
                 sns.lmplot("PC1", "PC2", bar, fit_reg=False)
         else:
@@ -191,7 +192,7 @@ class PCA:
                 plt.scatter(foo[:, 0], foo[:, 1], color=cm.Scalar)
             else:
                 bar = pd.DataFrame(
-                    list(zip(foo[:, 0], foo[:, 1], classifs)),
+                    list(zip(foo[:, 0], foo[:, 1], classifs, strict=False)),
                     columns=["PC1", "PC2", "Class"],
                 )
                 sns.lmplot("PC1", "PC2", bar, hue="Class", fit_reg=False)

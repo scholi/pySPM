@@ -185,7 +185,7 @@ def show_peak(
     if do_debug(debug):
         print("Selected Elements: " + ", ".join(E))
     m0s = [get_mass(x) for x in E]
-    E = [x for x, y in zip(E, m0s) if y >= lower_mass and y <= upper_mass]
+    E = [x for x, y in zip(E, m0s, strict=False) if y >= lower_mass and y <= upper_mass]
     m0s = [get_mass(x) for x in E]
     E_labels = [formulafy(x) for x in E] if formula else E
     if do_debug(debug):
@@ -390,7 +390,7 @@ def show_peak(
 
         if "dsf" in kargs and "dk0" in kargs and "sf" in kargs and "k0" in kargs:
             sf, dsf, k0, dk0 = (kargs[x] for x in "sf,dsf,k0,dk0".split(","))
-            P = list(zip(m0s, E))
+            P = list(zip(m0s, E, strict=False))
             P.sort(key=lambda x: x[0])
             for i, (mi, Ei) in enumerate(P):
                 col = colors[i % len(colors)]
@@ -399,7 +399,7 @@ def show_peak(
                 ax.axvline(mi + dmi, color=col, alpha=0.5, linestyle=":")
 
         if not pretty:
-            P = list(zip(m0s, E_labels))
+            P = list(zip(m0s, E_labels, strict=False))
             P.sort(key=lambda x: x[0])
             y = ax.get_ylim()[1]
             for i, (mi, Ei) in enumerate(P):

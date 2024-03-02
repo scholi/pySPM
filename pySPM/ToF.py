@@ -91,7 +91,7 @@ class BIF6:
         ).reshape(self.size)
 
     def getImgMass(self, masses, raw=False):
-        if isinstance(masses, (float, int)):
+        if isinstance(masses, float | int):
             masses = [masses]
         SUM = None
         for i, x in enumerate(self.cat):
@@ -179,7 +179,7 @@ class BIF3D:
         if isinstance(channels, str):
             assert channels in self.RPeaks
             return self.RPeaks[channels]
-        if isinstance(channels, (list, tuple)):
+        if isinstance(channels, list | tuple):
             ID = []
             for x in channels:
                 ID.append(self.getIDs(x))

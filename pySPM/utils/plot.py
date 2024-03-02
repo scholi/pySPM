@@ -325,7 +325,7 @@ def put_Xlabels(
 ):
     fig = ax.get_figure()
     renderer = fig.canvas.get_renderer()
-    P = list(zip(pos, labels))
+    P = list(zip(pos, labels, strict=False))
     P.sort(key=lambda x: x[0])  # sort labels by ascending x
     labs = []
     ax.draw(renderer)  # make sure to draw the new object

@@ -31,11 +31,11 @@ def funit(value, unit=None):
 
     Examples
     --------
-    >>> funit(0.01,'m')
+    >>> funit(0.01, "m")
     {'value': 10.0, 'unit': 'mm'}
-    >>> funit(1, 'cm')
+    >>> funit(1, "cm")
     {'value': 1.0, 'unit': 'cm'}
-    >>> funit({'value':2340, 'unit': 'um'})
+    >>> funit({"value": 2340, "unit": "um"})
     {'value': 2.34, 'unit': 'mm'}
     """
     if unit is None:
@@ -274,7 +274,7 @@ def getToFsimg(I, N=None, prog=False):
         N = [10, 50, 100, 300, 500]
     Ns = np.insert(np.diff(N), 0, N[0])
     T = [getToFimg(I, n) for n in Ns]
-    return dict(zip(N, np.cumsum(T, axis=0)))
+    return dict(zip(N, np.cumsum(T, axis=0), strict=False))
 
 
 def centered_meshgrid(A):

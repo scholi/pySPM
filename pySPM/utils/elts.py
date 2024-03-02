@@ -398,7 +398,9 @@ def elts_nm(elts, NM):
         elts = re.compile(r"((?:^[0-9]+)?[A-Z][a-z]?(?:_[0-9]+)?)").findall(elts)
     me = [get_mass(x) for x in elts]
     while r:
-        rnew = _elts_add(r, list(zip([_formula2dict(x) for x in elts], me)))
+        rnew = _elts_add(
+            r, list(zip([_formula2dict(x) for x in elts], me, strict=False))
+        )
         r = [x for x in rnew if x[1] < NM + 0.5]
         res += [
             _dict2formula(x[0])

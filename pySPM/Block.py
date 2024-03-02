@@ -102,6 +102,7 @@ class Block:
             zip(
                 ["name_length", "ID", "N", "length1", "length2"],
                 struct.unpack("<5I", self.f.read(20)),
+                strict=False,
             )
         )
         self.name = self.f.read(self.head["name_length"]).decode("ascii")
@@ -368,6 +369,7 @@ class Block:
             zip(
                 ["name_length", "ID", "N", "length1", "length2"],
                 struct.unpack("<5x5I", self.f.read(25)),
+                strict=False,
             )
         )
         self.f.read(head["name_length"])
@@ -404,6 +406,7 @@ class Block:
                 zip(
                     ["name_length", "ID", "N", "length1", "length2"],
                     struct.unpack("<5x5I", data),
+                    strict=False,
                 )
             )
             self.f.read(head["name_length"])
@@ -419,6 +422,7 @@ class Block:
                     zip(
                         ["index", "slen", "id", "blen", "bidx"],
                         struct.unpack("<III4xQQ", self.f.read(32)),
+                        strict=False,
                     )
                 )
                 self.f.seek(data + S["index"])

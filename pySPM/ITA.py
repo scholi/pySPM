@@ -160,7 +160,9 @@ class ITA(ITM):
             CHNO- (), mass: 42.97 - 43.05
             CHO_2- (), mass: 44.95 - 45.04
             Cs- (), mass: 132.81 - 133.01
-        >>> ch = A.getChannelsByName("C[^a-z]") # Only carbon atoms (meaning that the char after C cannot be lowercase)
+        >>> ch = A.getChannelsByName(
+        ...     "C[^a-z]"
+        ... )  # Only carbon atoms (meaning that the char after C cannot be lowercase)
         >>> A.showChannels(ch)
                 CH- (), mass: 12.99 - 13.03
             C_2- (), mass: 23.97 - 24.03
@@ -169,7 +171,9 @@ class ITA(ITM):
             C_2O- (), mass: 39.96 - 40.04
             CHNO- (), mass: 42.97 - 43.05
             CHO_2- (), mass: 44.95 - 45.04
-        >>> ch = A.getChannelsByName("CH", True) # Only CH channel and not CHNO and CHO_2
+        >>> ch = A.getChannelsByName(
+        ...     "CH", True
+        ... )  # Only CH channel and not CHNO and CHO_2
         >>> A.showChannels(ch)
                 CH- (), mass: 12.99 - 13.03
         """
@@ -517,7 +521,7 @@ class ITA(ITM):
         D = struct.unpack("<" + str(len(X) // 4) + "i", X)
         dx = D[::2]
         dy = D[1::2]
-        return list(zip(dx, dy))
+        return list(zip(dx, dy, strict=False))
 
     @alias("getShiftCorrectedImageByMass")
     def get_shift_corrected_image_by_mass(self, masses, **kargs):
@@ -538,7 +542,7 @@ class ITA(ITM):
             scans = range(self.Nscan)
         if isinstance(scans, int):
             scans = [scans]
-        if isinstance(masses, (int, float)):
+        if isinstance(masses, int | float):
             masses = [masses]
         if prog:
             scans = PB(scans, leave=False)
@@ -577,7 +581,7 @@ class ITA(ITM):
             List of all selected peaks used to compute the image.
             Note: Pass this list to pySPM.ITA.showChannels in order to print a human readable representation of it.
         """
-        if isinstance(masses, (int, float)):
+        if isinstance(masses, int | float):
             masses = [masses]
         Z = np.zeros((self.sy, self.sx))
         channels = []
@@ -1035,7 +1039,7 @@ class ITA_collection(Collection):
         Example
         -------
         >>> A = pySPM.ITA_collection("myfile.ita")
-        >>> A['Au-']
+        >>> A["Au-"]
         <pySPM.SPM.SPM_image at 0x????????>
         """
         if key not in self.channels:

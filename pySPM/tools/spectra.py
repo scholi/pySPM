@@ -99,7 +99,7 @@ class SpectraViewer(QMainWindow):
         for nm in range(int(np.round(r[0], 0)), int(np.round(r[1], 0)) + 1):
             E += pySPM.utils.get_peaklist(nm, self.ita.polarity == "Negative")
         m0s = [pySPM.utils.get_mass(x) for x in E]
-        P = list(zip(m0s, E))
+        P = list(zip(m0s, E, strict=False))
         P.sort(key=lambda x: x[0])
         y = self.ax.get_ylim()[1]
         for i, (mi, Ei) in enumerate(P):

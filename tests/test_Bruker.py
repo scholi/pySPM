@@ -8,7 +8,9 @@ data_path = os.path.join(os.path.dirname(__file__), "data")
 
 def get_Bruker_size(file, channel="Height Sensor"):
     return (
-        pySPM.Bruker(os.path.join(data_path, file)).get_channel(channel, mock_data=True).size
+        pySPM.Bruker(os.path.join(data_path, file))
+        .get_channel(channel, mock_data=True)
+        .size
     )
 
 
