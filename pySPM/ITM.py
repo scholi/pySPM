@@ -248,7 +248,7 @@ class ITM:
         }
 
     def show_summary(self, fig=None, plot=True, **kargs):
-        from . import funit
+        from .utils import funit
 
         s = self.get_summary(numeric=False)
         print(
