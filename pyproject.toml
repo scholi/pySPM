@@ -16,7 +16,7 @@ packages = [{ include = "pySPM" }]
 python = ">=3.10,<3.13"
 scikit-learn = "^1.2.2"
 scikit-image = ">=0.21.0"
-numpy = "^1.26.0"
+numpy = "^2.0.0"
 matplotlib = "^3.7.1"
 seaborn = "^0.13.0"
 psutil = "^5.9.4"
