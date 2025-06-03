@@ -158,6 +158,8 @@ class Bruker:
                     )
                 except KeyError:
                     continue
+                except UnboundLocalError:
+                    continue
             else:
                 _type = "Bruker AFM"
                 try:
@@ -165,6 +167,8 @@ class Bruker:
                         encoding
                     )
                 except KeyError:
+                    continue
+                except UnboundLocalError:
                     continue
             result = re.match(r'([^ ]+) \[([^]]*)] "([^"]*)"', layer_name).groups()
             if result[2] == channel:
