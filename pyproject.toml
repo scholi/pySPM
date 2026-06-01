@@ -13,7 +13,7 @@ keywords = ["ToF", "SIMS", "ION-ToF", "SPM", "SFM", "SXM", "AFM", "KPFM", "PCA",
 packages = [{ include = "pySPM" }]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
+python = ">=3.10,<3.15"
 scikit-learn = "^1.2.2"
 scikit-image = ">=0.21.0"
 numpy = "^2.0.0"
@@ -41,7 +41,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py314"
 
 [tool.ruff.lint]
 extend-select = [
