@@ -1137,7 +1137,7 @@ class ITA_collection(Collection):
         """
         import copy
 
-        from scipy.ndimage.filters import gaussian_filter
+        from scipy.ndimage import gaussian_filter
 
         N = ITA_collection(self.filename, [], name=self.name)
         size = next(iter(self.channels.values())).pixels.shape
